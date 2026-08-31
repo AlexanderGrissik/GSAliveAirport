@@ -7,6 +7,7 @@
 #include "SimObjectPositioning.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <utility>
 
@@ -24,12 +25,28 @@ constexpr std::string_view kFsdtWorkerTitle = "FSDT_catering_man_01";
 constexpr std::string_view kFsdtWingwalkerTitle = "FSDT_Wingwalker_Male_04";
 constexpr std::string_view kFsdtMarshallerTitle = "FSDT_Marshaller_01";
 constexpr std::string_view kAsoboMarshallerTitle = "Marshaller_Male_Summer_Caucasian";
+constexpr std::string_view kPassengerBaggageBeltFamily = "PaxBaggageBelt";
+constexpr std::string_view kFsdtBaggageBeltPrefix = "FSDT_Tug_660";
+constexpr std::string_view kFsdtBaggageWorkerPrefix =
+    "FSDT_Baggage_Loader_Man_02";
+constexpr double kFeetToMeters = 0.3048;
+constexpr double kBaggageLoaderDoorClearanceMeters = 0.5;
 
 bool SafeParkedAircraft(const AircraftSnapshot &aircraft)
 {
     return !aircraft.isUser && aircraft.onGround &&
            std::abs(aircraft.groundSpeedKnots) < kRemovalSpeedKnots;
 }
+
+bool EqualAsciiIgnoreCase(std::string_view left, std::string_view right)
+{
+    return left.size() == right.size() &&
+        std::ranges::equal(left, right, [](char leftCharacter, char rightCharacter) {
+            return std::tolower(static_cast<unsigned char>(leftCharacter)) ==
+                   std::tolower(static_cast<unsigned char>(rightCharacter));
+        });
+}
+
 }
 
 GroundServicesThread::GroundServicesThread(SimConnectThread &simConnect,
@@ -97,6 +114,7 @@ void GroundServicesThread::RunLoop(std::stop_token stopToken)
     while (!stopToken.stop_requested()) {
         ProcessCommands();
         const auto now = std::chrono::steady_clock::now();
+        if (m_connected) MaintainBaggageBeltAlignments(now);
         if (m_connected && now >= nextDecision) {
             EvaluateTrackedAircraft();
             nextDecision = now + 10s;
@@ -125,6 +143,130 @@ void GroundServicesThread::ProcessCommands()
         commands.swap(m_commands);
     }
     for (auto &command : commands) command();
+}
+
+void GroundServicesThread::MaintainBaggageBeltAlignments(
+    std::chrono::steady_clock::time_point now)
+{
+    for (auto &[loaderObjectId, alignment] : m_pendingBaggageBeltAlignments) {
+        if (alignment.geometryRequested || now < alignment.geometryRequestDue) continue;
+        alignment.geometryRequested = true;
+        m_simConnect.RequestBaggageLoaderGeometry(
+            loaderObjectId,
+            [this, loaderObjectId](BaggageLoaderGeometry geometry) {
+                Post([this, loaderObjectId, geometry] {
+                    CompleteBaggageBeltAlignment(loaderObjectId, geometry);
+                });
+            });
+    }
+}
+
+void GroundServicesThread::CompleteBaggageBeltAlignment(
+    AircraftId loaderObjectId, BaggageLoaderGeometry geometry)
+{
+    const auto pending = m_pendingBaggageBeltAlignments.find(loaderObjectId);
+    if (pending == m_pendingBaggageBeltAlignments.end()) return;
+    PendingBaggageBeltAlignment &alignment = pending->second;
+    alignment.geometryRequested = false;
+    if (!geometry.succeeded || !std::isfinite(geometry.angleCurrentDegrees) ||
+        !std::isfinite(geometry.endRampYMeters) ||
+        !std::isfinite(geometry.endRampZMeters) ||
+        !std::isfinite(geometry.pivotYMeters) ||
+        !std::isfinite(geometry.pivotZMeters)) {
+        m_log("Could not read live ramp geometry for baggage loader ObjectID " +
+              std::to_string(loaderObjectId) + "; removing it.");
+        const AircraftId aircraftId = alignment.aircraft.objectId;
+        m_pendingBaggageBeltAlignments.erase(pending);
+        m_simConnect.RemoveObject(loaderObjectId);
+        CloseCargoDoor(aircraftId);
+        m_createdObjects.erase(loaderObjectId);
+        m_aircraftByObject.erase(loaderObjectId);
+        if (auto group = m_objectsByAircraft.find(aircraftId);
+            group != m_objectsByAircraft.end()) {
+            group->second.erase(loaderObjectId);
+            if (group->second.empty()) m_objectsByAircraft.erase(group);
+        }
+        PublishStatus();
+        return;
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    if (alignment.stage == PendingBaggageBeltAlignment::Stage::MeasureInitialGeometry) {
+        const double rampLength = std::hypot(
+            geometry.endRampYMeters - geometry.pivotYMeters,
+            geometry.endRampZMeters - geometry.pivotZMeters);
+        if (rampLength < 0.01) {
+            m_log("MSFS returned an invalid ramp length for baggage loader ObjectID " +
+                  std::to_string(loaderObjectId) + ".");
+            const AircraftId aircraftId = alignment.aircraft.objectId;
+            m_pendingBaggageBeltAlignments.erase(pending);
+            m_simConnect.RemoveObject(loaderObjectId);
+            CloseCargoDoor(aircraftId);
+            m_createdObjects.erase(loaderObjectId);
+            m_aircraftByObject.erase(loaderObjectId);
+            if (auto group = m_objectsByAircraft.find(aircraftId);
+                group != m_objectsByAircraft.end()) {
+                group->second.erase(loaderObjectId);
+                if (group->second.empty()) m_objectsByAircraft.erase(group);
+            }
+            PublishStatus();
+            return;
+        }
+        const double currentPhase = std::atan2(
+            geometry.endRampYMeters - geometry.pivotYMeters,
+            geometry.endRampZMeters - geometry.pivotZMeters);
+        const double desiredPhase = std::asin(std::clamp(
+            (alignment.cargoHeightMeters - geometry.pivotYMeters) / rampLength,
+            -1.0, 1.0));
+        alignment.rampAngleDegrees = std::clamp(
+            geometry.angleCurrentDegrees +
+                (desiredPhase - currentPhase) * 180.0 / 3.14159265358979323846,
+            0.0, 90.0);
+        alignment.stage = PendingBaggageBeltAlignment::Stage::WaitForRampTarget;
+        alignment.geometryRequestDue = now + 500ms;
+        m_simConnect.SetBaggageLoaderRampTarget(loaderObjectId,
+                                                 alignment.rampAngleDegrees);
+        return;
+    }
+
+    if (std::abs(geometry.angleCurrentDegrees - alignment.rampAngleDegrees) > 0.2) {
+        alignment.geometryRequestDue = now + 500ms;
+        return;
+    }
+
+    const double headingRadians = alignment.modelRelativeHeadingDegrees *
+        3.14159265358979323846 / 180.0;
+    // Keep the ramp endpoint visibly clear of the cargo door while retaining
+    // its correct alignment with the selected cargo interactive point.
+    const double rampDistanceMeters =
+        geometry.endRampZMeters + kBaggageLoaderDoorClearanceMeters;
+    const double loaderForwardMeters = alignment.cargoForwardMeters -
+        std::cos(headingRadians) * rampDistanceMeters;
+    const double loaderRightMeters = alignment.cargoRightMeters -
+        std::sin(headingRadians) * rampDistanceMeters;
+    auto position = RelativePosition(
+        alignment.aircraft.headingDegrees, alignment.aircraft.longitude,
+        alignment.aircraft.latitude, alignment.aircraft.altitudeFeet,
+        loaderForwardMeters, loaderRightMeters);
+    position.Heading = alignment.headingDegrees;
+    m_simConnect.SetObjectPosition(loaderObjectId, position);
+
+    PendingCreate worker{};
+    worker.aircraft = alignment.aircraft;
+    worker.title = std::move(alignment.workerTitle);
+    worker.kind = PendingCreateKind::BaggageBeltWorker;
+    worker.pairedObjectId = loaderObjectId;
+    worker.forwardMeters = loaderForwardMeters;
+    worker.rightMeters = loaderRightMeters;
+    worker.baggageBeltRampAngleDegrees = alignment.rampAngleDegrees;
+    worker.headingDegrees = alignment.headingDegrees;
+    m_log("Aligned baggage loader ObjectID " + std::to_string(loaderObjectId) +
+          " from its live ramp end (Y=" + std::to_string(geometry.endRampYMeters) +
+          ", Z=" + std::to_string(geometry.endRampZMeters) +
+          ") with " + std::to_string(kBaggageLoaderDoorClearanceMeters) +
+          " m door clearance.");
+    m_pendingBaggageBeltAlignments.erase(pending);
+    QueueCreate(std::move(worker));
 }
 
 void GroundServicesThread::EvaluateTrackedAircraft()
@@ -188,28 +330,41 @@ void GroundServicesThread::EnsureAutomaticServices(const AircraftSnapshot &aircr
 
     m_configuration.FillRequests(*category, m_random, m_serviceRequestBuffer);
     m_configuredAircraft.insert(aircraft.objectId);
+    std::size_t requestedCount = 0;
     for (const GroundServiceRequest &request : m_serviceRequestBuffer) {
         std::optional<RelativeWalkingPath> walkingPath;
         if (request.walking) {
             walkingPath = RelativeWalkingPath{request.relX1, request.relY1,
                                               request.relX2, request.relY2};
         }
-        RequestObject(aircraft, request.title, request.relY1, request.relX1,
-                      walkingPath, request.faceAircraft);
+        if (request.family == kPassengerBaggageBeltFamily) {
+            if (RequestPassengerBaggageBelt(aircraft, request.title)) {
+                ++requestedCount;
+            }
+        } else {
+            RequestObject(aircraft, request.title, request.relY1, request.relX1,
+                          walkingPath, request.faceAircraft);
+            ++requestedCount;
+        }
     }
-    m_log("Applied " + std::to_string(m_serviceRequestBuffer.size()) +
+    m_log("Applied " + std::to_string(requestedCount) +
           " configured " + std::string(AircraftSizeCategoryName(*category)) +
           " service request(s) to aircraft " + std::to_string(aircraft.objectId) +
           " (wingspan " + std::to_string(aircraft.wingSpanMeters) + " m).");
     PublishStatus();
 }
 
-void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId)
+void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId, bool closeCargoDoor)
 {
     m_configuredAircraft.erase(aircraftId);
+    if (closeCargoDoor) CloseCargoDoor(aircraftId);
     for (auto &[token, pending] : m_pendingCreates) {
         if (pending.aircraft.objectId == aircraftId) pending.cancelled = true;
     }
+    std::erase_if(m_pendingBaggageBeltAlignments,
+                  [aircraftId](const auto &entry) {
+                      return entry.second.aircraft.objectId == aircraftId;
+                  });
     const auto group = m_objectsByAircraft.find(aircraftId);
     if (group == m_objectsByAircraft.end()) {
         PublishStatus();
@@ -218,7 +373,7 @@ void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId)
     const auto objects = group->second;
     m_objectsByAircraft.erase(group);
     for (const AircraftId objectId : objects) {
-        m_animation.RemoveWorker(objectId);
+        m_animation.RemoveObject(objectId);
         m_simConnect.RemoveObject(objectId);
         m_createdObjects.erase(objectId);
         m_aircraftByObject.erase(objectId);
@@ -230,23 +385,114 @@ void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId)
     }
 }
 
+void GroundServicesThread::CloseCargoDoor(AircraftId aircraftId)
+{
+    const auto door = m_openCargoDoorIndices.find(aircraftId);
+    if (door == m_openCargoDoorIndices.end()) return;
+    m_simConnect.SetCargoDoorOpen(aircraftId, door->second, false);
+    m_openCargoDoorIndices.erase(door);
+}
+
 void GroundServicesThread::RequestObject(const AircraftSnapshot &aircraft,
                                          std::string title, double forwardMeters,
                                          double rightMeters,
                                          std::optional<RelativeWalkingPath> walkingPath,
-                                         bool faceAircraft)
+                                         bool faceAircraft,
+                                         std::optional<double> headingDegrees)
+{
+    PendingCreate pending{};
+    pending.aircraft = aircraft;
+    pending.title = std::move(title);
+    pending.walkingPath = std::move(walkingPath);
+    pending.forwardMeters = forwardMeters;
+    pending.rightMeters = rightMeters;
+    pending.faceAircraft = faceAircraft;
+    pending.headingDegrees = headingDegrees;
+    QueueCreate(std::move(pending));
+}
+
+bool GroundServicesThread::RequestPassengerBaggageBelt(
+    const AircraftSnapshot &aircraft, std::string title)
+{
+    if (!aircraft.cargoConnectionPoint) {
+        m_log("Skipped PaxBaggageBelt for aircraft " +
+              std::to_string(aircraft.objectId) +
+              ": MSFS reported no cargo interactive point.");
+        return false;
+    }
+    const AircraftCargoConnectionPoint &connection =
+        *aircraft.cargoConnectionPoint;
+    const double headingDegrees = std::fmod(
+        aircraft.headingDegrees + connection.relativeHeadingDegrees + 540.0,
+        360.0);
+    if (m_openCargoDoorIndices.emplace(aircraft.objectId,
+                                       connection.interactivePointIndex).second) {
+        m_simConnect.SetCargoDoorOpen(aircraft.objectId,
+                                      connection.interactivePointIndex, true);
+        m_log("Requested cargo-door opening for aircraft " +
+              std::to_string(aircraft.objectId) + " at interactive point " +
+              std::to_string(connection.interactivePointIndex) + ".");
+    }
+
+    if (!title.starts_with(kFsdtBaggageBeltPrefix)) {
+        RequestObject(aircraft, std::move(title), connection.forwardMeters,
+                      connection.rightMeters, std::nullopt, false,
+                      headingDegrees);
+        return true;
+    }
+
+    const std::string expectedWorkerTitle =
+        std::string(kFsdtBaggageWorkerPrefix) +
+        title.substr(kFsdtBaggageBeltPrefix.size());
+    const auto matchingWorker = std::ranges::find_if(
+        m_catalogTitleBuffer, [&expectedWorkerTitle](const std::string &candidate) {
+            return EqualAsciiIgnoreCase(candidate, expectedWorkerTitle);
+        });
+    if (matchingWorker == m_catalogTitleBuffer.end()) {
+        m_log("Could not find matching worker " + expectedWorkerTitle + " for " +
+              title + "; creating the belt as a static object.");
+        RequestObject(aircraft, std::move(title), connection.forwardMeters,
+                      connection.rightMeters, std::nullopt, false,
+                      headingDegrees);
+        return true;
+    }
+
+    PendingCreate pending{};
+    pending.aircraft = aircraft;
+    pending.title = std::move(title);
+    pending.kind = PendingCreateKind::BaggageBeltLoader;
+    pending.companionTitle = *matchingWorker;
+    // Initially create at the target, then use the loader's own runtime
+    // ramp-end geometry to place its SimObject origin exactly.
+    pending.forwardMeters = connection.forwardMeters;
+    pending.rightMeters = connection.rightMeters;
+    pending.cargoHeightMeters =
+        (aircraft.altitudeFeet - aircraft.groundAltitudeFeet) * kFeetToMeters +
+        connection.verticalMeters;
+    pending.modelRelativeHeadingDegrees = std::fmod(
+        connection.relativeHeadingDegrees + 180.0, 360.0);
+    pending.headingDegrees = headingDegrees;
+    QueueCreate(std::move(pending));
+    return true;
+}
+
+void GroundServicesThread::QueueCreate(PendingCreate pending)
 {
     const std::uint64_t token = m_nextCreateToken++;
-    m_pendingCreates.emplace(
-        token, PendingCreate{aircraft, title, std::move(walkingPath), false});
-    PublishStatus();
-    auto position = RelativePosition(aircraft.headingDegrees, aircraft.longitude,
-                                     aircraft.latitude, aircraft.altitudeFeet,
-                                     forwardMeters, rightMeters);
-    if (faceAircraft) {
+    const std::string title = pending.title;
+    auto position = RelativePosition(
+        pending.aircraft.headingDegrees, pending.aircraft.longitude,
+        pending.aircraft.latitude, pending.aircraft.altitudeFeet,
+        pending.forwardMeters, pending.rightMeters);
+    if (pending.headingDegrees) {
+        position.Heading = *pending.headingDegrees;
+    } else if (pending.faceAircraft) {
         position.Heading = HeadingTowardRelativeOrigin(
-            aircraft.headingDegrees, forwardMeters, rightMeters);
+            pending.aircraft.headingDegrees, pending.forwardMeters,
+            pending.rightMeters);
     }
+    m_pendingCreates.emplace(token, std::move(pending));
+    PublishStatus();
     m_simConnect.CreateObject(
         title, position,
         [this, token](DWORD objectId) {
@@ -278,10 +524,39 @@ void GroundServicesThread::CompleteCreate(std::uint64_t token, AircraftId object
               " for inactive aircraft " + std::to_string(created.aircraft.objectId) + ".");
         return;
     }
+    if (created.kind == PendingCreateKind::BaggageBeltWorker) {
+        const auto loaderOwner = m_aircraftByObject.find(created.pairedObjectId);
+        if (!m_createdObjects.contains(created.pairedObjectId) ||
+            loaderOwner == m_aircraftByObject.end() ||
+            loaderOwner->second != created.aircraft.objectId) {
+            m_simConnect.RemoveObject(objectId);
+            PublishStatus();
+            m_log("Immediately removed late-created baggage worker " + created.title +
+                  " because its belt ObjectID " +
+                  std::to_string(created.pairedObjectId) + " is no longer active.");
+            return;
+        }
+    }
     m_createdObjects.insert(objectId);
     m_objectsByAircraft[created.aircraft.objectId].insert(objectId);
     m_aircraftByObject[objectId] = created.aircraft.objectId;
-    if (created.walkingPath) {
+    if (created.kind == PendingCreateKind::BaggageBeltLoader) {
+        m_simConnect.FreezeObject(objectId);
+        PendingBaggageBeltAlignment alignment{};
+        alignment.aircraft = created.aircraft;
+        alignment.workerTitle = created.companionTitle;
+        alignment.cargoForwardMeters = created.forwardMeters;
+        alignment.cargoRightMeters = created.rightMeters;
+        alignment.cargoHeightMeters = created.cargoHeightMeters;
+        alignment.modelRelativeHeadingDegrees = created.modelRelativeHeadingDegrees;
+        alignment.headingDegrees = *created.headingDegrees;
+        alignment.geometryRequestDue = std::chrono::steady_clock::now() + 250ms;
+        m_pendingBaggageBeltAlignments.emplace(objectId, std::move(alignment));
+        m_simConnect.SetBaggageLoaderRampTarget(objectId, 0.0);
+    } else if (created.kind == PendingCreateKind::BaggageBeltWorker) {
+        m_animation.AddBaggageBelt(created.pairedObjectId, objectId,
+                                   created.baggageBeltRampAngleDegrees);
+    } else if (created.walkingPath) {
         m_animation.AddWorker(objectId, created.title, created.aircraft,
                               *created.walkingPath);
     } else if (created.title == kFsdtWingwalkerTitle ||
@@ -304,11 +579,18 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
     if (isParent) {
         m_log("MSFS removed tracked aircraft ObjectID " + std::to_string(objectId) +
               "; removing its pending and created ground services.");
-        RemoveForAircraft(objectId);
+        // The target aircraft has already gone, so only clear our door state;
+        // sending a close event to its stale ObjectID would be meaningless.
+        m_openCargoDoorIndices.erase(objectId);
+        RemoveForAircraft(objectId, false);
         return;
     }
+    for (auto &[token, pending] : m_pendingCreates) {
+        if (pending.pairedObjectId == objectId) pending.cancelled = true;
+    }
+    m_pendingBaggageBeltAlignments.erase(objectId);
     const bool wasCreated = m_createdObjects.contains(objectId);
-    m_animation.RemoveWorker(objectId);
+    m_animation.RemoveObject(objectId);
     m_createdObjects.erase(objectId);
     const auto owner = m_aircraftByObject.find(objectId);
     AircraftId ownerId = 0;
@@ -334,10 +616,12 @@ void GroundServicesThread::HandleConnection(bool connected)
     m_connected = connected;
     if (connected) return;
     m_pendingCreates.clear();
+    m_pendingBaggageBeltAlignments.clear();
     m_createdObjects.clear();
     m_configuredAircraft.clear();
     m_objectsByAircraft.clear();
     m_aircraftByObject.clear();
+    m_openCargoDoorIndices.clear();
     m_animation.Reset();
     m_configuration.ClearResolution();
     PublishStatus();
@@ -370,9 +654,14 @@ void GroundServicesThread::SpawnFullTestInternal()
 void GroundServicesThread::ClearCreatedInternal(bool announce)
 {
     for (auto &[token, pending] : m_pendingCreates) pending.cancelled = true;
+    m_pendingBaggageBeltAlignments.clear();
+    for (const auto &[aircraftId, pointIndex] : m_openCargoDoorIndices) {
+        m_simConnect.SetCargoDoorOpen(aircraftId, pointIndex, false);
+    }
+    m_openCargoDoorIndices.clear();
     const auto objectCount = m_createdObjects.size();
     for (const AircraftId objectId : m_createdObjects) {
-        m_animation.RemoveWorker(objectId);
+        m_animation.RemoveObject(objectId);
         m_simConnect.RemoveObject(objectId);
     }
     m_createdObjects.clear();

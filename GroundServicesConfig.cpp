@@ -16,6 +16,7 @@ namespace
 {
 using Json = nlohmann::json;
 constexpr char kConfigurationFileName[] = "category-json-template.json";
+constexpr std::string_view kPassengerBaggageBeltFamily = "PaxBaggageBelt";
 
 std::string Lower(std::string_view value)
 {
@@ -216,18 +217,23 @@ void GroundServicesConfig::FillRequests(
             walking = false;
         }
         if (family == m_families.end() || family->second.resolvedTitles.empty()) continue;
-        const auto location = m_locations.find(element.location);
-        if (location == m_locations.end()) continue;
 
         std::uniform_int_distribution<std::size_t> titleIndex(
             0, family->second.resolvedTitles.size() - 1);
+        GroundServiceRequest request{};
+        request.family = element.family;
+        request.title = family->second.resolvedTitles[titleIndex(random)];
+        if (element.family == kPassengerBaggageBeltFamily) {
+            destination.push_back(std::move(request));
+            continue;
+        }
+
+        const auto location = m_locations.find(element.location);
+        if (location == m_locations.end()) continue;
         std::uniform_real_distribution<double> offsetX(
             -location->second.randomOffsetX, location->second.randomOffsetX);
         std::uniform_real_distribution<double> offsetY(
             -location->second.randomOffsetY, location->second.randomOffsetY);
-        GroundServiceRequest request{};
-        request.family = element.family;
-        request.title = family->second.resolvedTitles[titleIndex(random)];
         request.walking = walking;
         request.faceAircraft = location->second.faceAircraft;
         request.relX1 = location->second.relX1 + offsetX(random);
@@ -366,19 +372,30 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                     if (!entry.is_object()) {
                         throw std::runtime_error("each category element must be an object");
                     }
-                    Element element{ReadName(entry, "Family"), ReadName(entry, "Location")};
+                    Element element{};
+                    element.family = ReadName(entry, "Family");
+                    const bool aircraftAttached =
+                        element.family == kPassengerBaggageBeltFamily;
+                    if (aircraftAttached) {
+                        if (entry.contains("Location")) {
+                            throw std::runtime_error(
+                                "PaxBaggageBelt is aircraft-attached and must not specify Location");
+                        }
+                    } else {
+                        element.location = ReadName(entry, "Location");
+                    }
                     const auto family = m_families.find(element.family);
-                    const auto location = m_locations.find(element.location);
                     if (family == m_families.end()) {
                         throw std::runtime_error("category references unknown family '" +
                                                  element.family + "'");
                     }
-                    if (location == m_locations.end()) {
+                    const auto location = m_locations.find(element.location);
+                    if (!aircraftAttached && location == m_locations.end()) {
                         throw std::runtime_error("category references unknown location '" +
                                                  element.location + "'");
                     }
                     const bool walking = element.family == "WalkingWorker";
-                    if (walking != location->second.walking) {
+                    if (!aircraftAttached && walking != location->second.walking) {
                         throw std::runtime_error("WalkingWorker requires a two-endpoint location; "
                                                  "other families require RelX/RelY");
                     }

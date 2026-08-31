@@ -21,6 +21,7 @@ namespace parking_services
 class SimConnectThread;
 class AircraftTrackerThread;
 struct AnimationUpdate;
+struct BaggageBeltAnimationUpdate;
 struct AnimationProbeSample;
 
 struct AnimationStatus
@@ -55,7 +56,9 @@ class AnimationThread final
     void AddWorker(AircraftId objectId, std::string title, AircraftSnapshot aircraft);
     void AddWorker(AircraftId objectId, std::string title, AircraftSnapshot aircraft,
                    RelativeWalkingPath path);
-    void RemoveWorker(AircraftId objectId);
+    void AddBaggageBelt(AircraftId loaderObjectId, AircraftId workerObjectId,
+                        double rampAngleDegrees);
+    void RemoveObject(AircraftId objectId);
     void Reset();
     void StartProbe(AircraftId objectId);
     void StopProbe(bool announce = true);
@@ -92,6 +95,14 @@ class AnimationThread final
         double meters{};
     };
 
+    struct BaggageBelt
+    {
+        AircraftId loaderObjectId{};
+        AircraftId workerObjectId{};
+        double rampAngleDegrees{};
+        std::chrono::steady_clock::time_point animationStarted{};
+    };
+
     static void AnimationLoop(std::stop_token stopToken, AnimationThread *self);
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
@@ -106,7 +117,10 @@ class AnimationThread final
                            const AircraftSnapshot &aircraft,
                            const std::pair<double, double> *offsets,
                            std::size_t offsetCount);
-    void RemoveWorkerInternal(AircraftId objectId);
+    void AddBaggageBeltInternal(AircraftId loaderObjectId,
+                                AircraftId workerObjectId,
+                                double rampAngleDegrees);
+    void RemoveObjectInternal(AircraftId objectId);
     void HandleSimulatorObjectRemoved(AircraftId objectId);
     void ResetInternal();
     void StartProbeInternal(AircraftId objectId);
@@ -118,8 +132,10 @@ class AnimationThread final
     AircraftTrackerThread &m_aircraftTracker;
     LogSink m_log;
     std::map<AircraftId, Worker> m_workers;
+    std::map<AircraftId, BaggageBelt> m_baggageBelts;
     std::vector<WorkerDistance> m_distanceRanking;
     std::vector<AnimationUpdate> m_updateBuffer;
+    std::vector<BaggageBeltAnimationUpdate> m_baggageBeltUpdateBuffer;
 
     bool m_probeActive = false;
     AircraftId m_probeObjectId = 0;

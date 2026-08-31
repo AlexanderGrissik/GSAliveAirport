@@ -115,6 +115,18 @@ SendResult SimConnectSession::TransmitEvent(DWORD objectId, SIMCONNECT_CLIENT_EV
                             : E_HANDLE);
 }
 
+SendResult SimConnectSession::TransmitEventEx1(DWORD objectId,
+                                               SIMCONNECT_CLIENT_EVENT_ID eventId,
+                                               DWORD data0, DWORD data1)
+{
+    return Capture(m_handle ? SimConnect_TransmitClientEvent_EX1(
+                                  m_handle, objectId, eventId,
+                                  SIMCONNECT_GROUP_PRIORITY_HIGHEST,
+                                  SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY,
+                                  data0, data1)
+                            : E_HANDLE);
+}
+
 SendResult SimConnectSession::SetObjectData(SIMCONNECT_DATA_DEFINITION_ID definitionId,
                                             DWORD objectId, DWORD arrayCount,
                                             DWORD elementSize, const void *data)

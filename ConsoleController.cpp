@@ -134,7 +134,16 @@ void ConsoleController::PrintSnapshots(const std::vector<AircraftSnapshot> &airc
                   << std::setprecision(0) << data.distanceFromUserMeters << "m speed="
                   << std::setprecision(1) << data.groundSpeedKnots << "kt title="
                   << data.title << " state=" << data.trafficState << " nav="
-                  << data.lightNav << " on-ground=" << data.onGround << '\n';
+                  << data.lightNav << " on-ground=" << data.onGround;
+        if (data.cargoConnectionPoint) {
+            std::cout << " cargo-point=(forward=" << std::setprecision(1)
+                      << data.cargoConnectionPoint->forwardMeters << "m,right="
+                      << data.cargoConnectionPoint->rightMeters << "m,vertical="
+                      << data.cargoConnectionPoint->verticalMeters << "m)";
+        } else {
+            std::cout << " cargo-point=none";
+        }
+        std::cout << '\n';
     }
 }
 
@@ -171,6 +180,18 @@ void ConsoleController::PrintParked(const std::vector<AircraftSnapshot> &aircraf
                   << ", pushback-attached=" << data.pushbackAttached
                   << ", pushback-wait=" << data.pushbackWait
                   << ", transponder=" << data.transponderState << '\n';
+        if (data.cargoConnectionPoint) {
+            std::cout << "  cargo-point: forward=" << std::fixed
+                      << std::setprecision(1)
+                      << data.cargoConnectionPoint->forwardMeters << "m, right="
+                      << data.cargoConnectionPoint->rightMeters << "m, vertical="
+                      << data.cargoConnectionPoint->verticalMeters
+                      << "m, heading="
+                      << data.cargoConnectionPoint->relativeHeadingDegrees
+                      << "deg relative\n";
+        } else {
+            std::cout << "  cargo-point: none\n";
+        }
     }
     if (!found) {
         std::cout << "No aircraft outside STATE_SIMPLE_TAXI are present.\n";

@@ -17,8 +17,18 @@ namespace
 {
 constexpr double kWalkingSpeedMetersPerSecond = 2.5 * 0.514444;
 constexpr double kAnimationFramesPerSecond = 30.0;
+// Run the complete operation at FSDT's authored rate.
+constexpr double kBaggageAnimationFramesPerSecond = 30.0;
 constexpr auto kUpdateInterval = std::chrono::microseconds(33'333);
 constexpr std::string_view kWingwalkerTitle = "FSDT_Wingwalker_Male_04";
+constexpr double kBaggageOperationStart = 645.0;
+constexpr double kBaggageOperationEnd = 4213.0;
+constexpr double kBaggageBeltLoopEnd = 650.0;
+// The worker has a longer authored sequence than the loader's active loading
+// range.  Use every frame so his walk, handling work, and return motion are
+// preserved rather than looping only the grab/drop portion.
+constexpr double kBaggageWorkerAnimationStart = 0.0;
+constexpr double kBaggageWorkerAnimationEnd = 4213.0;
 }
 
 AnimationThread::AnimationThread(SimConnectThread &simConnect,
@@ -66,9 +76,18 @@ void AnimationThread::AddWorker(AircraftId objectId, std::string title,
     });
 }
 
-void AnimationThread::RemoveWorker(AircraftId objectId)
+void AnimationThread::AddBaggageBelt(AircraftId loaderObjectId,
+                                     AircraftId workerObjectId,
+                                     double rampAngleDegrees)
 {
-    Post([this, objectId] { RemoveWorkerInternal(objectId); });
+    Post([this, loaderObjectId, workerObjectId, rampAngleDegrees] {
+        AddBaggageBeltInternal(loaderObjectId, workerObjectId, rampAngleDegrees);
+    });
+}
+
+void AnimationThread::RemoveObject(AircraftId objectId)
+{
+    Post([this, objectId] { RemoveObjectInternal(objectId); });
 }
 
 void AnimationThread::Reset()
@@ -249,6 +268,39 @@ void AnimationThread::Tick(std::chrono::steady_clock::time_point now)
     if (!m_updateBuffer.empty()) {
         m_simConnect.PublishAnimationUpdates(m_updateBuffer);
     }
+
+    m_baggageBeltUpdateBuffer.clear();
+    if (m_baggageBeltUpdateBuffer.capacity() < m_baggageBelts.size()) {
+        m_baggageBeltUpdateBuffer.reserve(m_baggageBelts.size());
+    }
+    for (const auto &[loaderObjectId, baggageBelt] : m_baggageBelts) {
+        const double elapsed = std::chrono::duration<double>(
+            now - baggageBelt.animationStarted).count();
+        const double operationRange =
+            kBaggageOperationEnd - kBaggageOperationStart;
+        const double loadingFrameOffset = std::fmod(
+            elapsed * kBaggageAnimationFramesPerSecond, operationRange);
+
+        // FSDT defines loading as 4213 -> 645 and unloading as 645 -> 4213.
+        // Keep every loader in the loading direction, including its belt.
+        const double loaderFrame = kBaggageOperationEnd - loadingFrameOffset;
+        const double beltFrame = kBaggageBeltLoopEnd - std::fmod(
+            elapsed * kBaggageAnimationFramesPerSecond, kBaggageBeltLoopEnd);
+
+        // The worker's complete native sequence contains both its outward and
+        // return movement. Play it forward exactly as authored, then restart
+        // only once it reaches the final frame.
+        const double workerAnimationRange =
+            kBaggageWorkerAnimationEnd - kBaggageWorkerAnimationStart;
+        const double workerFrame = kBaggageWorkerAnimationStart + std::fmod(
+            elapsed * kBaggageAnimationFramesPerSecond, workerAnimationRange);
+        m_baggageBeltUpdateBuffer.push_back({
+            loaderObjectId, baggageBelt.workerObjectId, loaderFrame, beltFrame,
+            baggageBelt.rampAngleDegrees, workerFrame});
+    }
+    if (!m_baggageBeltUpdateBuffer.empty()) {
+        m_simConnect.PublishBaggageBeltAnimationUpdates(m_baggageBeltUpdateBuffer);
+    }
     if (selectionChanged) PublishStatus();
 }
 
@@ -312,18 +364,61 @@ void AnimationThread::AddWorkerInternal(AircraftId objectId, std::string title,
           ") as a distance-ranked walking candidate.");
 }
 
-void AnimationThread::RemoveWorkerInternal(AircraftId objectId)
+void AnimationThread::AddBaggageBeltInternal(AircraftId loaderObjectId,
+                                             AircraftId workerObjectId,
+                                             double rampAngleDegrees)
+{
+    if (loaderObjectId == 0 || workerObjectId == 0 ||
+        loaderObjectId == workerObjectId ||
+        std::ranges::any_of(m_baggageBelts, [loaderObjectId, workerObjectId](
+            const auto &entry) {
+            const BaggageBelt &belt = entry.second;
+            return belt.loaderObjectId == loaderObjectId ||
+                   belt.loaderObjectId == workerObjectId ||
+                   belt.workerObjectId == loaderObjectId ||
+                   belt.workerObjectId == workerObjectId;
+        })) {
+        return;
+    }
+    m_simConnect.FreezeObject(loaderObjectId);
+    m_simConnect.FreezeObject(workerObjectId);
+    m_baggageBelts.emplace(loaderObjectId,
+                           BaggageBelt{loaderObjectId, workerObjectId,
+                                      rampAngleDegrees,
+                                      std::chrono::steady_clock::now()});
+    m_log("Registered baggage belt ObjectID " + std::to_string(loaderObjectId) +
+          " with worker ObjectID " + std::to_string(workerObjectId) +
+          " for synchronized loading animation.");
+}
+
+void AnimationThread::RemoveObjectInternal(AircraftId objectId)
 {
     m_simConnect.CancelAnimationObject(objectId);
-    if (m_workers.erase(objectId) != 0) PublishStatus();
+    m_simConnect.CancelBaggageBeltAnimationObject(objectId);
+    bool changed = m_workers.erase(objectId) != 0;
+    for (auto baggageBelt = m_baggageBelts.begin();
+         baggageBelt != m_baggageBelts.end();) {
+        if (baggageBelt->second.loaderObjectId == objectId ||
+            baggageBelt->second.workerObjectId == objectId) {
+            baggageBelt = m_baggageBelts.erase(baggageBelt);
+            changed = true;
+        } else {
+            ++baggageBelt;
+        }
+    }
+    if (changed) PublishStatus();
     if (m_probeActive && m_probeObjectId == objectId) StopProbeInternal(false);
 }
 
 void AnimationThread::HandleSimulatorObjectRemoved(AircraftId objectId)
 {
-    const bool wasAnimated = m_workers.contains(objectId);
+    const bool wasAnimated = m_workers.contains(objectId) ||
+        std::ranges::any_of(m_baggageBelts, [objectId](const auto &entry) {
+            return entry.second.loaderObjectId == objectId ||
+                   entry.second.workerObjectId == objectId;
+        });
     const bool wasProbed = m_probeActive && m_probeObjectId == objectId;
-    RemoveWorkerInternal(objectId);
+    RemoveObjectInternal(objectId);
     if (wasAnimated || wasProbed) {
         m_log("MSFS removed ObjectID " + std::to_string(objectId) +
               "; cleared its animation and probe state.");
@@ -335,7 +430,11 @@ void AnimationThread::ResetInternal()
     for (const auto &[objectId, worker] : m_workers) {
         m_simConnect.CancelAnimationObject(objectId);
     }
+    for (const auto &[objectId, baggageBelt] : m_baggageBelts) {
+        m_simConnect.CancelBaggageBeltAnimationObject(objectId);
+    }
     m_workers.clear();
+    m_baggageBelts.clear();
     StopProbeInternal(false);
     PublishStatus();
 }

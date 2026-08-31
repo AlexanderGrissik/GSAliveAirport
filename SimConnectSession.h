@@ -6,7 +6,10 @@
 #define NOMINMAX
 
 #include <Windows.h>
+#pragma warning(push)
+#pragma warning(disable : 4245) // SimConnect SDK enum declarations use signed literals.
 #include <SimConnect.h>
+#pragma warning(pop)
 
 #include <atomic>
 #include <cstddef>
@@ -61,6 +64,8 @@ class SimConnectSession final
     SendResult EnumerateObjects(SIMCONNECT_DATA_REQUEST_ID requestId,
                                 SIMCONNECT_SIMOBJECT_TYPE type);
     SendResult TransmitEvent(DWORD objectId, SIMCONNECT_CLIENT_EVENT_ID eventId, DWORD data);
+    SendResult TransmitEventEx1(DWORD objectId, SIMCONNECT_CLIENT_EVENT_ID eventId,
+                                DWORD data0, DWORD data1 = 0);
     SendResult SetObjectData(SIMCONNECT_DATA_DEFINITION_ID definitionId, DWORD objectId,
                              DWORD arrayCount, DWORD elementSize, const void *data);
     SendResult CreateObject(std::string_view title, const SIMCONNECT_DATA_INITPOSITION &position,

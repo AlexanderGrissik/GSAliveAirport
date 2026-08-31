@@ -12,6 +12,15 @@ namespace parking_services
 using AircraftId = std::uint32_t;
 using TrackerClock = std::chrono::steady_clock;
 
+struct AircraftCargoConnectionPoint
+{
+    double forwardMeters{};
+    double rightMeters{};
+    double verticalMeters{};
+    double relativeHeadingDegrees{};
+    std::uint32_t interactivePointIndex{};
+};
+
 struct AircraftSnapshot
 {
     AircraftId objectId{};
@@ -49,6 +58,7 @@ struct AircraftSnapshot
     bool pushbackAttached{};
     bool pushbackWait{};
     int transponderState{};
+    std::optional<AircraftCargoConnectionPoint> cargoConnectionPoint;
     double distanceFromUserMeters{};
     TrackerClock::time_point firstSeen{};
     std::optional<TrackerClock::time_point> parkedSince;

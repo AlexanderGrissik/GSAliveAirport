@@ -27,6 +27,12 @@
         {
             "Family": "SmallPaxVan",
             "PreferedObj" : [ "FSDT_Van_Passengers_*", "Microsoft_Van_ASIA_02*", "Microsoft_Van_EUR*", "Microsoft_Van_NA_Modern*","Van Asia Vintage","Van Europe","Van NorthAm" ]
+        },
+        {
+            "Family": "PaxBaggageBelt",
+            "PreferedObj" : [ "FSDT_Tug_660*" ],
+            "AlternateObj": [ "Aso_Baggage_Loader_01" ],
+            "Exclude": ["FSDT_Tug_660_CARGO*"]
         }
     ],
     "Locations": [
@@ -98,13 +104,28 @@
             ]
         },
         {
-            "Category": "Medium"
+            "Category": "Medium",
+            "Elements": [
+                {
+                    "Family": "PaxBaggageBelt"
+                }
+            ]
         },
         {
-            "Category": "Large"
+            "Category": "Large",
+            "Elements": [
+                {
+                    "Family": "PaxBaggageBelt"
+                }
+            ]
         },
         {
-            "Category": "ExtraLarge"
+            "Category": "ExtraLarge",
+            "Elements": [
+                {
+                    "Family": "PaxBaggageBelt"
+                }
+            ]
         }
     ]
 }

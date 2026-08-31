@@ -42,6 +42,26 @@ struct AnimationUpdate
     double animationFrame{};
 };
 
+struct BaggageBeltAnimationUpdate
+{
+    DWORD loaderObjectId{};
+    DWORD workerObjectId{};
+    double loaderFrame{};
+    double beltFrame{};
+    double rampAngleDegrees{};
+    double workerFrame{};
+};
+
+struct BaggageLoaderGeometry
+{
+    bool succeeded{};
+    double angleCurrentDegrees{};
+    double endRampYMeters{};
+    double endRampZMeters{};
+    double pivotYMeters{};
+    double pivotZMeters{};
+};
+
 struct AnimationProbeSample
 {
     double elapsedSeconds{};
@@ -66,6 +86,7 @@ class SimConnectThread final : public ISimConnectMessageSink
     using ObjectRemovedCallback = std::function<void(DWORD)>;
     using ConnectionCallback = std::function<void(bool)>;
     using ProbeSampleCallback = std::function<void(AnimationProbeSample)>;
+    using BaggageLoaderGeometryCallback = std::function<void(BaggageLoaderGeometry)>;
 
     explicit SimConnectThread(LogSink log);
     ~SimConnectThread();
@@ -82,6 +103,14 @@ class SimConnectThread final : public ISimConnectMessageSink
     void FreezeObject(DWORD objectId);
     void PublishAnimationUpdates(const std::vector<AnimationUpdate> &updates);
     void CancelAnimationObject(DWORD objectId);
+    void PublishBaggageBeltAnimationUpdates(
+        const std::vector<BaggageBeltAnimationUpdate> &updates);
+    void CancelBaggageBeltAnimationObject(DWORD objectId);
+    void SetBaggageLoaderRampTarget(DWORD objectId, double angleDegrees);
+    void SetCargoDoorOpen(DWORD aircraftObjectId, DWORD interactivePointIndex, bool open);
+    void RequestBaggageLoaderGeometry(DWORD objectId,
+                                      BaggageLoaderGeometryCallback callback);
+    void SetObjectPosition(DWORD objectId, SIMCONNECT_DATA_INITPOSITION position);
     void StartAnimationProbe(DWORD objectId, ProbeSampleCallback callback);
     void StopAnimationProbe();
     void RequestCatalog();
@@ -98,12 +127,14 @@ class SimConnectThread final : public ISimConnectMessageSink
     struct PendingGroundScan;
     struct PendingCreate;
     struct PendingProbe;
+    struct PendingBaggageLoaderGeometry;
 
     static void SimConnectLoop(std::stop_token stopToken, SimConnectThread *self);
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
     void ProcessAnimationUpdates();
+    void ProcessBaggageBeltAnimationUpdates();
     void MaintainPendingRequests();
     bool Connect();
     void Disconnect();
@@ -117,6 +148,8 @@ class SimConnectThread final : public ISimConnectMessageSink
                      ObjectCreatedCallback callback);
     void CompleteCreate(DWORD requestId, DWORD objectId);
     void BeginProbe(DWORD objectId, ProbeSampleCallback callback);
+    void BeginBaggageLoaderGeometry(DWORD objectId,
+                                    BaggageLoaderGeometryCallback callback);
     void EndProbe();
     void HandleObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry, DWORD messageSize);
     void HandleProbeData(const SIMCONNECT_RECV_SIMOBJECT_DATA &entry, DWORD messageSize);
@@ -137,6 +170,7 @@ class SimConnectThread final : public ISimConnectMessageSink
     std::deque<std::function<void()>> m_commands;
     std::mutex m_animationMutex;
     std::map<DWORD, AnimationUpdate> m_latestAnimationUpdates;
+    std::map<DWORD, BaggageBeltAnimationUpdate> m_latestBaggageBeltAnimationUpdates;
     mutable std::mutex m_catalogSnapshotMutex;
     std::vector<std::string> m_availableSimObjectTitles;
     bool m_catalogSnapshotReady{};
@@ -148,6 +182,7 @@ class SimConnectThread final : public ISimConnectMessageSink
     std::unique_ptr<PendingGroundScan> m_groundScan;
     std::map<DWORD, PendingCreate> m_creates;
     std::unique_ptr<PendingProbe> m_probe;
+    std::map<DWORD, PendingBaggageLoaderGeometry> m_baggageLoaderGeometryRequests;
     std::jthread m_thread;
 };
 } // namespace parking_services

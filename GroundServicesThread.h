@@ -24,6 +24,7 @@ namespace parking_services
 {
 class AircraftTrackerThread;
 class SimConnectThread;
+struct BaggageLoaderGeometry;
 
 enum class GroundServicesDecision { Keep, Add, Remove };
 
@@ -53,12 +54,46 @@ class GroundServicesThread final
     [[nodiscard]] GroundServicesStatus Status() const;
 
   private:
+    enum class PendingCreateKind
+    {
+        Standard,
+        BaggageBeltLoader,
+        BaggageBeltWorker,
+    };
+
     struct PendingCreate
     {
         AircraftSnapshot aircraft;
         std::string title;
         std::optional<RelativeWalkingPath> walkingPath;
+        PendingCreateKind kind{PendingCreateKind::Standard};
+        std::string companionTitle;
+        AircraftId pairedObjectId{};
+        double forwardMeters{};
+        double rightMeters{};
+        double baggageBeltRampAngleDegrees{};
+        double cargoHeightMeters{};
+        double modelRelativeHeadingDegrees{};
+        bool faceAircraft{};
+        std::optional<double> headingDegrees;
         bool cancelled{};
+    };
+
+    struct PendingBaggageBeltAlignment
+    {
+        enum class Stage { MeasureInitialGeometry, WaitForRampTarget };
+
+        AircraftSnapshot aircraft;
+        std::string workerTitle;
+        double cargoForwardMeters{};
+        double cargoRightMeters{};
+        double cargoHeightMeters{};
+        double modelRelativeHeadingDegrees{};
+        double headingDegrees{};
+        double rampAngleDegrees{};
+        std::chrono::steady_clock::time_point geometryRequestDue{};
+        Stage stage{Stage::MeasureInitialGeometry};
+        bool geometryRequested{};
     };
 
     static void GroundServicesLoop(std::stop_token stopToken,
@@ -66,16 +101,24 @@ class GroundServicesThread final
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
+    void MaintainBaggageBeltAlignments(std::chrono::steady_clock::time_point now);
     void EvaluateTrackedAircraft();
     void ResolveConfigurationIfAvailable();
     static GroundServicesDecision Decide(const AircraftSnapshot &aircraft);
     void EnsureAutomaticServices(const AircraftSnapshot &aircraft);
-    void RemoveForAircraft(AircraftId aircraftId);
+    void RemoveForAircraft(AircraftId aircraftId, bool closeCargoDoor = true);
+    void CloseCargoDoor(AircraftId aircraftId);
     void RequestObject(const AircraftSnapshot &aircraft, std::string title,
                        double forwardMeters, double rightMeters,
                        std::optional<RelativeWalkingPath> walkingPath = std::nullopt,
-                       bool faceAircraft = false);
+                       bool faceAircraft = false,
+                       std::optional<double> headingDegrees = std::nullopt);
+    bool RequestPassengerBaggageBelt(const AircraftSnapshot &aircraft,
+                                     std::string title);
+    void QueueCreate(PendingCreate pending);
     void CompleteCreate(std::uint64_t token, AircraftId objectId);
+    void CompleteBaggageBeltAlignment(AircraftId loaderObjectId,
+                                      BaggageLoaderGeometry geometry);
     void HandleObjectRemoved(AircraftId objectId);
     void HandleConnection(bool connected);
     void SpawnFullTestInternal();
@@ -92,10 +135,12 @@ class GroundServicesThread final
     std::atomic_bool m_stopping{false};
     std::uint64_t m_nextCreateToken = 1;
     std::map<std::uint64_t, PendingCreate> m_pendingCreates;
+    std::map<AircraftId, PendingBaggageBeltAlignment> m_pendingBaggageBeltAlignments;
     std::set<AircraftId> m_createdObjects;
     std::set<AircraftId> m_configuredAircraft;
     std::map<AircraftId, std::set<AircraftId>> m_objectsByAircraft;
     std::unordered_map<AircraftId, AircraftId> m_aircraftByObject;
+    std::map<AircraftId, std::uint32_t> m_openCargoDoorIndices;
     std::vector<AircraftSnapshot> m_aircraftSnapshotBuffer;
     std::vector<std::string> m_catalogTitleBuffer;
     std::vector<std::string> m_configurationMessageBuffer;
