@@ -90,7 +90,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Aircraft.cpp" />
+    <ClCompile Include="AircraftTrackerThread.cpp" />
+    <ClCompile Include="AnimationThread.cpp" />
+    <ClCompile Include="ConsoleController.cpp" />
+    <ClCompile Include="GroundServicesThread.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ParkingServicesApp.cpp" />
+    <ClCompile Include="SimConnectSession.cpp" />
+    <ClCompile Include="SimConnectThread.cpp" />
+    <ClCompile Include="SimObjectCatalog.cpp" />
+    <ClCompile Include="SimObjectPositioning.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Aircraft.h" />
+    <ClInclude Include="AircraftTrackerThread.h" />
+    <ClInclude Include="AnimationThread.h" />
+    <ClInclude Include="ConsoleController.h" />
+    <ClInclude Include="GroundObject.h" />
+    <ClInclude Include="GroundServicesThread.h" />
+    <ClInclude Include="LogSink.h" />
+    <ClInclude Include="ParkingServicesApp.h" />
+    <ClInclude Include="SimConnectIds.h" />
+    <ClInclude Include="SimConnectSession.h" />
+    <ClInclude Include="SimConnectThread.h" />
+    <ClInclude Include="SimObjectCatalog.h" />
+    <ClInclude Include="SimObjectPositioning.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

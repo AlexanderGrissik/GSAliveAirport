@@ -1,18 +1,87 @@
 # ParkingServices probe
 
-Stage 1 is a read-mostly MSFS 2024 SimConnect console probe. It discovers nearby
-AI aircraft and ground SimObjects and allows a user to manually request three
-stock simulator services for all parked **non-user** aircraft in the current
-snapshot:
+ParkingServices is an MSFS 2024 SimConnect console application that tracks
+nearby non-user aircraft and automatically creates a small direct-control
+ground-service test group for likely departure traffic. It also retains the
+original diagnostic commands for requesting three stock simulator services:
 
 - catering (`REQUEST_CATERING`)
 - ground power (`REQUEST_POWER_SUPPLY`)
 - baggage (`REQUEST_LUGGAGE`)
 
-The probe does not automate service requests, control traffic, modify flight
-plans, request pushback, or target the user aircraft.
+The application does not control aircraft, modify flight plans, request
+pushback, or target the user aircraft.
 
-Aircraft and ground SimObjects are scanned within 10 km of the user aircraft.
+## Tracking and automatic service policy
+
+Every 10 seconds, `AircraftTrackerThread` requests aircraft within 5 km of the
+user aircraft. A newly observed aircraft is admitted to the
+tracked set only while it is within 1 km. Once admitted, it remains tracked
+while it is still detected within 5 km. Leaving the 5 km scan or disappearing
+from MSFS removes it from tracking and removes all of its created services.
+
+A separate `GroundServicesThread` requests an in-memory copy of the tracked
+aircraft every 10 seconds. This does not cause another SimConnect scan. Its
+current `GroundServicesDecision` creates services when an aircraft is on the
+ground, has its navigation light on, is moving below 1 knot, and is not in
+`STATE_SIMPLE_TAXI`. Services are removed when its state becomes
+`STATE_SIMPLE_TAXI`, its speed exceeds 2 knots, or the aircraft disappears.
+Engine state is deliberately not part of this policy.
+
+The automatic test group contains:
+
+- `FSDT_Catering_EU`
+- animated `FSDT_Wingwalker_Male_04`
+- standing `Marshaller_Male_Summer_Caucasian`
+
+Created objects are owned by their parent aircraft ObjectID, making service
+creation idempotent and cleanup per-aircraft. Late creation responses are
+immediately removed when their parent no longer qualifies.
+
+The application also subscribes to MSFS `ObjectRemoved` notifications. If SI
+or MSFS removes an aircraft, `AircraftTrackerThread` immediately evicts it and
+`GroundServicesThread` cancels pending creates and removes every owned service
+object. If MSFS removes one of the created ground objects, it is removed from
+the service ownership maps and from `AnimationThread` immediately. The normal
+5 km scan remains the fallback for an aircraft that disappears without a
+notification.
+
+The terminal runs on the main thread. Aircraft tracking, ground-service
+decisions, animation, and SimConnect each have one owning class and one owned
+`std::jthread`. All SimConnect requests and object mutations are queued to
+`SimConnectThread`, so the SDK is never called concurrently.
+
+## Architecture
+
+The application is composed from thread-owning, state-owning components:
+
+- `SimConnectThread` owns its `std::jthread`, the `SimConnectSession`, the SDK
+  connection, packed wire formats, request correlation, pending scans and
+  creates, catalog enumeration, and the coalesced animation-write queue.
+  `SimConnectSession` is its low-level handle wrapper and is never called from
+  another thread.
+- `AircraftTrackerThread` owns its `std::jthread`, the automatic 10-second
+  aircraft scan schedule, the latest complete 5 km view, 1 km/5 km tracking
+  hysteresis, distances, and observation timestamps. Consumers receive copied
+  snapshots under a mutex.
+- `GroundServicesThread` owns its `std::jthread`, `GroundServicesDecision`,
+  pending creates, created ObjectIDs, parent-aircraft relationships, native
+  request cooldowns, and cleanup. Each decision cycle reads a copied tracker
+  snapshot; it does not query MSFS itself.
+- `AnimationThread` owns its `std::jthread`, animated ObjectIDs, routes, model
+  frame ranges, and animation-probe CSV. It targets 30 updates per second for
+  each worker. The initial safety cap is 20 simultaneously animated workers;
+  excess created workers remain standing.
+- `SimObjectCatalog` owns catalog paging, filtering, and export state, but all
+  of its SDK work is invoked inside `SimConnectThread`.
+- `ConsoleController` owns command parsing, selection, and terminal rendering.
+- `ParkingServicesApp` runs on the main thread and only routes terminal
+  commands, polls the one-shot `ground` future, and enforces shutdown order.
+
+There is deliberately no ground-object polling thread or ground tracker.
+`ground` requests one debugging snapshot through `SimConnectThread`; service
+ownership is already known from successful create callbacks, and simulator
+removal notifications clean it up.
 
 ## Requirements
 
@@ -31,9 +100,9 @@ be copied beside the executable.
 
 1. Start MSFS 2024 and load into a flight near an airport with AI traffic.
 2. Run `ParkingServices.exe`.
-3. Type `aircraft` to inspect nearby non-user aircraft.
+3. Type `tracked`, `aircraft1`, or `aircraft5` to inspect traffic.
 4. Request one service with `catering`, `gpu`, or `baggage`. The command is
-   sent to every parked non-user aircraft in the current 10 km snapshot.
+   sent to every parked non-user aircraft in the latest complete 5 km snapshot.
 5. Optionally use `select <ObjectID>` and `target` to inspect one aircraft.
 6. Observe the simulator and use `ground` to list nearby ground SimObjects and
    their distance from the selected aircraft.
@@ -46,7 +115,11 @@ parking, airport services, or traffic injector does not support it.
 
 ```text
 status
+tracked
+aircraft1
+aircraft5
 aircraft
+parked
 ground
 select <ObjectID>
 target
@@ -57,11 +130,21 @@ fsdt
 clearfsdt
 animprobe <ObjectID>
 stopprobe
-scan
+reset
 catalog
 help
 quit
 ```
+
+- `tracked` lists every retained aircraft, including aircraft currently between
+  1 km and 5 km that first entered tracking inside 1 km.
+- `aircraft1` and `aircraft5` list the latest complete observations in those radii.
+- `aircraft` displays the detailed latest-snapshot view.
+- `ground` requests and prints one current 5 km ground-SimObject debug snapshot.
+- `reset` clears the tracker and requests removal of every object created by
+  the application. Automatic discovery resumes on the next periodic scan.
+
+Scanning is automatic; the old manual `scan` command is no longer required.
 
 `fsdt` directly creates a six-object test group beside every stationary,
 grounded non-user aircraft:
@@ -74,9 +157,9 @@ grounded non-user aircraft:
 - `Marshaller_Male_Summer_Caucasian`
 
 The FSDT objects require the corresponding FSDT/GSX SimObjects to be installed.
-The stock Asobo marshaller is retained as a waypoint-only control and therefore
-slides instead of playing a walking animation. `clearfsdt` removes all test
-objects created by the probe.
+The stock Asobo marshaller remains standing because its animation graph cannot
+be driven with the FSDT frame technique. `clearfsdt` removes all test objects
+created by the probe.
 
 ## Animated FSDT worker control
 
