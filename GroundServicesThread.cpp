@@ -51,7 +51,10 @@ constexpr double kWorkerWagonTowardWorkerMeters = 0.3;
 constexpr double kBaggageWagonFrontTowOffsetMeters = 0.998;
 constexpr double kBaggageWagonBackTowOffsetMeters = 1.601;
 constexpr double kBaggageWagonGapMeters = 0.45;
+constexpr double kBaggageTractorForwardGapMeters = 0.5;
 constexpr double kBaggageTrainArcDegrees = 4.0;
+constexpr double kFirstBaggageWagonRightOffsetMeters = 0.25;
+constexpr double kLastBaggageWagonRightOffsetMeters = -0.25;
 constexpr double kPackedLuggagePitchDegrees = 90.0;
 // Exact FSDT luggage mesh dimensions. One large and one small case plus the
 // requested gap fit the wagon's 1.61 m bed while two large cases do not.
@@ -807,13 +810,19 @@ void GroundServicesThread::QueueBaggageTrain(
         workerDirection.second * kBaggageWagonFrontTowOffsetMeters;
     const TrainPose tractor{
         workerFrontForward + tractorDirection.first *
-            selection.tractorBackOffsetMeters,
+            (selection.tractorBackOffsetMeters +
+             kBaggageTractorForwardGapMeters),
         workerFrontRight + tractorDirection.second *
-            selection.tractorBackOffsetMeters,
+            (selection.tractorBackOffsetMeters +
+             kBaggageTractorForwardGapMeters),
         tractorHeading};
 
-    const std::array<TrainPose, 3> wagonPoses{
+    std::array<TrainPose, 3> wagonPoses{
         workerWagon, secondWagon, thirdWagon};
+    wagonPoses.front().rightMeters +=
+        kFirstBaggageWagonRightOffsetMeters;
+    wagonPoses.back().rightMeters +=
+        kLastBaggageWagonRightOffsetMeters;
     const auto tractorWorkerBisector = bisectDirections(
         tractorDirection, workerDirection);
     const std::array<double, 3> towbarHeadings{
