@@ -78,10 +78,12 @@ void AnimationThread::AddWorker(AircraftId objectId, std::string title,
 
 void AnimationThread::AddBaggageBelt(AircraftId loaderObjectId,
                                      AircraftId workerObjectId,
-                                     double rampAngleDegrees)
+                                     double rampAngleDegrees,
+                                     BaggageBeltDirection direction)
 {
-    Post([this, loaderObjectId, workerObjectId, rampAngleDegrees] {
-        AddBaggageBeltInternal(loaderObjectId, workerObjectId, rampAngleDegrees);
+    Post([this, loaderObjectId, workerObjectId, rampAngleDegrees, direction] {
+        AddBaggageBeltInternal(loaderObjectId, workerObjectId,
+                               rampAngleDegrees, direction);
     });
 }
 
@@ -282,10 +284,16 @@ void AnimationThread::Tick(std::chrono::steady_clock::time_point now)
             elapsed * kBaggageAnimationFramesPerSecond, operationRange);
 
         // FSDT defines loading as 4213 -> 645 and unloading as 645 -> 4213.
-        // Keep every loader in the loading direction, including its belt.
-        const double loaderFrame = kBaggageOperationEnd - loadingFrameOffset;
-        const double beltFrame = kBaggageBeltLoopEnd - std::fmod(
+        const bool loading =
+            baggageBelt.direction == BaggageBeltDirection::Load;
+        const double loaderFrame = loading
+            ? kBaggageOperationEnd - loadingFrameOffset
+            : kBaggageOperationStart + loadingFrameOffset;
+        const double beltFrameOffset = std::fmod(
             elapsed * kBaggageAnimationFramesPerSecond, kBaggageBeltLoopEnd);
+        const double beltFrame = loading
+            ? kBaggageBeltLoopEnd - beltFrameOffset
+            : beltFrameOffset;
 
         // The worker's complete native sequence contains both its outward and
         // return movement. Play it forward exactly as authored, then restart
@@ -366,7 +374,8 @@ void AnimationThread::AddWorkerInternal(AircraftId objectId, std::string title,
 
 void AnimationThread::AddBaggageBeltInternal(AircraftId loaderObjectId,
                                              AircraftId workerObjectId,
-                                             double rampAngleDegrees)
+                                             double rampAngleDegrees,
+                                             BaggageBeltDirection direction)
 {
     if (loaderObjectId == 0 || workerObjectId == 0 ||
         loaderObjectId == workerObjectId ||
@@ -384,11 +393,14 @@ void AnimationThread::AddBaggageBeltInternal(AircraftId loaderObjectId,
     m_simConnect.FreezeObject(workerObjectId);
     m_baggageBelts.emplace(loaderObjectId,
                            BaggageBelt{loaderObjectId, workerObjectId,
-                                      rampAngleDegrees,
+                                      rampAngleDegrees, direction,
                                       std::chrono::steady_clock::now()});
     m_log("Registered baggage belt ObjectID " + std::to_string(loaderObjectId) +
           " with worker ObjectID " + std::to_string(workerObjectId) +
-          " for synchronized loading animation.");
+          " for synchronized " +
+          std::string(direction == BaggageBeltDirection::Load
+                          ? "loading" : "unloading") +
+          " animation.");
 }
 
 void AnimationThread::RemoveObjectInternal(AircraftId objectId)

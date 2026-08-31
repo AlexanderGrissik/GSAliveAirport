@@ -5,6 +5,7 @@
 #include "GroundServicesConfig.h"
 #include "LogSink.h"
 
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <deque>
@@ -59,6 +60,16 @@ class GroundServicesThread final
         Standard,
         BaggageBeltLoader,
         BaggageBeltWorker,
+        BaggageTrainComponent,
+        BaggageLuggage,
+    };
+
+    struct BaggageTrainSelection
+    {
+        std::string tractorTitle;
+        std::string towbarTitle;
+        std::string wagonTitle;
+        double tractorBackOffsetMeters{};
     };
 
     struct PendingCreate
@@ -68,14 +79,23 @@ class GroundServicesThread final
         std::optional<RelativeWalkingPath> walkingPath;
         PendingCreateKind kind{PendingCreateKind::Standard};
         std::string companionTitle;
+        BaggageTrainSelection baggageTrainSelection;
         AircraftId pairedObjectId{};
+        std::size_t luggageIndex{};
         double forwardMeters{};
         double rightMeters{};
+        double altitudeFeet{};
         double baggageBeltRampAngleDegrees{};
         double cargoHeightMeters{};
         double modelRelativeHeadingDegrees{};
+        double pitchDegrees{};
+        double bankDegrees{};
+        BaggageBeltDirection baggageBeltDirection{BaggageBeltDirection::Load};
         bool faceAircraft{};
+        bool onGround{true};
+        std::size_t baggageWagonIndex{3};
         std::optional<double> headingDegrees;
+        std::optional<std::uint32_t> cargoDoorPointIndex;
         bool cancelled{};
     };
 
@@ -85,15 +105,33 @@ class GroundServicesThread final
 
         AircraftSnapshot aircraft;
         std::string workerTitle;
+        BaggageTrainSelection baggageTrainSelection;
         double cargoForwardMeters{};
         double cargoRightMeters{};
         double cargoHeightMeters{};
         double modelRelativeHeadingDegrees{};
         double headingDegrees{};
         double rampAngleDegrees{};
+        BaggageBeltDirection direction{BaggageBeltDirection::Load};
         std::chrono::steady_clock::time_point geometryRequestDue{};
         Stage stage{Stage::MeasureInitialGeometry};
         bool geometryRequested{};
+    };
+
+    struct BaggageWagon
+    {
+        double forwardMeters{};
+        double rightMeters{};
+        double relativeHeadingDegrees{};
+        AircraftId objectId{};
+    };
+
+    struct BaggageTrain
+    {
+        AircraftSnapshot aircraft;
+        std::array<BaggageWagon, 3> wagons{};
+        std::array<AircraftId, 72> luggageObjectIds{};
+        std::array<bool, 72> luggagePending{};
     };
 
     static void GroundServicesLoop(std::stop_token stopToken,
@@ -112,9 +150,20 @@ class GroundServicesThread final
                        double forwardMeters, double rightMeters,
                        std::optional<RelativeWalkingPath> walkingPath = std::nullopt,
                        bool faceAircraft = false,
-                       std::optional<double> headingDegrees = std::nullopt);
+                       std::optional<double> headingDegrees = std::nullopt,
+                       std::optional<std::uint32_t> cargoDoorPointIndex = std::nullopt);
     bool RequestPassengerBaggageBelt(const AircraftSnapshot &aircraft,
                                      std::string title);
+    std::optional<BaggageTrainSelection> SelectBaggageTrain();
+    void QueueBaggageTrain(AircraftId loaderObjectId,
+                           const PendingBaggageBeltAlignment &alignment,
+                           double workerWagonForwardMeters,
+                           double workerWagonRightMeters,
+                           double workerWagonRelativeHeadingDegrees);
+    void RequestBaggageLuggage(AircraftId loaderObjectId,
+                               std::size_t luggageIndex);
+    void RemoveBaggageLuggage(AircraftId loaderObjectId,
+                              std::size_t luggageIndex);
     void QueueCreate(PendingCreate pending);
     void CompleteCreate(std::uint64_t token, AircraftId objectId);
     void CompleteBaggageBeltAlignment(AircraftId loaderObjectId,
@@ -136,7 +185,10 @@ class GroundServicesThread final
     std::uint64_t m_nextCreateToken = 1;
     std::map<std::uint64_t, PendingCreate> m_pendingCreates;
     std::map<AircraftId, PendingBaggageBeltAlignment> m_pendingBaggageBeltAlignments;
+    std::map<AircraftId, BaggageTrain> m_baggageTrains;
+    std::unordered_map<AircraftId, AircraftId> m_baggageTrainLoaderByObject;
     std::set<AircraftId> m_createdObjects;
+    std::set<AircraftId> m_baggageLoaderObjects;
     std::set<AircraftId> m_configuredAircraft;
     std::map<AircraftId, std::set<AircraftId>> m_objectsByAircraft;
     std::unordered_map<AircraftId, AircraftId> m_aircraftByObject;

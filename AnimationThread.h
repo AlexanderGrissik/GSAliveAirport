@@ -24,6 +24,8 @@ struct AnimationUpdate;
 struct BaggageBeltAnimationUpdate;
 struct AnimationProbeSample;
 
+enum class BaggageBeltDirection { Load, Unload };
+
 struct AnimationStatus
 {
     std::size_t walkingWorkers{};
@@ -57,7 +59,7 @@ class AnimationThread final
     void AddWorker(AircraftId objectId, std::string title, AircraftSnapshot aircraft,
                    RelativeWalkingPath path);
     void AddBaggageBelt(AircraftId loaderObjectId, AircraftId workerObjectId,
-                        double rampAngleDegrees);
+                        double rampAngleDegrees, BaggageBeltDirection direction);
     void RemoveObject(AircraftId objectId);
     void Reset();
     void StartProbe(AircraftId objectId);
@@ -100,6 +102,7 @@ class AnimationThread final
         AircraftId loaderObjectId{};
         AircraftId workerObjectId{};
         double rampAngleDegrees{};
+        BaggageBeltDirection direction{BaggageBeltDirection::Load};
         std::chrono::steady_clock::time_point animationStarted{};
     };
 
@@ -119,7 +122,8 @@ class AnimationThread final
                            std::size_t offsetCount);
     void AddBaggageBeltInternal(AircraftId loaderObjectId,
                                 AircraftId workerObjectId,
-                                double rampAngleDegrees);
+                                double rampAngleDegrees,
+                                BaggageBeltDirection direction);
     void RemoveObjectInternal(AircraftId objectId);
     void HandleSimulatorObjectRemoved(AircraftId objectId);
     void ResetInternal();

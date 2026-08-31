@@ -222,9 +222,13 @@ AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
             point.posYFeet * kFeetToMeters,
             point.headingDegrees,
             static_cast<std::uint32_t>(index)};
+        const bool candidateOnRight = candidate.rightMeters > 0.0;
+        const bool selectedOnRight = aircraft.cargoConnectionPoint &&
+            aircraft.cargoConnectionPoint->rightMeters > 0.0;
         if (!aircraft.cargoConnectionPoint ||
-            (candidate.rightMeters > 0.0 &&
-             aircraft.cargoConnectionPoint->rightMeters <= 0.0)) {
+            (candidateOnRight && !selectedOnRight) ||
+            (candidateOnRight == selectedOnRight &&
+             candidate.forwardMeters < aircraft.cargoConnectionPoint->forwardMeters)) {
             aircraft.cargoConnectionPoint = candidate;
         }
     }
@@ -397,10 +401,10 @@ void SimConnectThread::SetCargoDoorOpen(DWORD aircraftObjectId,
     Post([this, aircraftObjectId, interactivePointIndex, open] {
         if (!m_session.IsConnected() || aircraftObjectId == 0) return;
         const EventId eventId = open ? EventOpenAircraftDoors : EventCloseAircraftDoors;
-        // The key event uses one-based interactive-point indices. A zero second
-        // argument preserves the model's open/close animation.
+        // The key event uses one-based interactive-point indices. Skip the
+        // animation so the final requested state is applied immediately.
         if (!m_session.TransmitEventEx1(aircraftObjectId, eventId,
-                                        interactivePointIndex + 1, 0).Succeeded()) {
+                                        interactivePointIndex + 1, 1).Succeeded()) {
             m_log("SimConnect rejected a cargo-door " +
                   std::string(open ? "open" : "close") + " request for aircraft ObjectID " +
                   std::to_string(aircraftObjectId) + ".");

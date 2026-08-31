@@ -29,8 +29,97 @@ constexpr std::string_view kPassengerBaggageBeltFamily = "PaxBaggageBelt";
 constexpr std::string_view kFsdtBaggageBeltPrefix = "FSDT_Tug_660";
 constexpr std::string_view kFsdtBaggageWorkerPrefix =
     "FSDT_Baggage_Loader_Man_02";
+constexpr std::array<std::string_view, 3> kFsdtBaggageTractorPrefixes{
+    "FSDT_TLD_JET_16", "FSDT_Tug_Endurance", "FSDT_Tug_M1A"};
+constexpr std::array<double, 3> kFsdtBaggageTractorBackOffsets{
+    1.447, 1.47, 1.609};
+constexpr std::string_view kFsdtBaggageTowbarTitle =
+    "FSDT_BaggageWagon_towbar";
+constexpr std::array<std::string_view, 3> kFsdtBaggageWagonTitles{
+    "FSDT_BaggageWagon_Open", "FSDT_BaggageWagon_Closed",
+    "FSDT_BaggageWagon_Railing"};
 constexpr double kFeetToMeters = 0.3048;
 constexpr double kBaggageLoaderDoorClearanceMeters = 0.5;
+
+// FSDT_BaggageWagon_Open authors this transform in its Dummy_MAN node. Aligning
+// the node with the baggage worker's root puts the wagon at the worker's drop
+// side without an aircraft-specific placement offset.
+constexpr double kBaggageWagonDummyManRightMeters = -5.442;
+constexpr double kBaggageWagonDummyManForwardMeters = -1.029;
+constexpr double kBaggageWagonDummyManHeadingDegrees = -90.0;
+constexpr double kWorkerWagonTowardWorkerMeters = 0.3;
+constexpr double kBaggageWagonFrontTowOffsetMeters = 0.998;
+constexpr double kBaggageWagonBackTowOffsetMeters = 1.601;
+constexpr double kBaggageWagonGapMeters = 0.45;
+constexpr double kBaggageTrainArcDegrees = 4.0;
+constexpr double kPackedLuggagePitchDegrees = 90.0;
+// Exact FSDT luggage mesh dimensions. One large and one small case plus the
+// requested gap fit the wagon's 1.61 m bed while two large cases do not.
+constexpr double kPackedLargeLuggageWidthMeters = 0.8204469084739685;
+constexpr double kPackedSmallLuggageWidthMeters = 0.5903337597846985;
+constexpr double kPackedSmallLuggageDepthMeters = 0.4132336974143982;
+constexpr double kPackedLuggageThicknessMeters = 0.2066168785095215;
+constexpr double kPackedLuggageLateralGapMeters = 0.10;
+constexpr double kPackedLuggageRowSpacingMeters =
+    kPackedSmallLuggageDepthMeters + 0.10;
+constexpr double kPackedLuggageOuterRowOffsetMeters =
+    kPackedLuggageRowSpacingMeters * 1.5;
+constexpr double kPackedLuggageInnerRowOffsetMeters =
+    kPackedLuggageRowSpacingMeters * 0.5;
+constexpr double kPackedLargeLuggageInnerOffsetMeters =
+    (kPackedSmallLuggageWidthMeters + kPackedLuggageLateralGapMeters) / 2.0;
+constexpr double kPackedSmallLuggageOuterOffsetMeters =
+    (kPackedLargeLuggageWidthMeters + kPackedLuggageLateralGapMeters) / 2.0;
+
+struct LuggageRowPosition
+{
+    double rightMeters;
+    double forwardMeters;
+    bool large{};
+};
+
+// Each layer has four tightly packed longitudinal rows with two bags across.
+// The wider lateral spacing prevents the paired bags from intersecting.
+constexpr std::array<LuggageRowPosition, 8> kPackedLuggagePositions{{
+    {-kPackedLargeLuggageInnerOffsetMeters,
+     -kPackedLuggageOuterRowOffsetMeters, true},
+    { kPackedSmallLuggageOuterOffsetMeters,
+     -kPackedLuggageOuterRowOffsetMeters, false},
+    {-kPackedSmallLuggageOuterOffsetMeters,
+     -kPackedLuggageInnerRowOffsetMeters, false},
+    { kPackedLargeLuggageInnerOffsetMeters,
+     -kPackedLuggageInnerRowOffsetMeters, true},
+    {-kPackedLargeLuggageInnerOffsetMeters,
+      kPackedLuggageInnerRowOffsetMeters, true},
+    { kPackedSmallLuggageOuterOffsetMeters,
+      kPackedLuggageInnerRowOffsetMeters, false},
+    {-kPackedSmallLuggageOuterOffsetMeters,
+      kPackedLuggageOuterRowOffsetMeters, false},
+    { kPackedLargeLuggageInnerOffsetMeters,
+      kPackedLuggageOuterRowOffsetMeters, true},
+}};
+constexpr std::array<double, 3> kPackedLuggageLayerHeightsMeters{
+    0.73,
+    0.73 + kPackedLuggageThicknessMeters + 0.02,
+    0.73 + 2.0 * (kPackedLuggageThicknessMeters + 0.02)};
+constexpr std::array<std::string_view, 7> kPackedLargeLuggageTitles{
+    "FSDT_GSX_Luggage_Large_Black",
+    "FSDT_GSX_Luggage_Large_Grey",
+    "FSDT_GSX_Luggage_Large_Brown",
+    "FSDT_GSX_Luggage_Large_Red",
+    "FSDT_GSX_Luggage_Large_Blue",
+    "FSDT_GSX_Luggage_Large_LBrown",
+    "FSDT_GSX_Luggage_Large_White"};
+constexpr std::array<std::string_view, 7> kPackedSmallLuggageTitles{
+    "FSDT_GSX_Luggage_Small_Black",
+    "FSDT_GSX_Luggage_Small_Grey",
+    "FSDT_GSX_Luggage_Small_Brown",
+    "FSDT_GSX_Luggage_Small_Red",
+    "FSDT_GSX_Luggage_Small_Blue",
+    "FSDT_GSX_Luggage_Small_LBrown",
+    "FSDT_GSX_Luggage_Small_Green"};
+constexpr std::size_t kPackedLuggagePerWagon =
+    kPackedLuggagePositions.size() * kPackedLuggageLayerHeightsMeters.size();
 
 bool SafeParkedAircraft(const AircraftSnapshot &aircraft)
 {
@@ -45,6 +134,30 @@ bool EqualAsciiIgnoreCase(std::string_view left, std::string_view right)
             return std::tolower(static_cast<unsigned char>(leftCharacter)) ==
                    std::tolower(static_cast<unsigned char>(rightCharacter));
         });
+}
+
+bool StartsWithAsciiIgnoreCase(std::string_view value, std::string_view prefix)
+{
+    return value.size() >= prefix.size() &&
+        EqualAsciiIgnoreCase(value.substr(0, prefix.size()), prefix);
+}
+
+double NormalizeDegrees(double degrees)
+{
+    return std::fmod(degrees + 360.0, 360.0);
+}
+
+std::pair<double, double> RotateRelative(double forwardMeters,
+                                         double rightMeters,
+                                         double headingDegrees)
+{
+    const double headingRadians = headingDegrees *
+        3.14159265358979323846 / 180.0;
+    return {
+        std::cos(headingRadians) * forwardMeters -
+            std::sin(headingRadians) * rightMeters,
+        std::sin(headingRadians) * forwardMeters +
+            std::cos(headingRadians) * rightMeters};
 }
 
 }
@@ -180,6 +293,7 @@ void GroundServicesThread::CompleteBaggageBeltAlignment(
         m_simConnect.RemoveObject(loaderObjectId);
         CloseCargoDoor(aircraftId);
         m_createdObjects.erase(loaderObjectId);
+        m_baggageLoaderObjects.erase(loaderObjectId);
         m_aircraftByObject.erase(loaderObjectId);
         if (auto group = m_objectsByAircraft.find(aircraftId);
             group != m_objectsByAircraft.end()) {
@@ -203,6 +317,7 @@ void GroundServicesThread::CompleteBaggageBeltAlignment(
             m_simConnect.RemoveObject(loaderObjectId);
             CloseCargoDoor(aircraftId);
             m_createdObjects.erase(loaderObjectId);
+            m_baggageLoaderObjects.erase(loaderObjectId);
             m_aircraftByObject.erase(loaderObjectId);
             if (auto group = m_objectsByAircraft.find(aircraftId);
                 group != m_objectsByAircraft.end()) {
@@ -259,7 +374,41 @@ void GroundServicesThread::CompleteBaggageBeltAlignment(
     worker.forwardMeters = loaderForwardMeters;
     worker.rightMeters = loaderRightMeters;
     worker.baggageBeltRampAngleDegrees = alignment.rampAngleDegrees;
+    worker.baggageBeltDirection = alignment.direction;
     worker.headingDegrees = alignment.headingDegrees;
+
+    if (!alignment.baggageTrainSelection.wagonTitle.empty()) {
+        const double wagonRelativeHeadingDegrees = std::fmod(
+            alignment.modelRelativeHeadingDegrees -
+                kBaggageWagonDummyManHeadingDegrees + 360.0,
+            360.0);
+        const double wagonHeadingRadians = wagonRelativeHeadingDegrees *
+            3.14159265358979323846 / 180.0;
+        const double dummyForwardMeters =
+            std::cos(wagonHeadingRadians) *
+                kBaggageWagonDummyManForwardMeters -
+            std::sin(wagonHeadingRadians) *
+                kBaggageWagonDummyManRightMeters;
+        const double dummyRightMeters =
+            std::sin(wagonHeadingRadians) *
+                kBaggageWagonDummyManForwardMeters +
+            std::cos(wagonHeadingRadians) *
+                kBaggageWagonDummyManRightMeters;
+        const double dummyDistanceMeters = std::hypot(
+            dummyForwardMeters, dummyRightMeters);
+        const double towardWorkerScale = dummyDistanceMeters > 0.001
+            ? kWorkerWagonTowardWorkerMeters / dummyDistanceMeters
+            : 0.0;
+        const double workerWagonForwardMeters = loaderForwardMeters -
+            dummyForwardMeters + dummyForwardMeters * towardWorkerScale;
+        const double workerWagonRightMeters = loaderRightMeters -
+            dummyRightMeters + dummyRightMeters * towardWorkerScale;
+        QueueBaggageTrain(loaderObjectId, alignment,
+                          workerWagonForwardMeters,
+                          workerWagonRightMeters,
+                          wagonRelativeHeadingDegrees);
+    }
+
     m_log("Aligned baggage loader ObjectID " + std::to_string(loaderObjectId) +
           " from its live ramp end (Y=" + std::to_string(geometry.endRampYMeters) +
           ", Z=" + std::to_string(geometry.endRampZMeters) +
@@ -365,6 +514,10 @@ void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId, bool closeCa
                   [aircraftId](const auto &entry) {
                       return entry.second.aircraft.objectId == aircraftId;
                   });
+    std::erase_if(m_baggageTrains,
+                  [aircraftId](const auto &entry) {
+                      return entry.second.aircraft.objectId == aircraftId;
+                  });
     const auto group = m_objectsByAircraft.find(aircraftId);
     if (group == m_objectsByAircraft.end()) {
         PublishStatus();
@@ -376,6 +529,8 @@ void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId, bool closeCa
         m_animation.RemoveObject(objectId);
         m_simConnect.RemoveObject(objectId);
         m_createdObjects.erase(objectId);
+        m_baggageLoaderObjects.erase(objectId);
+        m_baggageTrainLoaderByObject.erase(objectId);
         m_aircraftByObject.erase(objectId);
     }
     PublishStatus();
@@ -398,7 +553,8 @@ void GroundServicesThread::RequestObject(const AircraftSnapshot &aircraft,
                                          double rightMeters,
                                          std::optional<RelativeWalkingPath> walkingPath,
                                          bool faceAircraft,
-                                         std::optional<double> headingDegrees)
+                                         std::optional<double> headingDegrees,
+                                         std::optional<std::uint32_t> cargoDoorPointIndex)
 {
     PendingCreate pending{};
     pending.aircraft = aircraft;
@@ -408,6 +564,7 @@ void GroundServicesThread::RequestObject(const AircraftSnapshot &aircraft,
     pending.rightMeters = rightMeters;
     pending.faceAircraft = faceAircraft;
     pending.headingDegrees = headingDegrees;
+    pending.cargoDoorPointIndex = cargoDoorPointIndex;
     QueueCreate(std::move(pending));
 }
 
@@ -425,19 +582,11 @@ bool GroundServicesThread::RequestPassengerBaggageBelt(
     const double headingDegrees = std::fmod(
         aircraft.headingDegrees + connection.relativeHeadingDegrees + 540.0,
         360.0);
-    if (m_openCargoDoorIndices.emplace(aircraft.objectId,
-                                       connection.interactivePointIndex).second) {
-        m_simConnect.SetCargoDoorOpen(aircraft.objectId,
-                                      connection.interactivePointIndex, true);
-        m_log("Requested cargo-door opening for aircraft " +
-              std::to_string(aircraft.objectId) + " at interactive point " +
-              std::to_string(connection.interactivePointIndex) + ".");
-    }
 
     if (!title.starts_with(kFsdtBaggageBeltPrefix)) {
         RequestObject(aircraft, std::move(title), connection.forwardMeters,
                       connection.rightMeters, std::nullopt, false,
-                      headingDegrees);
+                      headingDegrees, connection.interactivePointIndex);
         return true;
     }
 
@@ -453,7 +602,7 @@ bool GroundServicesThread::RequestPassengerBaggageBelt(
               title + "; creating the belt as a static object.");
         RequestObject(aircraft, std::move(title), connection.forwardMeters,
                       connection.rightMeters, std::nullopt, false,
-                      headingDegrees);
+                      headingDegrees, connection.interactivePointIndex);
         return true;
     }
 
@@ -462,6 +611,12 @@ bool GroundServicesThread::RequestPassengerBaggageBelt(
     pending.title = std::move(title);
     pending.kind = PendingCreateKind::BaggageBeltLoader;
     pending.companionTitle = *matchingWorker;
+    if (auto trainSelection = SelectBaggageTrain()) {
+        pending.baggageTrainSelection = std::move(*trainSelection);
+    } else {
+        m_log("Could not resolve a complete FSDT baggage train; creating the "
+              "animated baggage belt without one.");
+    }
     // Initially create at the target, then use the loader's own runtime
     // ramp-end geometry to place its SimObject origin exactly.
     pending.forwardMeters = connection.forwardMeters;
@@ -471,9 +626,332 @@ bool GroundServicesThread::RequestPassengerBaggageBelt(
         connection.verticalMeters;
     pending.modelRelativeHeadingDegrees = std::fmod(
         connection.relativeHeadingDegrees + 180.0, 360.0);
+    std::bernoulli_distribution selectLoading(0.5);
+    pending.baggageBeltDirection = selectLoading(m_random)
+        ? BaggageBeltDirection::Load
+        : BaggageBeltDirection::Unload;
     pending.headingDegrees = headingDegrees;
+    pending.cargoDoorPointIndex = connection.interactivePointIndex;
     QueueCreate(std::move(pending));
     return true;
+}
+
+std::optional<GroundServicesThread::BaggageTrainSelection>
+GroundServicesThread::SelectBaggageTrain()
+{
+    const auto towbar = std::ranges::find_if(
+        m_catalogTitleBuffer, [](const std::string &candidate) {
+            return EqualAsciiIgnoreCase(candidate, kFsdtBaggageTowbarTitle);
+        });
+    if (towbar == m_catalogTitleBuffer.end()) return std::nullopt;
+
+    std::array<std::size_t, kFsdtBaggageTractorPrefixes.size()> tractorCounts{};
+    for (const std::string &title : m_catalogTitleBuffer) {
+        if (title.find("_CARGO") != std::string::npos) continue;
+        for (std::size_t family = 0; family < kFsdtBaggageTractorPrefixes.size();
+             ++family) {
+            if (StartsWithAsciiIgnoreCase(
+                    title, kFsdtBaggageTractorPrefixes[family])) {
+                ++tractorCounts[family];
+                break;
+            }
+        }
+    }
+    std::array<std::size_t, kFsdtBaggageTractorPrefixes.size()>
+        availableTractorFamilies{};
+    std::size_t availableTractorFamilyCount = 0;
+    for (std::size_t family = 0; family < tractorCounts.size(); ++family) {
+        if (tractorCounts[family] != 0) {
+            availableTractorFamilies[availableTractorFamilyCount++] = family;
+        }
+    }
+    if (availableTractorFamilyCount == 0) return std::nullopt;
+
+    std::uniform_int_distribution<std::size_t> selectTractorFamily(
+        0, availableTractorFamilyCount - 1);
+    const std::size_t tractorFamily =
+        availableTractorFamilies[selectTractorFamily(m_random)];
+    std::uniform_int_distribution<std::size_t> selectTractorTitle(
+        0, tractorCounts[tractorFamily] - 1);
+    std::size_t selectedTractorIndex = selectTractorTitle(m_random);
+    const std::string *tractorTitle = nullptr;
+    for (const std::string &candidate : m_catalogTitleBuffer) {
+        if (candidate.find("_CARGO") != std::string::npos ||
+            !StartsWithAsciiIgnoreCase(
+                candidate, kFsdtBaggageTractorPrefixes[tractorFamily])) {
+            continue;
+        }
+        if (selectedTractorIndex-- == 0) {
+            tractorTitle = &candidate;
+            break;
+        }
+    }
+    if (!tractorTitle) return std::nullopt;
+
+    std::array<const std::string *, kFsdtBaggageWagonTitles.size()>
+        availableWagons{};
+    std::size_t availableWagonCount = 0;
+    for (const std::string_view wanted : kFsdtBaggageWagonTitles) {
+        const auto wagon = std::ranges::find_if(
+            m_catalogTitleBuffer, [wanted](const std::string &candidate) {
+                return EqualAsciiIgnoreCase(candidate, wanted);
+            });
+        if (wagon != m_catalogTitleBuffer.end()) {
+            availableWagons[availableWagonCount++] = &*wagon;
+        }
+    }
+    if (availableWagonCount == 0) return std::nullopt;
+    std::uniform_int_distribution<std::size_t> selectWagon(
+        0, availableWagonCount - 1);
+
+    BaggageTrainSelection selection{};
+    selection.tractorTitle = *tractorTitle;
+    selection.tractorBackOffsetMeters =
+        kFsdtBaggageTractorBackOffsets[tractorFamily];
+    selection.towbarTitle = *towbar;
+    selection.wagonTitle = *availableWagons[selectWagon(m_random)];
+    return selection;
+}
+
+void GroundServicesThread::QueueBaggageTrain(
+    AircraftId loaderObjectId,
+    const PendingBaggageBeltAlignment &alignment,
+    double workerWagonForwardMeters,
+    double workerWagonRightMeters,
+    double workerWagonRelativeHeadingDegrees)
+{
+    const BaggageTrainSelection &selection = alignment.baggageTrainSelection;
+    if (selection.tractorTitle.empty() || selection.towbarTitle.empty() ||
+        selection.wagonTitle.empty()) {
+        return;
+    }
+
+    struct TrainPose
+    {
+        double forwardMeters{};
+        double rightMeters{};
+        double relativeHeadingDegrees{};
+    };
+
+    const auto direction = [](double headingDegrees) {
+        const double radians = headingDegrees *
+            3.14159265358979323846 / 180.0;
+        return std::pair{std::cos(radians), std::sin(radians)};
+    };
+    const auto bisectDirections = [](const auto &first, const auto &second) {
+        const double forward = first.first + second.first;
+        const double right = first.second + second.second;
+        const double length = std::hypot(forward, right);
+        return std::pair{forward / length, right / length};
+    };
+    const auto directionHeading = [](const auto &value) {
+        constexpr double radiansToDegrees =
+            180.0 / 3.14159265358979323846;
+        return NormalizeDegrees(
+            std::atan2(value.second, value.first) * radiansToDegrees);
+    };
+    // The wagon aligned to the worker is first behind the tractor. Each later
+    // wagon is chained from the preceding rear hitch, with a small turn that
+    // keeps the train natural without opening visible gaps between hitches.
+    const TrainPose workerWagon{workerWagonForwardMeters,
+                                workerWagonRightMeters,
+                                NormalizeDegrees(
+                                    workerWagonRelativeHeadingDegrees)};
+    const auto workerDirection = direction(workerWagon.relativeHeadingDegrees);
+    const double secondHeading = NormalizeDegrees(
+        workerWagon.relativeHeadingDegrees + kBaggageTrainArcDegrees);
+    const auto secondDirection = direction(secondHeading);
+    const auto workerSecondBisector = bisectDirections(
+        workerDirection, secondDirection);
+    const double workerRearForward = workerWagon.forwardMeters -
+        workerDirection.first * kBaggageWagonBackTowOffsetMeters;
+    const double workerRearRight = workerWagon.rightMeters -
+        workerDirection.second * kBaggageWagonBackTowOffsetMeters;
+    const double secondFrontForward = workerRearForward -
+        workerSecondBisector.first * kBaggageWagonGapMeters;
+    const double secondFrontRight = workerRearRight -
+        workerSecondBisector.second * kBaggageWagonGapMeters;
+    const TrainPose secondWagon{
+        secondFrontForward -
+            secondDirection.first * kBaggageWagonFrontTowOffsetMeters,
+        secondFrontRight -
+            secondDirection.second * kBaggageWagonFrontTowOffsetMeters,
+        secondHeading};
+
+    const double thirdHeading = NormalizeDegrees(
+        secondHeading + kBaggageTrainArcDegrees);
+    const auto thirdDirection = direction(thirdHeading);
+    const auto secondThirdBisector = bisectDirections(
+        secondDirection, thirdDirection);
+    const double secondRearForward = secondWagon.forwardMeters -
+        secondDirection.first * kBaggageWagonBackTowOffsetMeters;
+    const double secondRearRight = secondWagon.rightMeters -
+        secondDirection.second * kBaggageWagonBackTowOffsetMeters;
+    const double thirdFrontForward = secondRearForward -
+        secondThirdBisector.first * kBaggageWagonGapMeters;
+    const double thirdFrontRight = secondRearRight -
+        secondThirdBisector.second * kBaggageWagonGapMeters;
+    const TrainPose thirdWagon{
+        thirdFrontForward -
+            thirdDirection.first * kBaggageWagonFrontTowOffsetMeters,
+        thirdFrontRight -
+            thirdDirection.second * kBaggageWagonFrontTowOffsetMeters,
+        thirdHeading};
+
+    const double tractorHeading = NormalizeDegrees(
+        workerWagon.relativeHeadingDegrees - kBaggageTrainArcDegrees);
+    const auto tractorDirection = direction(tractorHeading);
+    const double workerFrontForward = workerWagon.forwardMeters +
+        workerDirection.first * kBaggageWagonFrontTowOffsetMeters;
+    const double workerFrontRight = workerWagon.rightMeters +
+        workerDirection.second * kBaggageWagonFrontTowOffsetMeters;
+    const TrainPose tractor{
+        workerFrontForward + tractorDirection.first *
+            selection.tractorBackOffsetMeters,
+        workerFrontRight + tractorDirection.second *
+            selection.tractorBackOffsetMeters,
+        tractorHeading};
+
+    const std::array<TrainPose, 3> wagonPoses{
+        workerWagon, secondWagon, thirdWagon};
+    const auto tractorWorkerBisector = bisectDirections(
+        tractorDirection, workerDirection);
+    const std::array<double, 3> towbarHeadings{
+        directionHeading(tractorWorkerBisector),
+        directionHeading(workerSecondBisector),
+        directionHeading(secondThirdBisector)};
+
+    BaggageTrain train{};
+    train.aircraft = alignment.aircraft;
+    for (std::size_t index = 0; index < wagonPoses.size(); ++index) {
+        train.wagons[index].forwardMeters = wagonPoses[index].forwardMeters;
+        train.wagons[index].rightMeters = wagonPoses[index].rightMeters;
+        train.wagons[index].relativeHeadingDegrees =
+            wagonPoses[index].relativeHeadingDegrees;
+    }
+    m_baggageTrains[loaderObjectId] = std::move(train);
+
+    const auto queueComponent = [this, loaderObjectId, &alignment](
+                                    std::string title, const TrainPose &pose,
+                                    std::size_t baggageWagonIndex = 3) {
+        PendingCreate component{};
+        component.aircraft = alignment.aircraft;
+        component.title = std::move(title);
+        component.kind = PendingCreateKind::BaggageTrainComponent;
+        component.pairedObjectId = loaderObjectId;
+        component.forwardMeters = pose.forwardMeters;
+        component.rightMeters = pose.rightMeters;
+        component.headingDegrees = NormalizeDegrees(
+            alignment.aircraft.headingDegrees + pose.relativeHeadingDegrees);
+        component.baggageWagonIndex = baggageWagonIndex;
+        QueueCreate(std::move(component));
+    };
+
+    queueComponent(selection.tractorTitle, tractor);
+    for (std::size_t index = 0; index < wagonPoses.size(); ++index) {
+        const TrainPose &pose = wagonPoses[index];
+        // The towbar is the wagon's separate front steering/drawbar assembly,
+        // so it shares the body origin. Aim it down the real hitch-to-hitch
+        // bisector; its authored forward axis is opposite that direction.
+        TrainPose towbarPose = pose;
+        towbarPose.relativeHeadingDegrees = NormalizeDegrees(
+            towbarHeadings[index] + 180.0);
+        queueComponent(selection.towbarTitle, towbarPose);
+        queueComponent(selection.wagonTitle, pose, index);
+    }
+
+    m_log("Requested curved baggage train using " + selection.tractorTitle +
+          " and three permanently full " + selection.wagonTitle +
+          " wagons, with the worker wagon first, for loader ObjectID " +
+          std::to_string(loaderObjectId) + ".");
+}
+
+void GroundServicesThread::RequestBaggageLuggage(
+    AircraftId loaderObjectId, std::size_t luggageIndex)
+{
+    const auto trainEntry = m_baggageTrains.find(loaderObjectId);
+    if (trainEntry == m_baggageTrains.end() ||
+        luggageIndex >= trainEntry->second.luggageObjectIds.size()) {
+        return;
+    }
+    BaggageTrain &train = trainEntry->second;
+    const std::size_t wagonIndex =
+        luggageIndex / kPackedLuggagePerWagon;
+    const std::size_t slotIndex =
+        luggageIndex % kPackedLuggagePerWagon;
+    const std::size_t layerIndex =
+        slotIndex / kPackedLuggagePositions.size();
+    const std::size_t positionIndex =
+        slotIndex % kPackedLuggagePositions.size();
+    const BaggageWagon &wagon = train.wagons[wagonIndex];
+    if (wagon.objectId == 0 ||
+        train.luggageObjectIds[luggageIndex] != 0 ||
+        train.luggagePending[luggageIndex]) {
+        return;
+    }
+
+    const LuggageRowPosition &position =
+        kPackedLuggagePositions[positionIndex];
+    const auto [slotForward, slotRight] = RotateRelative(
+        position.forwardMeters, position.rightMeters,
+        wagon.relativeHeadingDegrees);
+    PendingCreate luggage{};
+    luggage.aircraft = train.aircraft;
+    if (position.large) {
+        luggage.title = std::string(kPackedLargeLuggageTitles[
+            slotIndex % kPackedLargeLuggageTitles.size()]);
+    } else {
+        luggage.title = std::string(kPackedSmallLuggageTitles[
+            slotIndex % kPackedSmallLuggageTitles.size()]);
+    }
+    luggage.kind = PendingCreateKind::BaggageLuggage;
+    luggage.pairedObjectId = loaderObjectId;
+    luggage.luggageIndex = luggageIndex;
+    luggage.forwardMeters = wagon.forwardMeters + slotForward;
+    luggage.rightMeters = wagon.rightMeters + slotRight;
+    luggage.altitudeFeet = train.aircraft.groundAltitudeFeet +
+        kPackedLuggageLayerHeightsMeters[layerIndex] / kFeetToMeters;
+    luggage.onGround = false;
+    luggage.pitchDegrees = kPackedLuggagePitchDegrees;
+    luggage.headingDegrees = NormalizeDegrees(
+        train.aircraft.headingDegrees +
+            wagon.relativeHeadingDegrees + 180.0);
+    train.luggagePending[luggageIndex] = true;
+    QueueCreate(std::move(luggage));
+}
+
+void GroundServicesThread::RemoveBaggageLuggage(
+    AircraftId loaderObjectId, std::size_t luggageIndex)
+{
+    const auto trainEntry = m_baggageTrains.find(loaderObjectId);
+    if (trainEntry == m_baggageTrains.end() ||
+        luggageIndex >= trainEntry->second.luggageObjectIds.size()) {
+        return;
+    }
+    BaggageTrain &train = trainEntry->second;
+    if (train.luggagePending[luggageIndex]) {
+        for (auto &[token, pending] : m_pendingCreates) {
+            if (pending.kind == PendingCreateKind::BaggageLuggage &&
+                pending.pairedObjectId == loaderObjectId &&
+                pending.luggageIndex == luggageIndex) {
+                pending.cancelled = true;
+            }
+        }
+        train.luggagePending[luggageIndex] = false;
+    }
+    const AircraftId objectId = train.luggageObjectIds[luggageIndex];
+    if (objectId == 0) return;
+    train.luggageObjectIds[luggageIndex] = 0;
+    m_baggageTrainLoaderByObject.erase(objectId);
+    m_simConnect.RemoveObject(objectId);
+    m_createdObjects.erase(objectId);
+    m_aircraftByObject.erase(objectId);
+    if (auto group = m_objectsByAircraft.find(train.aircraft.objectId);
+        group != m_objectsByAircraft.end()) {
+        group->second.erase(objectId);
+        if (group->second.empty()) m_objectsByAircraft.erase(group);
+    }
+    PublishStatus();
 }
 
 void GroundServicesThread::QueueCreate(PendingCreate pending)
@@ -482,8 +960,12 @@ void GroundServicesThread::QueueCreate(PendingCreate pending)
     const std::string title = pending.title;
     auto position = RelativePosition(
         pending.aircraft.headingDegrees, pending.aircraft.longitude,
-        pending.aircraft.latitude, pending.aircraft.altitudeFeet,
+        pending.aircraft.latitude,
+        pending.onGround ? pending.aircraft.altitudeFeet : pending.altitudeFeet,
         pending.forwardMeters, pending.rightMeters);
+    position.OnGround = pending.onGround ? 1 : 0;
+    position.Pitch = pending.pitchDegrees;
+    position.Bank = pending.bankDegrees;
     if (pending.headingDegrees) {
         position.Heading = *pending.headingDegrees;
     } else if (pending.faceAircraft) {
@@ -513,26 +995,43 @@ void GroundServicesThread::CompleteCreate(std::uint64_t token, AircraftId object
     }
     const PendingCreate created = pending->second;
     m_pendingCreates.erase(pending);
+    const auto clearLuggagePending = [this, &created] {
+        if (created.kind != PendingCreateKind::BaggageLuggage) {
+            return;
+        }
+        if (auto train = m_baggageTrains.find(created.pairedObjectId);
+            train != m_baggageTrains.end() &&
+            created.luggageIndex < train->second.luggagePending.size()) {
+            train->second.luggagePending[created.luggageIndex] = false;
+        }
+    };
     if (objectId == 0) {
+        clearLuggagePending();
         PublishStatus();
         return;
     }
     if (created.cancelled) {
+        clearLuggagePending();
         m_simConnect.RemoveObject(objectId);
         PublishStatus();
         m_log("Immediately removed late-created " + created.title +
               " for inactive aircraft " + std::to_string(created.aircraft.objectId) + ".");
         return;
     }
-    if (created.kind == PendingCreateKind::BaggageBeltWorker) {
+    if (created.kind == PendingCreateKind::BaggageBeltWorker ||
+        created.kind == PendingCreateKind::BaggageTrainComponent ||
+        created.kind == PendingCreateKind::BaggageLuggage) {
         const auto loaderOwner = m_aircraftByObject.find(created.pairedObjectId);
         if (!m_createdObjects.contains(created.pairedObjectId) ||
             loaderOwner == m_aircraftByObject.end() ||
-            loaderOwner->second != created.aircraft.objectId) {
+            loaderOwner->second != created.aircraft.objectId ||
+            (created.kind != PendingCreateKind::BaggageBeltWorker &&
+             !m_baggageTrains.contains(created.pairedObjectId))) {
+            clearLuggagePending();
             m_simConnect.RemoveObject(objectId);
             PublishStatus();
-            m_log("Immediately removed late-created baggage worker " + created.title +
-                  " because its belt ObjectID " +
+            m_log("Immediately removed late-created baggage companion " +
+                  created.title + " because its belt ObjectID " +
                   std::to_string(created.pairedObjectId) + " is no longer active.");
             return;
         }
@@ -540,22 +1039,66 @@ void GroundServicesThread::CompleteCreate(std::uint64_t token, AircraftId object
     m_createdObjects.insert(objectId);
     m_objectsByAircraft[created.aircraft.objectId].insert(objectId);
     m_aircraftByObject[objectId] = created.aircraft.objectId;
+    if (created.kind == PendingCreateKind::BaggageTrainComponent ||
+        created.kind == PendingCreateKind::BaggageLuggage) {
+        m_baggageTrainLoaderByObject[objectId] = created.pairedObjectId;
+    }
+    if (created.cargoDoorPointIndex) {
+        m_baggageLoaderObjects.insert(objectId);
+        m_openCargoDoorIndices[created.aircraft.objectId] =
+            *created.cargoDoorPointIndex;
+        m_simConnect.SetCargoDoorOpen(created.aircraft.objectId,
+                                      *created.cargoDoorPointIndex, true);
+        m_log("Instantly requested rear cargo-door opening for aircraft " +
+              std::to_string(created.aircraft.objectId) +
+              " after creating loader ObjectID " + std::to_string(objectId) +
+              " at interactive point " +
+              std::to_string(*created.cargoDoorPointIndex) + ".");
+    }
     if (created.kind == PendingCreateKind::BaggageBeltLoader) {
         m_simConnect.FreezeObject(objectId);
         PendingBaggageBeltAlignment alignment{};
         alignment.aircraft = created.aircraft;
         alignment.workerTitle = created.companionTitle;
+        alignment.baggageTrainSelection = created.baggageTrainSelection;
         alignment.cargoForwardMeters = created.forwardMeters;
         alignment.cargoRightMeters = created.rightMeters;
         alignment.cargoHeightMeters = created.cargoHeightMeters;
         alignment.modelRelativeHeadingDegrees = created.modelRelativeHeadingDegrees;
         alignment.headingDegrees = *created.headingDegrees;
+        alignment.direction = created.baggageBeltDirection;
         alignment.geometryRequestDue = std::chrono::steady_clock::now() + 250ms;
         m_pendingBaggageBeltAlignments.emplace(objectId, std::move(alignment));
         m_simConnect.SetBaggageLoaderRampTarget(objectId, 0.0);
     } else if (created.kind == PendingCreateKind::BaggageBeltWorker) {
         m_animation.AddBaggageBelt(created.pairedObjectId, objectId,
-                                   created.baggageBeltRampAngleDegrees);
+                                   created.baggageBeltRampAngleDegrees,
+                                   created.baggageBeltDirection);
+    } else if (created.kind == PendingCreateKind::BaggageTrainComponent) {
+        m_simConnect.FreezeObject(objectId);
+        if (created.baggageWagonIndex < 3) {
+            if (auto train = m_baggageTrains.find(created.pairedObjectId);
+                train != m_baggageTrains.end()) {
+                train->second.wagons[created.baggageWagonIndex].objectId =
+                    objectId;
+                const std::size_t firstLuggageIndex =
+                    created.baggageWagonIndex * kPackedLuggagePerWagon;
+                for (std::size_t slotIndex = 0;
+                     slotIndex < kPackedLuggagePerWagon; ++slotIndex) {
+                    RequestBaggageLuggage(
+                        created.pairedObjectId,
+                        firstLuggageIndex + slotIndex);
+                }
+            }
+        }
+    } else if (created.kind == PendingCreateKind::BaggageLuggage) {
+        clearLuggagePending();
+        if (auto train = m_baggageTrains.find(created.pairedObjectId);
+            train != m_baggageTrains.end() &&
+            created.luggageIndex < train->second.luggageObjectIds.size()) {
+            train->second.luggageObjectIds[created.luggageIndex] = objectId;
+        }
+        m_simConnect.FreezeObject(objectId);
     } else if (created.walkingPath) {
         m_animation.AddWorker(objectId, created.title, created.aircraft,
                               *created.walkingPath);
@@ -589,7 +1132,42 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
         if (pending.pairedObjectId == objectId) pending.cancelled = true;
     }
     m_pendingBaggageBeltAlignments.erase(objectId);
+    if (const auto trainOwner = m_baggageTrainLoaderByObject.find(objectId);
+        trainOwner != m_baggageTrainLoaderByObject.end()) {
+        if (auto train = m_baggageTrains.find(trainOwner->second);
+            train != m_baggageTrains.end()) {
+            const auto wagon = std::ranges::find_if(
+                train->second.wagons,
+                [objectId](const BaggageWagon &candidate) {
+                    return candidate.objectId == objectId;
+                });
+            if (wagon != train->second.wagons.end()) {
+                const std::size_t wagonIndex = static_cast<std::size_t>(
+                    std::distance(train->second.wagons.begin(), wagon));
+                wagon->objectId = 0;
+                const std::size_t firstLuggageIndex =
+                    wagonIndex * kPackedLuggagePerWagon;
+                for (std::size_t slotIndex = 0;
+                     slotIndex < kPackedLuggagePerWagon; ++slotIndex) {
+                    RemoveBaggageLuggage(
+                        trainOwner->second,
+                        firstLuggageIndex + slotIndex);
+                }
+            } else {
+                for (std::size_t index = 0;
+                     index < train->second.luggageObjectIds.size(); ++index) {
+                    if (train->second.luggageObjectIds[index] == objectId) {
+                        train->second.luggageObjectIds[index] = 0;
+                        train->second.luggagePending[index] = false;
+                        break;
+                    }
+                }
+            }
+        }
+        m_baggageTrainLoaderByObject.erase(trainOwner);
+    }
     const bool wasCreated = m_createdObjects.contains(objectId);
+    const bool wasBaggageLoader = m_baggageLoaderObjects.erase(objectId) != 0;
     m_animation.RemoveObject(objectId);
     m_createdObjects.erase(objectId);
     const auto owner = m_aircraftByObject.find(objectId);
@@ -602,6 +1180,9 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
             if (group->second.empty()) m_objectsByAircraft.erase(group);
         }
         m_aircraftByObject.erase(owner);
+    }
+    if (wasBaggageLoader && ownerId != 0) {
+        RemoveForAircraft(ownerId);
     }
     PublishStatus();
     if (wasCreated) {
@@ -617,7 +1198,10 @@ void GroundServicesThread::HandleConnection(bool connected)
     if (connected) return;
     m_pendingCreates.clear();
     m_pendingBaggageBeltAlignments.clear();
+    m_baggageTrains.clear();
+    m_baggageTrainLoaderByObject.clear();
     m_createdObjects.clear();
+    m_baggageLoaderObjects.clear();
     m_configuredAircraft.clear();
     m_objectsByAircraft.clear();
     m_aircraftByObject.clear();
@@ -665,6 +1249,9 @@ void GroundServicesThread::ClearCreatedInternal(bool announce)
         m_simConnect.RemoveObject(objectId);
     }
     m_createdObjects.clear();
+    m_baggageLoaderObjects.clear();
+    m_baggageTrains.clear();
+    m_baggageTrainLoaderByObject.clear();
     m_configuredAircraft.clear();
     m_objectsByAircraft.clear();
     m_aircraftByObject.clear();
