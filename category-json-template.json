@@ -1,0 +1,96 @@
+{
+    "Families":  [
+        {
+            "Family": "StandingWorker",
+            "PreferedObj" : [ "FSDT_Wingwalker_*", "FSDT_Marshaller_*", "Tarmac_*", "Marshaller_*" ]
+        },
+        {
+            "Family": "WalkingWorker",
+            "PreferedObj" : [ "FSDT_Wingwalker_*", "FSDT_Marshaller_*" ]
+        },
+        {
+            "Family": "StandingPilot",
+            "PreferedObj" : [ "FSDT_Passenger_PILOT_*" ],
+            "AlternateObj": [ "Tarmac_*" ],
+            "Exclude": [ "*_SEATED" ]
+        },
+        {
+            "Family": "StandingPassanger",
+            "PreferedObj" : [ "FSDT_Passenger*" ],
+            "AlternateObj": [ "Tarmac_*" ],
+            "Exclude": [ "*_SEATED" ]
+        },
+        {
+            "Family": "SmallPushTug",
+            "PreferedObj" : [ "FSDT_Pushback_M1A", "ASO_Aircraft_Caddy" ]
+        },
+        {
+            "Family": "SmallPaxVan",
+            "PreferedObj" : [ "FSDT_Van_Passengers_*", "Microsoft_Van_ASIA_02*", "Microsoft_Van_EUR*", "Microsoft_Van_NA_Modern*","Van Asia Vintage","Van Europe","Van NorthAm" ]
+        }
+    ],
+    "Locations": [
+        {
+            "Name": "rand2_right5_bottom5",
+            "RandOffset": 2,
+            "RelX": 5,
+            "RelY": -5
+        },
+        {
+            "Name": "rand2_right3_bottom3",
+            "RandOffset": 2,
+            "RelX": 3,
+            "RelY": -3
+        },
+        {
+            "Name": "rand1_top5",
+            "RandOffset": 1,
+            "RelX": 0,
+            "RelY": 5
+        },
+        {
+            "Name": "walk_left5_10m",
+            "RandOffset": 1,
+            "RelX1": -5,
+            "RelY1": 5,
+            "RelX2": -5,
+            "RelY2": -5,
+        }
+    ],
+    "Categories": [
+        {
+            "Category": "Small",
+            "Elements": [
+                {
+                    "Family": "SmallPaxVan",
+                    "Location": "rand2_right5_bottom5"
+                },
+                {
+                    "Family": "SmallPushTug",
+                    "Location": "rand1_top5"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "walk_left5_10m"
+                },
+                {
+                    "Family": "StandingPilot",
+                    "Location": "rand2_right3_bottom3"
+                },
+                {
+                    "Family": "StandingPassanger",
+                    "Location": "rand2_right3_bottom3"
+                }
+            ]
+        },
+        {
+            "Category": "Medium"
+        },
+        {
+            "Category": "Large"
+        },
+        {
+            "Category": "ExtraLarge"
+        }
+    ]
+}
