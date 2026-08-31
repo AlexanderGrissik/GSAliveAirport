@@ -60,7 +60,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(MSFS2024_SDK)\SimConnect SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\nlohmann-json\include;$(MSFS2024_SDK)\SimConnect SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -78,7 +78,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(MSFS2024_SDK)\SimConnect SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\nlohmann-json\include;$(MSFS2024_SDK)\SimConnect SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -95,6 +95,7 @@
     <ClCompile Include="AnimationThread.cpp" />
     <ClCompile Include="ConsoleController.cpp" />
     <ClCompile Include="GroundServicesThread.cpp" />
+    <ClCompile Include="GroundServicesConfig.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ParkingServicesApp.cpp" />
     <ClCompile Include="SimConnectSession.cpp" />
@@ -109,6 +110,7 @@
     <ClInclude Include="ConsoleController.h" />
     <ClInclude Include="GroundObject.h" />
     <ClInclude Include="GroundServicesThread.h" />
+    <ClInclude Include="GroundServicesConfig.h" />
     <ClInclude Include="LogSink.h" />
     <ClInclude Include="ParkingServicesApp.h" />
     <ClInclude Include="SimConnectIds.h" />
@@ -118,6 +120,9 @@
     <ClInclude Include="SimObjectPositioning.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="category-json-template.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -14,10 +14,13 @@
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace parking_services
 {
 class SimConnectThread;
+class AircraftTrackerThread;
+struct AnimationUpdate;
 struct AnimationProbeSample;
 
 struct AnimationStatus
@@ -28,12 +31,21 @@ struct AnimationStatus
     std::size_t probeSamples{};
 };
 
+struct RelativeWalkingPath
+{
+    double relX1{};
+    double relY1{};
+    double relX2{};
+    double relY2{};
+};
+
 class AnimationThread final
 {
   public:
-    static constexpr std::size_t MaximumWorkers = 20;
+    static constexpr std::size_t MaximumWalkingWorkers = 20;
 
-    AnimationThread(SimConnectThread &simConnect, LogSink log);
+    AnimationThread(SimConnectThread &simConnect,
+                    AircraftTrackerThread &aircraftTracker, LogSink log);
     ~AnimationThread();
 
     AnimationThread(const AnimationThread &) = delete;
@@ -41,6 +53,8 @@ class AnimationThread final
 
     void Stop();
     void AddWorker(AircraftId objectId, std::string title, AircraftSnapshot aircraft);
+    void AddWorker(AircraftId objectId, std::string title, AircraftSnapshot aircraft,
+                   RelativeWalkingPath path);
     void RemoveWorker(AircraftId objectId);
     void Reset();
     void StartProbe(AircraftId objectId);
@@ -58,8 +72,24 @@ class AnimationThread final
         };
 
         std::string title;
-        std::chrono::steady_clock::time_point started{};
         std::array<RoutePoint, 4> route{};
+        std::array<double, 4> segmentLengths{};
+        std::size_t routePointCount{};
+        double routeLength{};
+        double routeDistance{};
+        double currentLatitude{};
+        double currentLongitude{};
+        double currentAltitudeFeet{};
+        double currentHeadingDegrees{};
+        bool walking{};
+        std::chrono::steady_clock::time_point animationStarted{};
+        std::chrono::steady_clock::time_point movementUpdated{};
+    };
+
+    struct WorkerDistance
+    {
+        AircraftId objectId{};
+        double meters{};
     };
 
     static void AnimationLoop(std::stop_token stopToken, AnimationThread *self);
@@ -69,6 +99,13 @@ class AnimationThread final
     void Tick(std::chrono::steady_clock::time_point now);
     void AddWorkerInternal(AircraftId objectId, std::string title,
                            const AircraftSnapshot &aircraft);
+    void AddWorkerInternal(AircraftId objectId, std::string title,
+                           const AircraftSnapshot &aircraft,
+                           const RelativeWalkingPath &path);
+    void AddWorkerInternal(AircraftId objectId, std::string title,
+                           const AircraftSnapshot &aircraft,
+                           const std::pair<double, double> *offsets,
+                           std::size_t offsetCount);
     void RemoveWorkerInternal(AircraftId objectId);
     void HandleSimulatorObjectRemoved(AircraftId objectId);
     void ResetInternal();
@@ -78,8 +115,11 @@ class AnimationThread final
     void PublishStatus();
 
     SimConnectThread &m_simConnect;
+    AircraftTrackerThread &m_aircraftTracker;
     LogSink m_log;
     std::map<AircraftId, Worker> m_workers;
+    std::vector<WorkerDistance> m_distanceRanking;
+    std::vector<AnimationUpdate> m_updateBuffer;
 
     bool m_probeActive = false;
     AircraftId m_probeObjectId = 0;

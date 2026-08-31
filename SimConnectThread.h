@@ -80,11 +80,12 @@ class SimConnectThread final : public ISimConnectMessageSink
                       ObjectCreatedCallback callback);
     void RemoveObject(DWORD objectId);
     void FreezeObject(DWORD objectId);
-    void PublishAnimationUpdates(std::vector<AnimationUpdate> updates);
+    void PublishAnimationUpdates(const std::vector<AnimationUpdate> &updates);
     void CancelAnimationObject(DWORD objectId);
     void StartAnimationProbe(DWORD objectId, ProbeSampleCallback callback);
     void StopAnimationProbe();
     void RequestCatalog();
+    bool FillAvailableSimObjectTitles(std::vector<std::string> &destination) const;
 
     void SubscribeObjectRemoved(ObjectRemovedCallback callback);
     void SubscribeConnection(ConnectionCallback callback);
@@ -122,6 +123,7 @@ class SimConnectThread final : public ISimConnectMessageSink
     void HandleException(const SIMCONNECT_RECV_EXCEPTION &exception);
     void NotifyObjectRemoved(DWORD objectId);
     void NotifyConnection(bool connected);
+    void PublishAvailableSimObjectTitles(std::vector<std::string> titles);
 
     LogSink m_log;
     SimConnectSession m_session;
@@ -135,6 +137,9 @@ class SimConnectThread final : public ISimConnectMessageSink
     std::deque<std::function<void()>> m_commands;
     std::mutex m_animationMutex;
     std::map<DWORD, AnimationUpdate> m_latestAnimationUpdates;
+    mutable std::mutex m_catalogSnapshotMutex;
+    std::vector<std::string> m_availableSimObjectTitles;
+    bool m_catalogSnapshotReady{};
     std::mutex m_subscriberMutex;
     std::vector<ObjectRemovedCallback> m_objectRemovedCallbacks;
     std::vector<ConnectionCallback> m_connectionCallbacks;

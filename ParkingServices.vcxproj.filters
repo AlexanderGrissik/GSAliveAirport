@@ -6,6 +6,7 @@
     <ClCompile Include="AnimationThread.cpp" />
     <ClCompile Include="ConsoleController.cpp" />
     <ClCompile Include="GroundServicesThread.cpp" />
+    <ClCompile Include="GroundServicesConfig.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ParkingServicesApp.cpp" />
     <ClCompile Include="SimConnectSession.cpp" />
@@ -20,6 +21,7 @@
     <ClInclude Include="ConsoleController.h" />
     <ClInclude Include="GroundObject.h" />
     <ClInclude Include="GroundServicesThread.h" />
+    <ClInclude Include="GroundServicesConfig.h" />
     <ClInclude Include="LogSink.h" />
     <ClInclude Include="ParkingServicesApp.h" />
     <ClInclude Include="SimConnectIds.h" />
@@ -29,6 +31,7 @@
     <ClInclude Include="SimObjectPositioning.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="category-json-template.json" />
     <None Include="README.md" />
   </ItemGroup>
 </Project>

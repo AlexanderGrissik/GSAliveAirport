@@ -79,6 +79,15 @@ void AircraftTrackerThread::FillNearbyAircraftSnapshot(
     }
 }
 
+bool AircraftTrackerThread::TryGetApproximateUserPosition(
+    ApproximateUserPosition &destination) const
+{
+    std::scoped_lock lock(m_snapshotMutex);
+    if (!m_publishedUserPosition) return false;
+    destination = *m_publishedUserPosition;
+    return true;
+}
+
 std::size_t AircraftTrackerThread::TrackedCount() const
 {
     std::scoped_lock lock(m_snapshotMutex);
@@ -150,6 +159,9 @@ void AircraftTrackerThread::ApplyScan(std::vector<AircraftSnapshot> observations
         return;
     }
 
+    m_userPosition = ApproximateUserPosition{
+        user->objectId, user->latitude, user->longitude};
+
     const auto now = TrackerClock::now();
     std::map<AircraftId, AircraftSnapshot> nextNearby;
     std::set<AircraftId> seenTracked;
@@ -207,11 +219,17 @@ void AircraftTrackerThread::RemoveObject(AircraftId objectId)
 {
     const bool removed = m_tracked.erase(objectId) != 0;
     const bool observed = m_nearby.erase(objectId) != 0;
-    if (removed || observed) {
+    const bool userRemoved = m_userPosition && m_userPosition->objectId == objectId;
+    if (userRemoved) m_userPosition.reset();
+    if (removed || observed || userRemoved) {
         PublishSnapshot();
-        m_log("MSFS removed aircraft ObjectID " + std::to_string(objectId) +
-              (removed ? "; evicted it from the tracked set."
-                       : "; removed it from the nearby snapshot."));
+        if (userRemoved) {
+            m_log("MSFS removed the user-aircraft ObjectID; invalidated its approximate position.");
+        } else {
+            m_log("MSFS removed aircraft ObjectID " + std::to_string(objectId) +
+                  (removed ? "; evicted it from the tracked set."
+                           : "; removed it from the nearby snapshot."));
+        }
     }
 }
 
@@ -219,6 +237,7 @@ void AircraftTrackerThread::ClearState()
 {
     m_tracked.clear();
     m_nearby.clear();
+    m_userPosition.reset();
     PublishSnapshot();
 }
 
@@ -227,5 +246,6 @@ void AircraftTrackerThread::PublishSnapshot()
     std::scoped_lock lock(m_snapshotMutex);
     m_publishedTracked = m_tracked;
     m_publishedNearby = m_nearby;
+    m_publishedUserPosition = m_userPosition;
 }
 } // namespace parking_services

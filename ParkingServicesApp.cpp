@@ -10,14 +10,19 @@ namespace parking_services
 using namespace std::chrono_literals;
 
 ParkingServicesApp::ParkingServicesApp()
-    : m_simConnect([this](std::string message) { LogLine(std::move(message)); }),
+    : m_groundServicesConfig(GroundServicesConfig::LoadDefault()),
+      m_simConnect([this](std::string message) { LogLine(std::move(message)); }),
       m_aircraftTracker(m_simConnect,
                         [this](std::string message) { LogLine(std::move(message)); }),
-      m_animation(m_simConnect,
+      m_animation(m_simConnect, m_aircraftTracker,
                   [this](std::string message) { LogLine(std::move(message)); }),
       m_groundServices(m_simConnect, m_aircraftTracker, m_animation,
+                       m_groundServicesConfig,
                        [this](std::string message) { LogLine(std::move(message)); })
 {
+    for (const std::string &message : m_groundServicesConfig.StartupMessages()) {
+        LogLine(message);
+    }
 }
 
 ParkingServicesApp::~ParkingServicesApp()
@@ -63,7 +68,8 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
         m_console.PrintStatus({m_simConnect.IsConnected(), m_aircraftTracker.TrackedCount(),
                                m_aircraftTracker.NearbyCount(), m_lastGroundObjects.size(),
                                services.createdObjects, services.pendingCreates,
-                               animation.walkingWorkers, AnimationThread::MaximumWorkers,
+                               animation.walkingWorkers,
+                               AnimationThread::MaximumWalkingWorkers,
                                animation.probeActive, animation.probeObjectId,
                                animation.probeSamples});
         break;

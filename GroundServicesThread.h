@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Aircraft.h"
+#include "AnimationThread.h"
+#include "GroundServicesConfig.h"
 #include "LogSink.h"
 
 #include <atomic>
@@ -9,6 +11,8 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <optional>
+#include <random>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -19,7 +23,6 @@
 namespace parking_services
 {
 class AircraftTrackerThread;
-class AnimationThread;
 class SimConnectThread;
 
 enum class GroundServicesDecision { Keep, Add, Remove };
@@ -36,7 +39,8 @@ class GroundServicesThread final
   public:
     GroundServicesThread(SimConnectThread &simConnect,
                          AircraftTrackerThread &aircraftTracker,
-                         AnimationThread &animation, LogSink log);
+                         AnimationThread &animation,
+                         GroundServicesConfig &configuration, LogSink log);
     ~GroundServicesThread();
 
     GroundServicesThread(const GroundServicesThread &) = delete;
@@ -53,6 +57,7 @@ class GroundServicesThread final
     {
         AircraftSnapshot aircraft;
         std::string title;
+        std::optional<RelativeWalkingPath> walkingPath;
         bool cancelled{};
     };
 
@@ -62,11 +67,14 @@ class GroundServicesThread final
     void Post(std::function<void()> command);
     void ProcessCommands();
     void EvaluateTrackedAircraft();
+    void ResolveConfigurationIfAvailable();
     static GroundServicesDecision Decide(const AircraftSnapshot &aircraft);
     void EnsureAutomaticServices(const AircraftSnapshot &aircraft);
     void RemoveForAircraft(AircraftId aircraftId);
     void RequestObject(const AircraftSnapshot &aircraft, std::string title,
-                       double forwardMeters, double rightMeters);
+                       double forwardMeters, double rightMeters,
+                       std::optional<RelativeWalkingPath> walkingPath = std::nullopt,
+                       bool faceAircraft = false);
     void CompleteCreate(std::uint64_t token, AircraftId objectId);
     void HandleObjectRemoved(AircraftId objectId);
     void HandleConnection(bool connected);
@@ -78,15 +86,21 @@ class GroundServicesThread final
     SimConnectThread &m_simConnect;
     AircraftTrackerThread &m_aircraftTracker;
     AnimationThread &m_animation;
+    GroundServicesConfig &m_configuration;
     LogSink m_log;
     bool m_connected = false;
     std::atomic_bool m_stopping{false};
     std::uint64_t m_nextCreateToken = 1;
     std::map<std::uint64_t, PendingCreate> m_pendingCreates;
     std::set<AircraftId> m_createdObjects;
+    std::set<AircraftId> m_configuredAircraft;
     std::map<AircraftId, std::set<AircraftId>> m_objectsByAircraft;
     std::unordered_map<AircraftId, AircraftId> m_aircraftByObject;
     std::vector<AircraftSnapshot> m_aircraftSnapshotBuffer;
+    std::vector<std::string> m_catalogTitleBuffer;
+    std::vector<std::string> m_configurationMessageBuffer;
+    std::vector<GroundServiceRequest> m_serviceRequestBuffer;
+    std::mt19937 m_random{std::random_device{}()};
 
     mutable std::mutex m_statusMutex;
     GroundServicesStatus m_status;

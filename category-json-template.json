@@ -16,9 +16,9 @@
         },
         {
             "Family": "StandingPassanger",
-            "PreferedObj" : [ "FSDT_Passenger*" ],
+            "PreferedObj" : [ "FSDT_Passenger_*" ],
             "AlternateObj": [ "Tarmac_*" ],
-            "Exclude": [ "*_SEATED" ]
+            "Exclude": [ "*_SEATED", "FSDT_Passenger_guidance_trolley", "FSDT_Passenger_safepass_system", "FSDT_Passenger_PILOT_*", "FSDT_Passenger_LOADMASTER_*" ]
         },
         {
             "Family": "SmallPushTug",
@@ -31,30 +31,44 @@
     ],
     "Locations": [
         {
-            "Name": "rand2_right5_bottom5",
-            "RandOffset": 2,
-            "RelX": 5,
-            "RelY": -5
+            "Name": "SmallVanRight",
+            "RandOffsetX": 1,
+            "RandOffsetY": 10,
+            "RelX": 10,
+            "RelY": 0
         },
         {
-            "Name": "rand2_right3_bottom3",
-            "RandOffset": 2,
-            "RelX": 3,
-            "RelY": -3
+            "Name": "SmallPilotRight",
+            "RandOffsetX": 1,
+            "RandOffsetY": 10,
+            "RelX": 6,
+            "RelY": 0,
+            "Dir": "Aircraft"
         },
         {
-            "Name": "rand1_top5",
-            "RandOffset": 1,
+            "Name": "SmallPaxRight",
+            "RandOffsetX": 1,
+            "RandOffsetY": 10,
+            "RelX": 6,
+            "RelY": 0,
+            "Dir": "Aircraft"
+        },
+        {
+            "Name": "SmallTugFront",
+            "RandOffsetX": 2,
+            "RandOffsetY": 2,
             "RelX": 0,
-            "RelY": 5
+            "RelY": 10,
+            "Dir": "Aircraft"
         },
         {
-            "Name": "walk_left5_10m",
-            "RandOffset": 1,
-            "RelX1": -5,
+            "Name": "SmallWorkerWalkLeft",
+            "RandOffsetX": 1,
+            "RandOffsetY": 1,
+            "RelX1": -8,
             "RelY1": 5,
-            "RelX2": -5,
-            "RelY2": -5,
+            "RelX2": -8,
+            "RelY2": -5
         }
     ],
     "Categories": [
@@ -63,23 +77,23 @@
             "Elements": [
                 {
                     "Family": "SmallPaxVan",
-                    "Location": "rand2_right5_bottom5"
+                    "Location": "SmallVanRight"
                 },
                 {
                     "Family": "SmallPushTug",
-                    "Location": "rand1_top5"
+                    "Location": "SmallTugFront"
                 },
                 {
                     "Family": "WalkingWorker",
-                    "Location": "walk_left5_10m"
+                    "Location": "SmallWorkerWalkLeft"
                 },
                 {
                     "Family": "StandingPilot",
-                    "Location": "rand2_right3_bottom3"
+                    "Location": "SmallPilotRight"
                 },
                 {
                     "Family": "StandingPassanger",
-                    "Location": "rand2_right3_bottom3"
+                    "Location": "SmallPaxRight"
                 }
             ]
         },

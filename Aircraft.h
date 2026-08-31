@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace parking_services
 {
@@ -24,6 +25,7 @@ struct AircraftSnapshot
     double groundAltitudeFeet{};
     double headingDegrees{};
     double groundSpeedKnots{};
+    double wingSpanMeters{};
     bool onGround{};
     bool isUser{};
     std::string currentAirport;
@@ -54,7 +56,17 @@ struct AircraftSnapshot
     TrackerClock::time_point lastSeen{};
 };
 
+enum class AircraftSizeCategory
+{
+    Small,
+    Medium,
+    Large,
+    ExtraLarge
+};
+
 std::string NormalizeTrafficState(std::string state);
+std::optional<AircraftSizeCategory> ClassifyAircraftSize(double wingSpanMeters);
+std::string_view AircraftSizeCategoryName(AircraftSizeCategory category);
 double MetersPerDegree(double latitude);
 double DistanceMeters(double latitudeA, double longitudeA,
                       double latitudeB, double longitudeB);

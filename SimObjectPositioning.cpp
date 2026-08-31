@@ -24,4 +24,16 @@ SIMCONNECT_DATA_INITPOSITION RelativePosition(
     position.OnGround = 1;
     return position;
 }
+
+double HeadingTowardRelativeOrigin(double referenceHeadingDegrees,
+                                   double forwardMeters, double rightMeters)
+{
+    if (std::hypot(forwardMeters, rightMeters) < 0.001) {
+        return std::fmod(referenceHeadingDegrees + 360.0, 360.0);
+    }
+    constexpr double radiansToDegrees = 180.0 / 3.14159265358979323846;
+    const double relativeHeading = std::atan2(-rightMeters, -forwardMeters) *
+                                   radiansToDegrees;
+    return std::fmod(referenceHeadingDegrees + relativeHeading + 360.0, 360.0);
+}
 } // namespace parking_services

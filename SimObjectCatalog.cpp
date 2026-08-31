@@ -7,23 +7,30 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <tuple>
 
 namespace parking_services
 {
 SimObjectCatalog::SimObjectCatalog(LogSink log) : m_log(std::move(log)) {}
 
-void SimObjectCatalog::Request(SimConnectSession &session)
+void SimObjectCatalog::Request(SimConnectSession &session, CompletionCallback callback)
 {
     if (!session.IsConnected()) {
         std::cout << "Not connected to MSFS.\n";
         return;
     }
     if (m_inProgress) {
+        if (callback) {
+            m_callbacks.push_back(std::move(callback));
+            return;
+        }
         std::cout << "A SimObject catalog request is already in progress.\n";
         return;
     }
 
     m_buckets.clear();
+    m_callbacks.clear();
+    if (callback) m_callbacks.push_back(std::move(callback));
     const auto addBucket = [this, &session](std::string label, SIMCONNECT_SIMOBJECT_TYPE type,
                                             bool excluded) {
         const DWORD requestId = session.NextRequestId();
@@ -55,7 +62,7 @@ void SimObjectCatalog::Request(SimConnectSession &session)
         }
     }
     if (std::ranges::all_of(m_buckets, [](const auto &item) { return item.second.complete; })) {
-        m_inProgress = false;
+        FinishIfComplete();
         return;
     }
     std::cout << "Requested categorized spawnable SimObject catalogs. Waiting for MSFS...\n";
@@ -98,6 +105,7 @@ void SimObjectCatalog::Reset()
 {
     m_buckets.clear();
     m_allRequestId.reset();
+    m_callbacks.clear();
     m_inProgress = false;
 }
 
@@ -114,6 +122,35 @@ void SimObjectCatalog::FinishIfComplete()
     }
     m_inProgress = false;
 
+    std::vector<std::string> availableTitles;
+    std::vector<std::tuple<Entry, std::string>> retainedEntries;
+    std::size_t excluded = 0;
+    if (!m_allRequestId || !m_buckets.contains(*m_allRequestId)) {
+        m_log("The all-objects catalog bucket was not available.");
+    } else {
+        const auto &allEntries = m_buckets.at(*m_allRequestId).entries;
+        std::set<std::string> uniqueTitles;
+        for (const auto &entry : allEntries) {
+            bool isExcluded = false;
+            std::string type = "UNKNOWN";
+            for (const auto &[requestId, bucket] : m_buckets) {
+                if (requestId == *m_allRequestId || !bucket.entries.contains(entry)) continue;
+                if (bucket.excluded) {
+                    isExcluded = true;
+                    break;
+                }
+                if (type == "UNKNOWN") type = bucket.label;
+            }
+            if (isExcluded) {
+                ++excluded;
+            } else {
+                retainedEntries.emplace_back(entry, std::move(type));
+                uniqueTitles.insert(entry.first);
+            }
+        }
+        availableTitles.assign(uniqueTitles.begin(), uniqueTitles.end());
+    }
+
     std::array<wchar_t, 32768> executablePath{};
     const DWORD length = GetModuleFileNameW(nullptr, executablePath.data(),
                                             static_cast<DWORD>(executablePath.size()));
@@ -124,44 +161,25 @@ void SimObjectCatalog::FinishIfComplete()
     std::ofstream output(outputPath, std::ios::trunc);
     if (!output) {
         m_log("Could not create SimObject catalog file: " + outputPath.string());
-        return;
-    }
-
-    if (!m_allRequestId || !m_buckets.contains(*m_allRequestId)) {
-        m_log("The all-objects catalog bucket was not available.");
-        return;
-    }
-    const auto &allEntries = m_buckets.at(*m_allRequestId).entries;
-    std::size_t retained = 0;
-    std::size_t excluded = 0;
-    output << "ParkingServices filtered spawnable SimObject catalog\n"
-           << "All entries: " << allEntries.size() << "\n"
-           << "Excluded types: AIRCRAFT, HELICOPTER, HOT_AIR_BALLOON, BOAT, ANIMAL\n\n"
-           << "[SPAWNABLE - FILTERED]\n";
-    for (const auto &entry : allEntries) {
-        bool isExcluded = false;
-        std::string type = "UNKNOWN";
-        for (const auto &[requestId, bucket] : m_buckets) {
-            if (requestId == *m_allRequestId || !bucket.entries.contains(entry)) {
-                continue;
-            }
-            if (bucket.excluded) {
-                isExcluded = true;
-                break;
-            }
-            if (type == "UNKNOWN") {
-                type = bucket.label;
-            }
-        }
-        if (isExcluded) {
-            ++excluded;
-        } else {
+    } else {
+        const std::size_t allCount = m_allRequestId && m_buckets.contains(*m_allRequestId)
+                                         ? m_buckets.at(*m_allRequestId).entries.size()
+                                         : 0;
+        output << "ParkingServices filtered spawnable SimObject catalog\n"
+               << "All entries: " << allCount << "\n"
+               << "Excluded types: AIRCRAFT, HELICOPTER, HOT_AIR_BALLOON, BOAT, ANIMAL\n\n"
+               << "[SPAWNABLE - FILTERED]\n";
+        for (const auto &[entry, type] : retainedEntries) {
             output << "type=\"" << type << "\"\ttitle=\"" << entry.first
                    << "\"\tlivery=\"" << entry.second << "\"\n";
-            ++retained;
         }
+        output << "\nRetained entries: " << retainedEntries.size()
+               << "\nExcluded entries: " << excluded << "\n";
+        m_log("Wrote SimObject catalog to " + outputPath.string());
     }
-    output << "\nRetained entries: " << retained << "\nExcluded entries: " << excluded << "\n";
-    m_log("Wrote SimObject catalog to " + outputPath.string());
+
+    auto callbacks = std::move(m_callbacks);
+    m_callbacks.clear();
+    for (auto &callback : callbacks) callback(availableTitles);
 }
 } // namespace parking_services

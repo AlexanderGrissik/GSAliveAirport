@@ -8,6 +8,7 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <stop_token>
 #include <thread>
 #include <vector>
@@ -15,6 +16,13 @@
 namespace parking_services
 {
 class SimConnectThread;
+
+struct ApproximateUserPosition
+{
+    AircraftId objectId{};
+    double latitude{};
+    double longitude{};
+};
 
 class AircraftTrackerThread final
 {
@@ -35,6 +43,8 @@ class AircraftTrackerThread final
     void FillNearbyAircraftSnapshot(
         std::vector<AircraftSnapshot> &destination,
         double radiusMeters = RetentionRadiusMeters) const;
+    [[nodiscard]] bool TryGetApproximateUserPosition(
+        ApproximateUserPosition &destination) const;
     [[nodiscard]] std::size_t TrackedCount() const;
     [[nodiscard]] std::size_t NearbyCount() const;
 
@@ -57,10 +67,12 @@ class AircraftTrackerThread final
     std::chrono::steady_clock::time_point m_nextScan{};
     std::map<AircraftId, AircraftSnapshot> m_tracked;
     std::map<AircraftId, AircraftSnapshot> m_nearby;
+    std::optional<ApproximateUserPosition> m_userPosition;
 
     mutable std::mutex m_snapshotMutex;
     std::map<AircraftId, AircraftSnapshot> m_publishedTracked;
     std::map<AircraftId, AircraftSnapshot> m_publishedNearby;
+    std::optional<ApproximateUserPosition> m_publishedUserPosition;
 
     std::mutex m_commandMutex;
     std::condition_variable_any m_wake;

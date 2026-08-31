@@ -56,6 +56,7 @@ struct AircraftWireData
     double groundAltitudeFeet{};
     double headingDegrees{};
     double groundSpeedKnots{};
+    double wingSpanMeters{};
     std::int32_t onGround{};
     std::int32_t isUser{};
     std::array<char, 256> currentAirport{};
@@ -113,7 +114,7 @@ struct AnimationWireData
 };
 #pragma pack(pop)
 
-static_assert(sizeof(AircraftWireData) == 2728);
+static_assert(sizeof(AircraftWireData) == 2736);
 static_assert(sizeof(GroundWireData) == 280);
 static_assert(sizeof(ProbeWireData) == 324);
 static_assert(sizeof(AnimationWireData) == 40);
@@ -132,6 +133,7 @@ AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
     aircraft.groundAltitudeFeet = data.groundAltitudeFeet;
     aircraft.headingDegrees = data.headingDegrees;
     aircraft.groundSpeedKnots = data.groundSpeedKnots;
+    aircraft.wingSpanMeters = data.wingSpanMeters;
     aircraft.onGround = data.onGround != 0;
     aircraft.isUser = data.isUser != 0;
     aircraft.currentAirport = FixedString(data.currentAirport);
@@ -253,13 +255,14 @@ void SimConnectThread::FreezeObject(DWORD objectId)
     });
 }
 
-void SimConnectThread::PublishAnimationUpdates(std::vector<AnimationUpdate> updates)
+void SimConnectThread::PublishAnimationUpdates(
+    const std::vector<AnimationUpdate> &updates)
 {
     if (!m_connected.load()) return;
     {
         std::scoped_lock lock(m_animationMutex);
-        for (AnimationUpdate &update : updates) {
-            m_latestAnimationUpdates[update.objectId] = std::move(update);
+        for (const AnimationUpdate &update : updates) {
+            m_latestAnimationUpdates[update.objectId] = update;
         }
     }
     m_wake.notify_all();
@@ -285,7 +288,21 @@ void SimConnectThread::StopAnimationProbe()
 
 void SimConnectThread::RequestCatalog()
 {
-    Post([this] { m_catalog.Request(m_session); });
+    Post([this] {
+        m_catalog.Request(m_session, [this](std::vector<std::string> titles) {
+            PublishAvailableSimObjectTitles(std::move(titles));
+        });
+    });
+}
+
+bool SimConnectThread::FillAvailableSimObjectTitles(
+    std::vector<std::string> &destination) const
+{
+    std::scoped_lock lock(m_catalogSnapshotMutex);
+    destination.clear();
+    if (!m_catalogSnapshotReady) return false;
+    destination = m_availableSimObjectTitles;
+    return true;
 }
 
 void SimConnectThread::SubscribeObjectRemoved(ObjectRemovedCallback callback)
@@ -414,6 +431,9 @@ bool SimConnectThread::Connect()
     m_connected.store(true);
     m_log("Connected to MSFS 2024.");
     NotifyConnection(true);
+    m_catalog.Request(m_session, [this](std::vector<std::string> titles) {
+        PublishAvailableSimObjectTitles(std::move(titles));
+    });
     return true;
 }
 
@@ -427,6 +447,11 @@ void SimConnectThread::Disconnect()
     for (const DWORD requestId : createRequests) CompleteCreate(requestId, 0);
     if (m_probe) EndProbe();
     m_catalog.Reset();
+    {
+        std::scoped_lock lock(m_catalogSnapshotMutex);
+        m_availableSimObjectTitles.clear();
+        m_catalogSnapshotReady = false;
+    }
     {
         std::scoped_lock lock(m_animationMutex);
         m_latestAnimationUpdates.clear();
@@ -452,6 +477,7 @@ bool SimConnectThread::DefineDataAndEvents()
         aircraft("GROUND ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT64) &&
         aircraft("PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE_FLOAT64) &&
         aircraft("GROUND VELOCITY", "knots", SIMCONNECT_DATATYPE_FLOAT64) &&
+        aircraft("WING SPAN", "meters", SIMCONNECT_DATATYPE_FLOAT64) &&
         aircraft("SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT32) &&
         aircraft("IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT32) &&
         aircraft("AI TRAFFIC CURRENT AIRPORT", nullptr, SIMCONNECT_DATATYPE_STRING256) &&
@@ -789,5 +815,12 @@ void SimConnectThread::NotifyConnection(bool connected)
         callbacks = m_connectionCallbacks;
     }
     for (const auto &callback : callbacks) callback(connected);
+}
+
+void SimConnectThread::PublishAvailableSimObjectTitles(std::vector<std::string> titles)
+{
+    std::scoped_lock lock(m_catalogSnapshotMutex);
+    m_availableSimObjectTitles = std::move(titles);
+    m_catalogSnapshotReady = true;
 }
 } // namespace parking_services

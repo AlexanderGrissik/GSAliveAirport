@@ -4,6 +4,7 @@
 #include "AnimationThread.h"
 #include "ConsoleController.h"
 #include "GroundServicesThread.h"
+#include "GroundServicesConfig.h"
 #include "SimConnectThread.h"
 
 #include <atomic>
@@ -34,6 +35,7 @@ class ParkingServicesApp final
 
     std::atomic_bool m_quit{false};
     mutable std::mutex m_outputMutex;
+    GroundServicesConfig m_groundServicesConfig;
     SimConnectThread m_simConnect;
     AircraftTrackerThread m_aircraftTracker;
     AnimationThread m_animation;

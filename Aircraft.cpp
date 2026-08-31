@@ -35,6 +35,30 @@ std::string NormalizeTrafficState(std::string state)
     return state;
 }
 
+std::optional<AircraftSizeCategory> ClassifyAircraftSize(double wingSpanMeters)
+{
+    if (wingSpanMeters < 0.0) return std::nullopt;
+    if (wingSpanMeters < 24.0) return AircraftSizeCategory::Small;
+    if (wingSpanMeters < 36.0) return AircraftSizeCategory::Medium;
+    if (wingSpanMeters < 65.0) return AircraftSizeCategory::Large;
+    return AircraftSizeCategory::ExtraLarge;
+}
+
+std::string_view AircraftSizeCategoryName(AircraftSizeCategory category)
+{
+    switch (category) {
+    case AircraftSizeCategory::Small:
+        return "Small";
+    case AircraftSizeCategory::Medium:
+        return "Medium";
+    case AircraftSizeCategory::Large:
+        return "Large";
+    case AircraftSizeCategory::ExtraLarge:
+        return "ExtraLarge";
+    }
+    return "Unknown";
+}
+
 double MetersPerDegree(double latitude)
 {
     const auto latitudeBand = (std::min)(

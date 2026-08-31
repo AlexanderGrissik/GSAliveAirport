@@ -1,8 +1,10 @@
 #include "AnimationThread.h"
 
+#include "AircraftTrackerThread.h"
 #include "SimConnectThread.h"
 #include "SimObjectPositioning.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <utility>
@@ -17,11 +19,12 @@ constexpr double kWalkingSpeedMetersPerSecond = 2.5 * 0.514444;
 constexpr double kAnimationFramesPerSecond = 30.0;
 constexpr auto kUpdateInterval = std::chrono::microseconds(33'333);
 constexpr std::string_view kWingwalkerTitle = "FSDT_Wingwalker_Male_04";
-constexpr std::string_view kMarshallerTitle = "FSDT_Marshaller_01";
 }
 
-AnimationThread::AnimationThread(SimConnectThread &simConnect, LogSink log)
-    : m_simConnect(simConnect), m_log(std::move(log))
+AnimationThread::AnimationThread(SimConnectThread &simConnect,
+                                 AircraftTrackerThread &aircraftTracker, LogSink log)
+    : m_simConnect(simConnect), m_aircraftTracker(aircraftTracker),
+      m_log(std::move(log))
 {
     m_simConnect.SubscribeConnection([this](bool connected) {
         if (!connected) Post([this] { ResetInternal(); });
@@ -51,6 +54,15 @@ void AnimationThread::AddWorker(AircraftId objectId, std::string title,
 {
     Post([this, objectId, title = std::move(title), aircraft = std::move(aircraft)]() mutable {
         AddWorkerInternal(objectId, std::move(title), aircraft);
+    });
+}
+
+void AnimationThread::AddWorker(AircraftId objectId, std::string title,
+                                AircraftSnapshot aircraft, RelativeWalkingPath path)
+{
+    Post([this, objectId, title = std::move(title), aircraft = std::move(aircraft),
+          path]() mutable {
+        AddWorkerInternal(objectId, std::move(title), aircraft, path);
     });
 }
 
@@ -124,45 +136,97 @@ void AnimationThread::ProcessCommands()
 
 void AnimationThread::Tick(std::chrono::steady_clock::time_point now)
 {
-    std::vector<AnimationUpdate> updates;
-    updates.reserve(m_workers.size());
-    for (const auto &[objectId, worker] : m_workers) {
-        const bool marshaller = worker.title == kMarshallerTitle;
+    ApproximateUserPosition userPosition{};
+    const bool hasUserPosition =
+        m_aircraftTracker.TryGetApproximateUserPosition(userPosition);
+
+    m_distanceRanking.clear();
+    if (hasUserPosition) {
+        if (m_distanceRanking.capacity() < m_workers.size()) {
+            m_distanceRanking.reserve(m_workers.size());
+        }
+        for (const auto &[objectId, worker] : m_workers) {
+            m_distanceRanking.push_back({
+                objectId,
+                DistanceMeters(userPosition.latitude, userPosition.longitude,
+                               worker.currentLatitude, worker.currentLongitude)});
+        }
+        std::ranges::sort(m_distanceRanking, [](const WorkerDistance &left,
+                                                const WorkerDistance &right) {
+            if (left.meters != right.meters) return left.meters < right.meters;
+            return left.objectId < right.objectId;
+        });
+    }
+
+    const std::size_t walkingCount = (std::min)(
+        MaximumWalkingWorkers, m_distanceRanking.size());
+    m_updateBuffer.clear();
+    if (m_updateBuffer.capacity() < walkingCount) {
+        m_updateBuffer.reserve(walkingCount);
+    }
+
+    bool selectionChanged = false;
+    for (auto &[objectId, worker] : m_workers) {
+        bool shouldWalk = false;
+        for (std::size_t index = 0; index < walkingCount; ++index) {
+            if (m_distanceRanking[index].objectId == objectId) {
+                shouldWalk = true;
+                break;
+            }
+        }
+
+        const bool marshaller = worker.title.starts_with("FSDT_Marshaller_");
         const double transitionStart = marshaller ? 1445.0 : 192.0;
         const double transitionEnd = marshaller ? 1530.0 : 229.0;
         const double loopStart = marshaller ? 1530.0 : 230.0;
         const double loopEnd = marshaller ? 1572.0 : 268.0;
-        const double elapsed = std::chrono::duration<double>(now - worker.started).count();
 
-        std::array<double, 4> lengths{};
-        double routeLength = 0.0;
-        for (std::size_t index = 0; index < worker.route.size(); ++index) {
-            const auto &from = worker.route[index];
-            const auto &to = worker.route[(index + 1) % worker.route.size()];
-            lengths[index] = DistanceMeters(from.latitude, from.longitude,
-                                             to.latitude, to.longitude);
-            routeLength += lengths[index];
+        if (!shouldWalk) {
+            if (worker.walking) {
+                worker.walking = false;
+                selectionChanged = true;
+                m_updateBuffer.push_back({objectId, worker.currentLatitude,
+                                          worker.currentLongitude,
+                                          worker.currentAltitudeFeet,
+                                          worker.currentHeadingDegrees,
+                                          transitionStart});
+            }
+            continue;
         }
-        if (routeLength <= 0.0) continue;
 
-        double routeDistance = std::fmod(elapsed * kWalkingSpeedMetersPerSecond,
-                                         routeLength);
+        if (!worker.walking) {
+            worker.walking = true;
+            worker.animationStarted = now;
+            worker.movementUpdated = now;
+            m_simConnect.FreezeObject(objectId);
+            selectionChanged = true;
+        }
+
+        const double movementSeconds = std::chrono::duration<double>(
+            now - worker.movementUpdated).count();
+        worker.movementUpdated = now;
+        worker.routeDistance = std::fmod(
+            worker.routeDistance + movementSeconds * kWalkingSpeedMetersPerSecond,
+            worker.routeLength);
+
+        double segmentDistance = worker.routeDistance;
         std::size_t segment = 0;
-        while (segment + 1 < lengths.size() && routeDistance > lengths[segment]) {
-            routeDistance -= lengths[segment++];
+        while (segment + 1 < worker.routePointCount &&
+               segmentDistance > worker.segmentLengths[segment]) {
+            segmentDistance -= worker.segmentLengths[segment++];
         }
         const auto &from = worker.route[segment];
-        const auto &to = worker.route[(segment + 1) % worker.route.size()];
-        const double fraction = lengths[segment] > 0.0
-                                    ? routeDistance / lengths[segment]
+        const auto &to = worker.route[(segment + 1) % worker.routePointCount];
+        const double fraction = worker.segmentLengths[segment] > 0.0
+                                    ? segmentDistance / worker.segmentLengths[segment]
                                     : 0.0;
-        const double meanLatitude = (from.latitude + to.latitude) * 0.5 *
-                                    3.14159265358979323846 / 180.0;
         const double north = to.latitude - from.latitude;
-        const double east = (to.longitude - from.longitude) * std::cos(meanLatitude);
+        const double east = to.longitude - from.longitude;
         const double heading = std::fmod(std::atan2(east, north) * 180.0 /
                                              3.14159265358979323846 + 360.0,
                                          360.0);
+        const double elapsed = std::chrono::duration<double>(
+            now - worker.animationStarted).count();
         const double transitionDuration =
             (transitionEnd - transitionStart) / kAnimationFramesPerSecond;
         const double frame = elapsed < transitionDuration
@@ -170,45 +234,82 @@ void AnimationThread::Tick(std::chrono::steady_clock::time_point now)
             : loopStart + std::fmod((elapsed - transitionDuration) *
                                         kAnimationFramesPerSecond,
                                     loopEnd - loopStart);
-        updates.push_back({objectId,
-                           from.latitude + (to.latitude - from.latitude) * fraction,
-                           from.longitude + (to.longitude - from.longitude) * fraction,
-                           from.altitudeFeet + (to.altitudeFeet - from.altitudeFeet) * fraction,
-                           heading, frame});
+        worker.currentLatitude =
+            from.latitude + (to.latitude - from.latitude) * fraction;
+        worker.currentLongitude =
+            from.longitude + (to.longitude - from.longitude) * fraction;
+        worker.currentAltitudeFeet =
+            from.altitudeFeet + (to.altitudeFeet - from.altitudeFeet) * fraction;
+        worker.currentHeadingDegrees = heading;
+        m_updateBuffer.push_back({objectId, worker.currentLatitude,
+                                  worker.currentLongitude,
+                                  worker.currentAltitudeFeet,
+                                  worker.currentHeadingDegrees, frame});
     }
-    if (!updates.empty()) m_simConnect.PublishAnimationUpdates(std::move(updates));
+    if (!m_updateBuffer.empty()) {
+        m_simConnect.PublishAnimationUpdates(m_updateBuffer);
+    }
+    if (selectionChanged) PublishStatus();
 }
 
 void AnimationThread::AddWorkerInternal(AircraftId objectId, std::string title,
                                         const AircraftSnapshot &aircraft)
 {
-    if (objectId == 0 || m_workers.contains(objectId)) return;
-    if (m_workers.size() >= MaximumWorkers) {
-        m_log("Animation worker limit (" + std::to_string(MaximumWorkers) +
-              ") reached; ObjectID " + std::to_string(objectId) + " will remain standing.");
-        return;
-    }
     const std::array<std::pair<double, double>, 4> offsets = title == kWingwalkerTitle
         ? std::array<std::pair<double, double>, 4>{{{-3.0, 19.0}, {-8.0, 19.0},
                                                     {-8.0, 25.0}, {-3.0, 25.0}}}
         : std::array<std::pair<double, double>, 4>{{{0.0, 14.0}, {4.0, 14.0},
                                                     {4.0, 18.0}, {0.0, 18.0}}};
+    AddWorkerInternal(objectId, std::move(title), aircraft, offsets.data(), offsets.size());
+}
+
+void AnimationThread::AddWorkerInternal(AircraftId objectId, std::string title,
+                                        const AircraftSnapshot &aircraft,
+                                        const RelativeWalkingPath &path)
+{
+    const std::array<std::pair<double, double>, 2> offsets{{
+        {path.relY1, path.relX1}, {path.relY2, path.relX2}}};
+    AddWorkerInternal(objectId, std::move(title), aircraft, offsets.data(), offsets.size());
+}
+
+void AnimationThread::AddWorkerInternal(AircraftId objectId, std::string title,
+                                        const AircraftSnapshot &aircraft,
+                                        const std::pair<double, double> *offsets,
+                                        std::size_t offsetCount)
+{
+    if (objectId == 0 || m_workers.contains(objectId) || offsetCount < 2 ||
+        offsetCount > 4) return;
     Worker worker{};
     worker.title = std::move(title);
-    worker.started = std::chrono::steady_clock::now();
-    for (std::size_t index = 0; index < offsets.size(); ++index) {
+    worker.routePointCount = offsetCount;
+    worker.currentHeadingDegrees = aircraft.headingDegrees;
+    for (std::size_t index = 0; index < offsetCount; ++index) {
         const auto position = RelativePosition(
             aircraft.headingDegrees, aircraft.longitude, aircraft.latitude,
             aircraft.altitudeFeet, offsets[index].first, offsets[index].second);
         worker.route[index] = {position.Latitude, position.Longitude,
                                aircraft.groundAltitudeFeet};
     }
-    m_simConnect.FreezeObject(objectId);
+    worker.currentLatitude = worker.route[0].latitude;
+    worker.currentLongitude = worker.route[0].longitude;
+    worker.currentAltitudeFeet = worker.route[0].altitudeFeet;
+    for (std::size_t index = 0; index < worker.routePointCount; ++index) {
+        const auto &from = worker.route[index];
+        const auto &to = worker.route[(index + 1) % worker.routePointCount];
+        worker.segmentLengths[index] = DistanceMeters(
+            from.latitude, from.longitude, to.latitude, to.longitude);
+        worker.routeLength += worker.segmentLengths[index];
+    }
+    if (worker.routeLength <= 0.0) {
+        m_log("Could not register a zero-length animation route for ObjectID " +
+              std::to_string(objectId) + ".");
+        return;
+    }
     const std::string workerTitle = worker.title;
     m_workers.emplace(objectId, std::move(worker));
-    PublishStatus();
-    m_log("Started 30 Hz direct walking animation for " + workerTitle +
-          " (ObjectID " + std::to_string(objectId) + ").");
+    m_log("Registered " + workerTitle + " (ObjectID " +
+          std::to_string(objectId) +
+          ") as a distance-ranked walking candidate.");
 }
 
 void AnimationThread::RemoveWorkerInternal(AircraftId objectId)
@@ -315,7 +416,11 @@ void AnimationThread::RecordProbeSample(AnimationProbeSample sample)
 
 void AnimationThread::PublishStatus()
 {
+    const std::size_t walkingWorkers = static_cast<std::size_t>(
+        std::ranges::count_if(m_workers, [](const auto &entry) {
+            return entry.second.walking;
+        }));
     std::scoped_lock lock(m_statusMutex);
-    m_status = {m_workers.size(), m_probeActive, m_probeObjectId, m_probeSamples};
+    m_status = {walkingWorkers, m_probeActive, m_probeObjectId, m_probeSamples};
 }
 } // namespace parking_services
