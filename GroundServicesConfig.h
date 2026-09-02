@@ -74,6 +74,9 @@ struct GroundServiceRequest
 {
     GroundServiceObject object;
     GroundServiceLocation location;
+    // Carried through so the ground-service object factory can dispatch to the
+    // right GSObject subclass (WalkerFSDT / LuggageLoaderFSDT / plain).
+    GroundServiceSpecialType specialType{GroundServiceSpecialType::None};
 };
 
 class GroundServicesConfig final

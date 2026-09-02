@@ -296,6 +296,7 @@ void GroundServicesConfig::FillRequests(
             m_families.contains(element.family)
                 ? m_families.at(element.family).specialType
                 : GroundServiceSpecialType::None;
+        request.specialType = specialType;
         if (specialType == GroundServiceSpecialType::LuggageLoaderFSDT) {
             // Attach to a cargo door: prefer the back door, fall back to the front.
             request.location =

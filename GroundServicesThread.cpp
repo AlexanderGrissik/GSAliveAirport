@@ -1,6 +1,7 @@
 #include "GroundServicesThread.h"
 
 #include "AircraftTrackerThread.h"
+#include "GSObject.h"
 #include "SimConnectThread.h"
 #include "SimObjectPositioning.h"
 
@@ -16,24 +17,16 @@ namespace
 {
 constexpr double kSpawnSpeedKnots = 1.0;
 constexpr double kRemovalSpeedKnots = 2.0;
-constexpr double kFeetToMeters = 0.3048;
-constexpr double kCargoDoorClearanceMeters = 0.5;
-constexpr double kRadiansToDegrees = 180.0 / 3.14159265358979323846;
-
-double NormalizeDegrees(double degrees)
-{
-    return std::fmod(degrees + 360.0, 360.0);
-}
 } // namespace
 
 GroundServicesThread::GroundServicesThread(SimConnectThread &simConnect,
                                            AircraftTrackerThread &aircraftTracker,
                                            AnimationThread &animation,
-                                           GroundServicesConfig &configuration,
-                                           LogSink log)
+                                           GroundServicesConfig &configuration, LogSink log)
     : m_simConnect(simConnect), m_aircraftTracker(aircraftTracker),
       m_animation(animation), m_configuration(configuration), m_log(std::move(log))
 {
+    m_services = MakeServices();
     m_simConnect.SubscribeConnection(
         [this](bool connected) { Post([this, connected] { HandleConnection(connected); }); });
     m_simConnect.SubscribeObjectRemoved(
@@ -81,7 +74,7 @@ void GroundServicesThread::RunLoop(std::stop_token stopToken)
     while (!stopToken.stop_requested()) {
         ProcessCommands();
         const auto now = std::chrono::steady_clock::now();
-        if (m_connected) MaintainCargoDoorAlignments(now);
+        if (m_connected) MaintainObjects(now);
         if (m_connected && now >= nextDecision) {
             EvaluateTrackedAircraft();
             nextDecision = now + 10s;
@@ -112,102 +105,21 @@ void GroundServicesThread::ProcessCommands()
     for (auto &command : commands) command();
 }
 
-void GroundServicesThread::MaintainCargoDoorAlignments(
-    std::chrono::steady_clock::time_point now)
+// Drives one maintenance tick for every live object. Each object decides for
+// itself whether it needs anything (e.g. a cargo-door loader requesting ramp
+// geometry); objects that finish (cancelled, or created with no object to track)
+// are retired and dropped from the collection.
+void GroundServicesThread::MaintainObjects(std::chrono::steady_clock::time_point now)
 {
-    for (auto &[objectId, alignment] : m_pendingCargoDoorAlignments) {
-        if (alignment.geometryRequested || now < alignment.geometryRequestDue) continue;
-        alignment.geometryRequested = true;
-        m_simConnect.RequestBaggageLoaderGeometry(
-            objectId, [this, objectId](BaggageLoaderGeometry geometry) {
-                Post([this, objectId, geometry] {
-                    CompleteCargoDoorAlignment(objectId, geometry);
-                });
-            });
+    std::vector<std::uint64_t> retired;
+    for (auto &[token, object] : m_objects) {
+        if (object->Cancelled() || object->Finalized()) continue;
+        object->Maintain(m_services, now);
+        if (object->Retired()) retired.push_back(token);
     }
+    for (const std::uint64_t token : retired) m_objects.erase(token);
+    if (!retired.empty()) PublishStatus();
 }
-
-void GroundServicesThread::CompleteCargoDoorAlignment(
-    AircraftId objectId, BaggageLoaderGeometry geometry)
-{
-    const auto pending = m_pendingCargoDoorAlignments.find(objectId);
-    if (pending == m_pendingCargoDoorAlignments.end()) return;
-    PendingCargoDoorAlignment &alignment = pending->second;
-    alignment.geometryRequested = false;
-
-    const auto finishAtInitialPosition = [this, objectId, &alignment, pending] {
-        PendingCreate created{};
-        created.aircraft = alignment.aircraft;
-        created.object = alignment.object;
-        created.pose = alignment.initialPose;
-        created.route = alignment.route;
-        created.parentObjectId = alignment.parentObjectId;
-        m_pendingCargoDoorAlignments.erase(pending);
-        FinalizeCreatedObject(objectId, created, created.pose);
-    };
-
-    if (!geometry.succeeded || !std::isfinite(geometry.angleCurrentDegrees) ||
-        !std::isfinite(geometry.endRampYMeters) || !std::isfinite(geometry.endRampZMeters) ||
-        !std::isfinite(geometry.pivotYMeters) || !std::isfinite(geometry.pivotZMeters)) {
-        m_log("Could not read cargo-door ramp geometry for ObjectID " +
-              std::to_string(objectId) + "; keeping the configured object at the door point.");
-        finishAtInitialPosition();
-        return;
-    }
-
-    const auto now = std::chrono::steady_clock::now();
-    if (alignment.stage == PendingCargoDoorAlignment::Stage::MeasureInitialGeometry) {
-        const double rampLength = std::hypot(geometry.endRampYMeters - geometry.pivotYMeters,
-                                             geometry.endRampZMeters - geometry.pivotZMeters);
-        if (rampLength < 0.01) {
-            m_log("MSFS returned no usable cargo-door ramp geometry for ObjectID " +
-                  std::to_string(objectId) + "; keeping the configured object at the door point.");
-            finishAtInitialPosition();
-            return;
-        }
-        const double currentPhase = std::atan2(geometry.endRampYMeters - geometry.pivotYMeters,
-                                               geometry.endRampZMeters - geometry.pivotZMeters);
-        const double desiredPhase = std::asin(std::clamp(
-            (alignment.cargoDoor.cargoHeightMeters - geometry.pivotYMeters) / rampLength,
-            -1.0, 1.0));
-        alignment.rampAngleDegrees = std::clamp(
-            geometry.angleCurrentDegrees + (desiredPhase - currentPhase) * kRadiansToDegrees,
-            0.0, 90.0);
-        alignment.stage = PendingCargoDoorAlignment::Stage::WaitForRampTarget;
-        alignment.geometryRequestDue = now + 500ms;
-        m_simConnect.SetBaggageLoaderRampTarget(objectId, alignment.rampAngleDegrees);
-        return;
-    }
-
-    if (std::abs(geometry.angleCurrentDegrees - alignment.rampAngleDegrees) > 0.2) {
-        alignment.geometryRequestDue = now + 500ms;
-        return;
-    }
-
-    const double headingRadians = alignment.cargoDoor.modelRelativeHeadingDegrees *
-        3.14159265358979323846 / 180.0;
-    const double rampDistanceMeters = geometry.endRampZMeters + kCargoDoorClearanceMeters;
-    const double forwardMeters = alignment.cargoDoor.cargoForwardMeters -
-        std::cos(headingRadians) * rampDistanceMeters;
-    const double rightMeters = alignment.cargoDoor.cargoRightMeters -
-        std::sin(headingRadians) * rampDistanceMeters;
-    SpawnPose actualPose = RelativeToAircraft(alignment.aircraft, rightMeters, forwardMeters,
-                                              false);
-    actualPose.headingDegrees = alignment.initialPose.headingDegrees;
-    m_simConnect.SetObjectPosition(objectId, ToInitialPosition(actualPose));
-
-    PendingCreate created{};
-    created.aircraft = alignment.aircraft;
-    created.object = alignment.object;
-    created.pose = actualPose;
-    created.route = alignment.route;
-    created.parentObjectId = alignment.parentObjectId;
-    m_pendingCargoDoorAlignments.erase(pending);
-    FinalizeCreatedObject(objectId, created, actualPose);
-    m_log("Aligned configured cargo-door object ObjectID " + std::to_string(objectId) +
-          " with " + std::to_string(kCargoDoorClearanceMeters) + " m door clearance.");
-}
-
 void GroundServicesThread::EvaluateTrackedAircraft()
 {
     ResolveConfigurationIfAvailable();
@@ -233,13 +145,9 @@ void GroundServicesThread::EvaluateTrackedAircraft()
         static_cast<void>(objects);
         owned.insert(aircraftId);
     }
-    for (const auto &[token, pending] : m_pendingCreates) {
+    for (const auto &[token, object] : m_objects) {
         static_cast<void>(token);
-        owned.insert(pending.aircraft.objectId);
-    }
-    for (const auto &[objectId, alignment] : m_pendingCargoDoorAlignments) {
-        static_cast<void>(objectId);
-        owned.insert(alignment.aircraft.objectId);
+        owned.insert(object->AircraftObjectId());
     }
     for (const AircraftId aircraftId : owned) {
         if (!present.contains(aircraftId)) RemoveForAircraft(aircraftId);
@@ -287,202 +195,145 @@ void GroundServicesThread::EnsureAutomaticServices(const AircraftSnapshot &aircr
     m_log("Applied " + std::to_string(m_serviceRequestBuffer.size()) +
           " configured " + std::string(AircraftSizeCategoryName(*category)) +
           " service request(s) to aircraft " + std::to_string(aircraft.objectId) +
-          " (wingspan " + std::to_string(aircraft.wingSpanMeters) + " m).");
+          " (wingspan " + std::to_string(aircraft.wingSpanMeters) + " m.");
     PublishStatus();
 }
 
+// Builds the GSObject for one request (dispatching on specialType inside the
+// factory), resolves its placement, and starts the create. The concrete
+// subclass encapsulates all type-specific placement logic (route walking,
+// cargo-door attachment, ...).
 void GroundServicesThread::QueueService(const AircraftSnapshot &aircraft,
                                         const GroundServiceRequest &request)
 {
-    PendingCreate pending{};
-    pending.aircraft = aircraft;
-    pending.object = request.object;
-    switch (request.location.kind) {
-    case GroundServiceLocationKind::Static:
-        pending.pose = RelativeToAircraft(aircraft, request.location.relX1,
-                                          request.location.relY1,
-                                          request.location.faceAircraft);
-        break;
-    case GroundServiceLocationKind::Route: {
-        pending.pose = RelativeToAircraft(aircraft, request.location.relX1,
-                                          request.location.relY1, false);
-        const SpawnPose endpoint = RelativeToAircraft(aircraft, request.location.relX2,
-                                                      request.location.relY2, false);
-        pending.route = {pending.pose.latitude, pending.pose.longitude,
-                         pending.pose.altitudeFeet, endpoint.latitude, endpoint.longitude,
-                         endpoint.altitudeFeet};
-        break;
-    }
-    case GroundServiceLocationKind::CargoDoorRightAuto: {
-        // Attach to a right cargo door: prefer the back door, fall back to the front.
-        const AircraftCargoConnectionPoint *connection =
-            aircraft.cargoDoorRightBack ? &aircraft.cargoDoorRightBack.value()
-                                        : (aircraft.cargoDoorRightFront
-                                               ? &aircraft.cargoDoorRightFront.value()
-                                               : nullptr);
-        if (!connection) {
-            m_log("Skipped " + request.object.family + " for aircraft " +
-                  std::to_string(aircraft.objectId) + ": MSFS reported no matching right cargo door.");
-            return;
-        }
-        pending.pose = RelativeToAircraft(aircraft, connection->rightMeters,
-                                          connection->forwardMeters, false);
-        pending.pose.headingDegrees = NormalizeDegrees(
-            aircraft.headingDegrees + connection->relativeHeadingDegrees + 180.0);
-        pending.cargoDoor = {connection->interactivePointIndex,
-                             connection->forwardMeters, connection->rightMeters,
-                             (aircraft.altitudeFeet - aircraft.groundAltitudeFeet) *
-                                     kFeetToMeters +
-                                 connection->verticalMeters,
-                             NormalizeDegrees(connection->relativeHeadingDegrees + 180.0)};
-        break;
-    }
-    }
-    QueueObject(std::move(pending));
-}
-
-void GroundServicesThread::QueueObject(PendingCreate pending)
-{
     const std::uint64_t token = m_nextCreateToken++;
-    const std::string title = pending.object.title;
-    const auto position = ToInitialPosition(pending.pose);
-    m_pendingCreates.emplace(token, std::move(pending));
+    auto object = GSObject::Create(token, aircraft, request);
+    if (!object) return;
+    if (!object->PreparePlacement(m_services)) {
+        m_log("Skipped " + request.object.family + " for aircraft " +
+              std::to_string(aircraft.objectId) + ": no valid placement was found.");
+        return;
+    }
+    BeginCreate(token, std::move(object));
+}
+// Starts the async create for one object. The object itself (a GSObject
+// subclass) already knows its pose and route; the callback hands the result
+// back to the object through OnCreated, which decides whether to finalize or
+// continue (e.g. a cargo-door loader defers until its ramp aligns).
+void GroundServicesThread::BeginCreate(std::uint64_t token, std::unique_ptr<GSObject> object)
+{
+    auto *raw = object.get();
+    const GSObjectSpawnPose pose = raw->Pose();
+    m_objects.emplace(token, std::move(object));
     PublishStatus();
-    m_simConnect.CreateObject(
-        title, position, [this, token](DWORD objectId) {
-            if (m_stopping.load()) {
-                if (objectId != 0) m_simConnect.RemoveObject(objectId);
-                return;
-            }
-            Post([this, token, objectId] { CompleteCreate(token, objectId); });
-        });
+    m_simConnect.CreateObject(raw->Object().title, GSObject::ToInitialPosition(pose),
+                              [this, token](DWORD objectId) {
+                                  if (m_stopping.load()) {
+                                      if (objectId != 0) m_simConnect.RemoveObject(objectId);
+                                      return;
+                                  }
+                                  Post([this, token, objectId] {
+                                      const auto it = m_objects.find(token);
+                                      if (it == m_objects.end()) {
+                                          if (objectId != 0) m_simConnect.RemoveObject(objectId);
+                                          return;
+                                      }
+                                      it->second->OnCreated(m_services, objectId);
+                                  });
+                              });
 }
 
-void GroundServicesThread::QueueAttachments(
-    const AircraftSnapshot &aircraft, AircraftId parentObjectId,
-    const SpawnPose &parentPose,
-    const std::vector<GroundServiceObject> &attachments)
+// Records a successfully created object (bookkeeping). Called by GSObject via
+// the services.registerObject capability, before type-specific activation.
+void GroundServicesThread::RegisterObject(GSObject *object, AircraftId objectId,
+                                          const GSObjectSpawnPose &pose)
+{
+    static_cast<void>(pose);
+    m_createdObjects.insert(objectId);
+    m_objectsByAircraft[object->AircraftObjectId()].insert(objectId);
+    m_aircraftByObject[objectId] = object->AircraftObjectId();
+    if (object->ParentObjectId() != 0) {
+        m_parentByObject[objectId] = object->ParentObjectId();
+        m_childrenByObject[object->ParentObjectId()].insert(objectId);
+    }
+}
+
+void GroundServicesThread::QueueAttachments(const AircraftSnapshot &aircraft,
+                                            AircraftId parentObjectId,
+                                            const GSObjectSpawnPose &parentPose,
+                                            const std::vector<GroundServiceObject> &attachments)
 {
     for (const GroundServiceObject &attachment : attachments) {
-        PendingCreate child{};
-        child.aircraft = aircraft;
-        child.object = attachment;
-        child.pose = RelativeToParent(parentPose, attachment);
-        child.parentObjectId = parentObjectId;
-        QueueObject(std::move(child));
+        const std::uint64_t token = m_nextCreateToken++;
+        auto object = std::make_unique<GSObject>(token, aircraft, attachment,
+                                                 GroundServiceLocation{}, parentObjectId);
+        object->PrepareAttachment(parentPose);
+        BeginCreate(token, std::move(object));
     }
 }
 
-void GroundServicesThread::CompleteCreate(std::uint64_t token, AircraftId objectId)
+// Shared completion (GSObject::Finish): start the walking animation (with the
+// route, if any) and queue any child attachments. Called via services.finalize.
+void GroundServicesThread::FinalizeObject(GSObject *object, const GSObjectSpawnPose &actualPose)
 {
-    const auto pending = m_pendingCreates.find(token);
-    if (pending == m_pendingCreates.end()) {
-        if (objectId != 0) m_simConnect.RemoveObject(objectId);
-        return;
+    if (object->Object().animation) {
+        m_animation.AddObject(object->ObjectId(), *object->Object().animation, object->Route());
     }
-    const PendingCreate created = pending->second;
-    m_pendingCreates.erase(pending);
-    if (objectId == 0) {
-        PublishStatus();
-        return;
-    }
-    if (created.cancelled ||
-        (created.parentObjectId != 0 && !m_createdObjects.contains(created.parentObjectId))) {
-        m_simConnect.RemoveObject(objectId);
-        PublishStatus();
-        return;
-    }
-
-    m_createdObjects.insert(objectId);
-    m_objectsByAircraft[created.aircraft.objectId].insert(objectId);
-    m_aircraftByObject[objectId] = created.aircraft.objectId;
-    m_createdPoses[objectId] = created.pose;
-    if (created.parentObjectId != 0) {
-        m_parentByObject[objectId] = created.parentObjectId;
-        m_childrenByObject[created.parentObjectId].insert(objectId);
-    }
-
-    if (created.cargoDoor) {
-        const auto point = created.cargoDoor->interactivePointIndex;
-        m_openCargoDoorIndices[created.aircraft.objectId].insert(point);
-        m_cargoDoorPointByObject[objectId] = point;
-        m_simConnect.SetCargoDoorOpen(created.aircraft.objectId, point, true);
-        m_simConnect.FreezeObject(objectId);
-        PendingCargoDoorAlignment alignment{};
-        alignment.aircraft = created.aircraft;
-        alignment.object = created.object;
-        alignment.initialPose = created.pose;
-        alignment.route = created.route;
-        alignment.parentObjectId = created.parentObjectId;
-        alignment.cargoDoor = *created.cargoDoor;
-        alignment.geometryRequestDue = std::chrono::steady_clock::now() + 250ms;
-        m_pendingCargoDoorAlignments.emplace(objectId, std::move(alignment));
-        m_simConnect.SetBaggageLoaderRampTarget(objectId, 0.0);
-    } else {
-        FinalizeCreatedObject(objectId, created, created.pose);
-    }
-    PublishStatus();
-    m_log("Created " + created.object.title + " for aircraft " +
-          std::to_string(created.aircraft.objectId) + " as ObjectID " +
-          std::to_string(objectId) + ".");
+    QueueAttachments(object->Aircraft(), object->ObjectId(), actualPose,
+                     object->Object().attachments);
 }
-
-void GroundServicesThread::FinalizeCreatedObject(
-    AircraftId objectId, const PendingCreate &created, const SpawnPose &actualPose)
-{
-    if (!m_createdObjects.contains(objectId)) return;
-    m_createdPoses[objectId] = actualPose;
-    if (created.object.animation) {
-        m_animation.AddObject(objectId, *created.object.animation, created.route);
-    }
-    QueueAttachments(created.aircraft, objectId, actualPose, created.object.attachments);
-}
-
-void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId, bool closeCargoDoors)
+void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId)
 {
     m_configuredAircraft.erase(aircraftId);
-    if (closeCargoDoors) CloseCargoDoors(aircraftId);
-    for (auto &[token, pending] : m_pendingCreates) {
-        static_cast<void>(token);
-        if (pending.aircraft.objectId == aircraftId) pending.cancelled = true;
+    std::vector<std::uint64_t> tokens;
+    for (auto &[token, object] : m_objects) {
+        if (object->AircraftObjectId() == aircraftId) tokens.push_back(token);
     }
-    std::erase_if(m_pendingCargoDoorAlignments,
-                  [aircraftId](const auto &entry) {
-                      return entry.second.aircraft.objectId == aircraftId;
-                  });
-    const auto group = m_objectsByAircraft.find(aircraftId);
-    if (group == m_objectsByAircraft.end()) {
-        PublishStatus();
-        return;
-    }
-    std::vector<AircraftId> objects(group->second.begin(), group->second.end());
-    for (const AircraftId objectId : objects) {
-        if (m_createdObjects.contains(objectId)) RemoveCreatedObject(objectId, true);
+    for (const std::uint64_t token : tokens) {
+        if (auto it = m_objects.find(token); it != m_objects.end()) {
+            RemoveObject(it->second->ObjectId(), true);
+        }
     }
     PublishStatus();
-    if (!objects.empty()) {
-        m_log("Requested removal of " + std::to_string(objects.size()) +
+    if (!tokens.empty()) {
+        m_log("Requested removal of " + std::to_string(tokens.size()) +
               " services for aircraft " + std::to_string(aircraftId) + ".");
     }
 }
 
-void GroundServicesThread::RemoveCreatedObject(AircraftId objectId,
-                                                bool requestSimulatorRemoval)
+// Removes one created object (and any children first). The object's OnRemoved
+// hook runs here, letting it close its own cargo door (luggage loaders); other
+// types leave it a no-op.
+void GroundServicesThread::RemoveObject(AircraftId objectId, bool requestSimulatorRemoval)
 {
-    const auto children = m_childrenByObject.find(objectId);
-    if (children != m_childrenByObject.end()) {
-        const std::vector<AircraftId> childIds(children->second.begin(), children->second.end());
-        m_childrenByObject.erase(children);
-        for (const AircraftId childId : childIds) {
-            RemoveCreatedObject(childId, requestSimulatorRemoval);
+    if (objectId == 0) return;
+
+    std::vector<AircraftId> children;
+    if (const auto childIt = m_childrenByObject.find(objectId);
+        childIt != m_childrenByObject.end()) {
+        children.assign(childIt->second.begin(), childIt->second.end());
+    }
+    for (const AircraftId childId : children) RemoveObject(childId, requestSimulatorRemoval);
+
+    GSObject *object = nullptr;
+    std::uint64_t token = 0;
+    for (auto &entry : m_objects) {
+        if (entry.second->ObjectId() == objectId) {
+            object = entry.second.get();
+            token = entry.first;
+            break;
         }
     }
-    m_pendingCargoDoorAlignments.erase(objectId);
+    if (object) {
+        object->OnRemoved(m_services);
+        m_objects.erase(token);
+    }
+
     m_animation.RemoveObject(objectId);
     if (requestSimulatorRemoval) m_simConnect.RemoveObject(objectId);
 
-    const auto parent = m_parentByObject.find(objectId);
-    if (parent != m_parentByObject.end()) {
+    m_childrenByObject.erase(objectId);
+    if (const auto parent = m_parentByObject.find(objectId); parent != m_parentByObject.end()) {
         if (const auto siblings = m_childrenByObject.find(parent->second);
             siblings != m_childrenByObject.end()) {
             siblings->second.erase(objectId);
@@ -490,18 +341,7 @@ void GroundServicesThread::RemoveCreatedObject(AircraftId objectId,
         }
         m_parentByObject.erase(parent);
     }
-    const auto owner = m_aircraftByObject.find(objectId);
-    if (owner != m_aircraftByObject.end()) {
-        if (const auto cargoDoor = m_cargoDoorPointByObject.find(objectId);
-            cargoDoor != m_cargoDoorPointByObject.end()) {
-            m_simConnect.SetCargoDoorOpen(owner->second, cargoDoor->second, false);
-            if (const auto doors = m_openCargoDoorIndices.find(owner->second);
-                doors != m_openCargoDoorIndices.end()) {
-                doors->second.erase(cargoDoor->second);
-                if (doors->second.empty()) m_openCargoDoorIndices.erase(doors);
-            }
-            m_cargoDoorPointByObject.erase(cargoDoor);
-        }
+    if (const auto owner = m_aircraftByObject.find(objectId); owner != m_aircraftByObject.end()) {
         if (const auto group = m_objectsByAircraft.find(owner->second);
             group != m_objectsByAircraft.end()) {
             group->second.erase(objectId);
@@ -509,71 +349,52 @@ void GroundServicesThread::RemoveCreatedObject(AircraftId objectId,
         }
         m_aircraftByObject.erase(owner);
     }
-    m_createdPoses.erase(objectId);
-    m_cargoDoorPointByObject.erase(objectId);
     m_createdObjects.erase(objectId);
-}
-
-void GroundServicesThread::CloseCargoDoors(AircraftId aircraftId)
-{
-    const auto doors = m_openCargoDoorIndices.find(aircraftId);
-    if (doors == m_openCargoDoorIndices.end()) return;
-    for (const std::uint32_t pointIndex : doors->second) {
-        m_simConnect.SetCargoDoorOpen(aircraftId, pointIndex, false);
-    }
-    m_openCargoDoorIndices.erase(doors);
 }
 
 void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
 {
-    const bool isTrackedAircraft = m_configuredAircraft.contains(objectId) ||
-        m_objectsByAircraft.contains(objectId) ||
-        std::ranges::any_of(m_pendingCreates, [objectId](const auto &entry) {
-            return entry.second.aircraft.objectId == objectId;
-        }) ||
-        std::ranges::any_of(m_pendingCargoDoorAlignments,
-                            [objectId](const auto &entry) {
-                                return entry.second.aircraft.objectId == objectId;
-                            });
+    const bool isTrackedAircraft =
+        m_configuredAircraft.contains(objectId) || m_objectsByAircraft.contains(objectId) ||
+        std::ranges::any_of(m_objects, [objectId](const auto &entry) {
+            return entry.second->AircraftObjectId() == objectId;
+        });
     if (isTrackedAircraft) {
         m_log("MSFS removed tracked aircraft ObjectID " + std::to_string(objectId) +
               "; removing its pending and created ground services.");
-        m_openCargoDoorIndices.erase(objectId);
-        RemoveForAircraft(objectId, false);
+        RemoveForAircraft(objectId);
         return;
     }
 
-    for (auto &[token, pending] : m_pendingCreates) {
-        static_cast<void>(token);
-        if (pending.parentObjectId == objectId) pending.cancelled = true;
+    // A created ground object (or one of its parents) was removed by MSFS.
+    // Cancel any pending children that depended on it, then remove it (and
+    // remove dependents that were already created).
+    std::vector<std::uint64_t> tokens;
+    for (auto &[token, object] : m_objects) {
+        if (object->ParentObjectId() == objectId) tokens.push_back(token);
+    }
+    for (const std::uint64_t token : tokens) {
+        if (auto it = m_objects.find(token); it != m_objects.end()) {
+            if (it->second->Finalized()) {
+                RemoveObject(it->second->ObjectId(), true);
+            } else {
+                it->second->Cancel();
+            }
+        }
     }
     const bool wasCreated = m_createdObjects.contains(objectId);
-    const auto owner = m_aircraftByObject.find(objectId);
-    const AircraftId ownerId = owner == m_aircraftByObject.end() ? 0 : owner->second;
-    if (wasCreated) RemoveCreatedObject(objectId, false);
+    if (wasCreated) RemoveObject(objectId, false);
     if (wasCreated) {
         m_log("MSFS removed created ground ObjectID " + std::to_string(objectId) +
-              (ownerId != 0 ? " owned by aircraft " + std::to_string(ownerId) : "") +
               "; removed it and its dependent objects from tracking.");
     }
     PublishStatus();
 }
-
 void GroundServicesThread::HandleConnection(bool connected)
 {
     m_connected = connected;
     if (connected) return;
-    m_pendingCreates.clear();
-    m_pendingCargoDoorAlignments.clear();
-    m_createdObjects.clear();
-    m_configuredAircraft.clear();
-    m_objectsByAircraft.clear();
-    m_aircraftByObject.clear();
-    m_parentByObject.clear();
-    m_childrenByObject.clear();
-    m_createdPoses.clear();
-    m_openCargoDoorIndices.clear();
-    m_cargoDoorPointByObject.clear();
+    RemoveAllServicesInternal();
     m_animation.Reset();
     m_configuration.ClearResolution();
     PublishStatus();
@@ -581,88 +402,85 @@ void GroundServicesThread::HandleConnection(bool connected)
 
 void GroundServicesThread::RemoveAllServicesInternal()
 {
-    for (auto &[token, pending] : m_pendingCreates) {
-        static_cast<void>(token);
-        pending.cancelled = true;
-    }
-    m_pendingCargoDoorAlignments.clear();
-    std::vector<AircraftId> aircraftIds;
-    aircraftIds.reserve(m_openCargoDoorIndices.size());
-    for (const auto &[aircraftId, doors] : m_openCargoDoorIndices) {
-        static_cast<void>(doors);
-        aircraftIds.push_back(aircraftId);
-    }
-    for (const AircraftId aircraftId : aircraftIds) CloseCargoDoors(aircraftId);
-
-    const std::vector<AircraftId> objects(m_createdObjects.begin(), m_createdObjects.end());
+    std::vector<AircraftId> objects;
+    objects.assign(m_createdObjects.begin(), m_createdObjects.end());
     for (const AircraftId objectId : objects) {
-        if (m_createdObjects.contains(objectId)) RemoveCreatedObject(objectId, true);
+        if (m_createdObjects.contains(objectId)) RemoveObject(objectId, true);
     }
+    m_objects.clear();
     m_configuredAircraft.clear();
     m_objectsByAircraft.clear();
     m_aircraftByObject.clear();
     m_parentByObject.clear();
     m_childrenByObject.clear();
-    m_createdPoses.clear();
-    m_cargoDoorPointByObject.clear();
     PublishStatus();
 }
 
 void GroundServicesThread::PublishStatus()
 {
+    std::size_t pendingCreates = 0;
+    for (const auto &[token, object] : m_objects) {
+        static_cast<void>(token);
+        if (!object->Retired()) pendingCreates++;
+    }
     std::scoped_lock lock(m_statusMutex);
-    m_status = {m_createdObjects.size(), m_pendingCreates.size(),
-                m_configuredAircraft.size()};
+    m_status = {m_createdObjects.size(), pendingCreates, m_configuredAircraft.size()};
 }
 
 bool GroundServicesThread::HasPendingFor(AircraftId aircraftId) const
 {
-    return std::ranges::any_of(m_pendingCreates, [aircraftId](const auto &entry) {
-        return entry.second.aircraft.objectId == aircraftId && !entry.second.cancelled;
-    }) || std::ranges::any_of(m_pendingCargoDoorAlignments,
-                              [aircraftId](const auto &entry) {
-                                  return entry.second.aircraft.objectId == aircraftId;
-                              });
+    return std::ranges::any_of(m_objects, [aircraftId](const auto &entry) {
+        return entry.second->AircraftObjectId() == aircraftId && !entry.second->Retired();
+    });
 }
-
-GroundServicesThread::SpawnPose GroundServicesThread::RelativeToAircraft(
-    const AircraftSnapshot &aircraft, double relX, double relY, bool faceAircraft)
+// The capabilities a GSObject calls into. These are the only SimConnect /
+// animation touchpoints the driver exposes to the objects, which keeps them
+// decoupled from those classes. Everything here runs on the ground-services
+// thread, so it may safely mutate shared state.
+GSObjectServices GroundServicesThread::MakeServices()
 {
-    const auto position = RelativePosition(aircraft.headingDegrees, aircraft.longitude,
-                                           aircraft.latitude, aircraft.groundAltitudeFeet,
-                                           relY, relX);
-    SpawnPose result{position.Latitude, position.Longitude, position.Altitude,
-                     position.Heading, true};
-    if (faceAircraft) {
-        result.headingDegrees = HeadingTowardRelativeOrigin(aircraft.headingDegrees,
-                                                            relY, relX);
-    }
-    return result;
-}
-
-GroundServicesThread::SpawnPose GroundServicesThread::RelativeToParent(
-    const SpawnPose &parent, const GroundServiceObject &child)
-{
-    // XYZH deliberately uses a different compact convention from Locations:
-    // X is forward and -Y is right. Thus a parent at 090 with [0,-5,0,H]
-    // places the child five metres south, at an absolute direction of 180.
-    const auto position = RelativePosition(parent.headingDegrees, parent.longitude,
-                                           parent.latitude, parent.altitudeFeet,
-                                           child.parentX, -child.parentY);
-    return {position.Latitude, position.Longitude,
-            parent.altitudeFeet + child.parentZ / kFeetToMeters,
-            NormalizeDegrees(parent.headingDegrees + child.parentHeadingDegrees),
-            parent.onGround && std::abs(child.parentZ) < 0.001};
-}
-
-SIMCONNECT_DATA_INITPOSITION GroundServicesThread::ToInitialPosition(const SpawnPose &pose)
-{
-    SIMCONNECT_DATA_INITPOSITION result{};
-    result.Latitude = pose.latitude;
-    result.Longitude = pose.longitude;
-    result.Altitude = pose.altitudeFeet;
-    result.Heading = pose.headingDegrees;
-    result.OnGround = pose.onGround ? 1 : 0;
-    return result;
+    GSObjectServices services;
+    services.log = [this](std::string message) { m_log(std::move(message)); };
+    services.registerObject = [this](GSObject *object, AircraftId objectId,
+                                     const GSObjectSpawnPose &pose) {
+        if (object) RegisterObject(object, objectId, pose);
+    };
+    services.finalize = [this](GSObject *object, const GSObjectSpawnPose &pose) {
+        if (object) FinalizeObject(object, pose);
+    };
+    services.removeSimObject = [this](AircraftId objectId) { m_simConnect.RemoveObject(objectId); };
+    services.setPosition = [this](AircraftId objectId, const GSObjectSpawnPose &pose) {
+        const ObjectPositionUpdate update{objectId, pose.latitude, pose.longitude,
+                                          pose.altitudeFeet, pose.headingDegrees};
+        m_simConnect.PublishObjectPositionUpdates({update});
+    };
+    services.freezeObject = [this](AircraftId objectId) { m_simConnect.FreezeObject(objectId); };
+    services.openCargoDoor = [this](AircraftId aircraftId, std::uint32_t point) {
+        m_simConnect.SetCargoDoorOpen(aircraftId, point, true);
+    };
+    services.closeCargoDoor = [this](AircraftId aircraftId, std::uint32_t point) {
+        m_simConnect.SetCargoDoorOpen(aircraftId, point, false);
+    };
+    services.setRampTarget = [this](AircraftId objectId, double angle) {
+        m_simConnect.SetBaggageLoaderRampTarget(objectId, angle);
+    };
+    services.requestBaggageGeometry = [this](AircraftId objectId) {
+        m_simConnect.RequestBaggageLoaderGeometry(
+            objectId, [this, objectId](BaggageLoaderGeometry geometry) {
+                Post([this, objectId, geometry] {
+                    for (auto &entry : m_objects) {
+                        GSObject *object = entry.second.get();
+                        if (object->ObjectId() == objectId) {
+                            object->OnGeometry(m_services, geometry);
+                            return;
+                        }
+                    }
+                });
+            });
+    };
+    services.isParentCreated = [this](AircraftId parentObjectId) {
+        return m_createdObjects.contains(parentObjectId);
+    };
+    return services;
 }
 } // namespace parking_services

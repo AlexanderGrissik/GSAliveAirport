@@ -3,6 +3,7 @@
 #include "Aircraft.h"
 #include "AnimationThread.h"
 #include "GroundServicesConfig.h"
+#include "GSObject.h"
 #include "LogSink.h"
 #include "SimConnectIds.h"
 
@@ -13,6 +14,7 @@
 #include <deque>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <random>
@@ -27,7 +29,6 @@ namespace parking_services
 {
 class AircraftTrackerThread;
 class SimConnectThread;
-struct BaggageLoaderGeometry;
 
 enum class GroundServicesDecision { Keep, Add, Remove };
 
@@ -38,6 +39,13 @@ struct GroundServicesStatus
     std::size_t servicedAircraft{};
 };
 
+// Drives ground-service objects on its own thread. It owns the object
+// collection as polymorphic GSObject instances (created through
+// GSObject::Create, keyed by token) and implements the GSObjectServices
+// capabilities that those objects call into. Type-specific behaviours
+// (cargo-door ramp alignment, route walking) live in the GSObject subclasses,
+// not here; this thread only sequences their lifecycle: create, maintain,
+// geometry, finalize, and remove.
 class GroundServicesThread final
 {
   public:
@@ -55,85 +63,31 @@ class GroundServicesThread final
     [[nodiscard]] GroundServicesStatus Status() const;
 
   private:
-    struct SpawnPose
-    {
-        double latitude{};
-        double longitude{};
-        double altitudeFeet{};
-        double headingDegrees{};
-        bool onGround{true};
-    };
-
-    struct CargoDoorPlacement
-    {
-        std::uint32_t interactivePointIndex{};
-        double cargoForwardMeters{};
-        double cargoRightMeters{};
-        double cargoHeightMeters{};
-        double modelRelativeHeadingDegrees{};
-    };
-
-    struct PendingCreate
-    {
-        AircraftSnapshot aircraft;
-        GroundServiceObject object;
-        SpawnPose pose;
-        std::optional<AnimationRoute> route;
-        std::optional<CargoDoorPlacement> cargoDoor;
-        AircraftId parentObjectId{};
-        bool cancelled{};
-    };
-
-    struct PendingCargoDoorAlignment
-    {
-        enum class Stage { MeasureInitialGeometry, WaitForRampTarget };
-
-        AircraftSnapshot aircraft;
-        GroundServiceObject object;
-        SpawnPose initialPose;
-        std::optional<AnimationRoute> route;
-        AircraftId parentObjectId{};
-        CargoDoorPlacement cargoDoor;
-        double rampAngleDegrees{};
-        std::chrono::steady_clock::time_point geometryRequestDue{};
-        Stage stage{Stage::MeasureInitialGeometry};
-        bool geometryRequested{};
-    };
-
-    static void GroundServicesLoop(std::stop_token stopToken,
-                                   GroundServicesThread *self);
+    static void GroundServicesLoop(std::stop_token stopToken, GroundServicesThread *self);
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
-    void MaintainCargoDoorAlignments(std::chrono::steady_clock::time_point now);
-    void CompleteCargoDoorAlignment(AircraftId objectId, BaggageLoaderGeometry geometry);
+    void MaintainObjects(std::chrono::steady_clock::time_point now);
     void EvaluateTrackedAircraft();
     void ResolveConfigurationIfAvailable();
     static GroundServicesDecision Decide(const AircraftSnapshot &aircraft);
     void EnsureAutomaticServices(const AircraftSnapshot &aircraft);
     void QueueService(const AircraftSnapshot &aircraft, const GroundServiceRequest &request);
-    void QueueObject(PendingCreate pending);
+    void BeginCreate(std::uint64_t token, std::unique_ptr<GSObject> object);
+    void RegisterObject(GSObject *object, AircraftId objectId,
+                        const GSObjectSpawnPose &pose);
+    void FinalizeObject(GSObject *object, const GSObjectSpawnPose &actualPose);
     void QueueAttachments(const AircraftSnapshot &aircraft, AircraftId parentObjectId,
-                          const SpawnPose &parentPose,
+                          const GSObjectSpawnPose &parentPose,
                           const std::vector<GroundServiceObject> &attachments);
-    void CompleteCreate(std::uint64_t token, AircraftId objectId);
-    void FinalizeCreatedObject(AircraftId objectId, const PendingCreate &created,
-                               const SpawnPose &actualPose);
-    void RemoveForAircraft(AircraftId aircraftId, bool closeCargoDoors = true);
-    void RemoveCreatedObject(AircraftId objectId, bool requestSimulatorRemoval);
-    void CloseCargoDoors(AircraftId aircraftId);
+    void RemoveForAircraft(AircraftId aircraftId);
+    void RemoveObject(AircraftId objectId, bool requestSimulatorRemoval);
     void HandleObjectRemoved(AircraftId objectId);
     void HandleConnection(bool connected);
     void RemoveAllServicesInternal();
     void PublishStatus();
     [[nodiscard]] bool HasPendingFor(AircraftId aircraftId) const;
-    [[nodiscard]] static SpawnPose RelativeToAircraft(const AircraftSnapshot &aircraft,
-                                                       double relX, double relY,
-                                                       bool faceAircraft);
-    [[nodiscard]] static SpawnPose RelativeToParent(const SpawnPose &parent,
-                                                     const GroundServiceObject &child);
-    [[nodiscard]] static SIMCONNECT_DATA_INITPOSITION ToInitialPosition(
-        const SpawnPose &pose);
+    GSObjectServices MakeServices();
 
     SimConnectThread &m_simConnect;
     AircraftTrackerThread &m_aircraftTracker;
@@ -143,17 +97,21 @@ class GroundServicesThread final
     bool m_connected = false;
     std::atomic_bool m_stopping{false};
     std::uint64_t m_nextCreateToken = 1;
-    std::map<std::uint64_t, PendingCreate> m_pendingCreates;
-    std::map<AircraftId, PendingCargoDoorAlignment> m_pendingCargoDoorAlignments;
+    // Capability bag injected into every GSObject. Built once in the constructor;
+    // its lambdas capture 'this' and are stateless, so a single shared instance is
+    // safe (every GSObject method runs on this thread).
+    GSObjectServices m_services;
+    // Every ground-service object under management, keyed by create token. The
+    // concrete subclass (GSWalker, GSLuggageLoaderFSDT, ...) is created by
+    // GSObject::Create and drives its own special-type behaviour through the
+    // GSObjectServices capabilities this thread injects.
+    std::map<std::uint64_t, std::unique_ptr<GSObject>> m_objects;
     std::set<AircraftId> m_createdObjects;
     std::set<AircraftId> m_configuredAircraft;
     std::map<AircraftId, std::set<AircraftId>> m_objectsByAircraft;
     std::unordered_map<AircraftId, AircraftId> m_aircraftByObject;
     std::unordered_map<AircraftId, AircraftId> m_parentByObject;
     std::map<AircraftId, std::set<AircraftId>> m_childrenByObject;
-    std::map<AircraftId, SpawnPose> m_createdPoses;
-    std::map<AircraftId, std::set<std::uint32_t>> m_openCargoDoorIndices;
-    std::map<AircraftId, std::uint32_t> m_cargoDoorPointByObject;
     std::vector<AircraftSnapshot> m_aircraftSnapshotBuffer;
     std::vector<std::string> m_catalogTitleBuffer;
     std::vector<std::string> m_configurationMessageBuffer;
