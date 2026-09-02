@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Aircraft.h"
+#include "AnimationObject.h"
 #include "LogSink.h"
 
-#include <array>
 #include <condition_variable>
 #include <deque>
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <stop_token>
 #include <string>
@@ -20,11 +20,7 @@ namespace parking_services
 {
 class SimConnectThread;
 class AircraftTrackerThread;
-struct AnimationUpdate;
-struct BaggageBeltAnimationUpdate;
 struct AnimationProbeSample;
-
-enum class BaggageBeltDirection { Load, Unload };
 
 struct AnimationStatus
 {
@@ -32,14 +28,6 @@ struct AnimationStatus
     bool probeActive{};
     AircraftId probeObjectId{};
     std::size_t probeSamples{};
-};
-
-struct RelativeWalkingPath
-{
-    double relX1{};
-    double relY1{};
-    double relX2{};
-    double relY2{};
 };
 
 class AnimationThread final
@@ -55,11 +43,8 @@ class AnimationThread final
     AnimationThread &operator=(const AnimationThread &) = delete;
 
     void Stop();
-    void AddWorker(AircraftId objectId, std::string title, AircraftSnapshot aircraft);
-    void AddWorker(AircraftId objectId, std::string title, AircraftSnapshot aircraft,
-                   RelativeWalkingPath path);
-    void AddBaggageBelt(AircraftId loaderObjectId, AircraftId workerObjectId,
-                        double rampAngleDegrees, BaggageBeltDirection direction);
+    void AddObject(AircraftId objectId, GroundServiceAnimation animation,
+                   std::optional<AnimationRoute> route = std::nullopt);
     void RemoveObject(AircraftId objectId);
     void Reset();
     void StartProbe(AircraftId objectId);
@@ -67,43 +52,10 @@ class AnimationThread final
     [[nodiscard]] AnimationStatus Status() const;
 
   private:
-    struct Worker
+    struct AnimationDistance
     {
-        struct RoutePoint
-        {
-            double latitude{};
-            double longitude{};
-            double altitudeFeet{};
-        };
-
-        std::string title;
-        std::array<RoutePoint, 4> route{};
-        std::array<double, 4> segmentLengths{};
-        std::size_t routePointCount{};
-        double routeLength{};
-        double routeDistance{};
-        double currentLatitude{};
-        double currentLongitude{};
-        double currentAltitudeFeet{};
-        double currentHeadingDegrees{};
-        bool walking{};
-        std::chrono::steady_clock::time_point animationStarted{};
-        std::chrono::steady_clock::time_point movementUpdated{};
-    };
-
-    struct WorkerDistance
-    {
-        AircraftId objectId{};
+        AircraftId animationId{};
         double meters{};
-    };
-
-    struct BaggageBelt
-    {
-        AircraftId loaderObjectId{};
-        AircraftId workerObjectId{};
-        double rampAngleDegrees{};
-        BaggageBeltDirection direction{BaggageBeltDirection::Load};
-        std::chrono::steady_clock::time_point animationStarted{};
     };
 
     static void AnimationLoop(std::stop_token stopToken, AnimationThread *self);
@@ -111,19 +63,8 @@ class AnimationThread final
     void Post(std::function<void()> command);
     void ProcessCommands();
     void Tick(std::chrono::steady_clock::time_point now);
-    void AddWorkerInternal(AircraftId objectId, std::string title,
-                           const AircraftSnapshot &aircraft);
-    void AddWorkerInternal(AircraftId objectId, std::string title,
-                           const AircraftSnapshot &aircraft,
-                           const RelativeWalkingPath &path);
-    void AddWorkerInternal(AircraftId objectId, std::string title,
-                           const AircraftSnapshot &aircraft,
-                           const std::pair<double, double> *offsets,
-                           std::size_t offsetCount);
-    void AddBaggageBeltInternal(AircraftId loaderObjectId,
-                                AircraftId workerObjectId,
-                                double rampAngleDegrees,
-                                BaggageBeltDirection direction);
+    void AddObjectInternal(AircraftId objectId, GroundServiceAnimation animation,
+                           std::optional<AnimationRoute> route);
     void RemoveObjectInternal(AircraftId objectId);
     void HandleSimulatorObjectRemoved(AircraftId objectId);
     void ResetInternal();
@@ -131,15 +72,14 @@ class AnimationThread final
     void StopProbeInternal(bool announce);
     void RecordProbeSample(AnimationProbeSample sample);
     void PublishStatus();
+    [[nodiscard]] bool ContainsAnimationObject(AircraftId objectId) const;
 
     SimConnectThread &m_simConnect;
     AircraftTrackerThread &m_aircraftTracker;
     LogSink m_log;
-    std::map<AircraftId, Worker> m_workers;
-    std::map<AircraftId, BaggageBelt> m_baggageBelts;
-    std::vector<WorkerDistance> m_distanceRanking;
-    std::vector<AnimationUpdate> m_updateBuffer;
-    std::vector<BaggageBeltAnimationUpdate> m_baggageBeltUpdateBuffer;
+    AnimationFrame m_frame;
+    std::map<AircraftId, std::unique_ptr<AnimationObject>> m_animations;
+    std::vector<AnimationDistance> m_distanceRanking;
 
     bool m_probeActive = false;
     AircraftId m_probeObjectId = 0;

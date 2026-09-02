@@ -5,10 +5,6 @@
             "PreferedObj" : [ "FSDT_Wingwalker_*", "FSDT_Marshaller_*", "Tarmac_*", "Marshaller_*" ]
         },
         {
-            "Family": "WalkingWorker",
-            "PreferedObj" : [ "FSDT_Wingwalker_*", "FSDT_Marshaller_*" ]
-        },
-        {
             "Family": "StandingPilot",
             "PreferedObj" : [ "FSDT_Passenger_PILOT_*" ],
             "AlternateObj": [ "Tarmac_*" ],
@@ -29,10 +25,119 @@
             "PreferedObj" : [ "FSDT_Van_Passengers_*", "Microsoft_Van_ASIA_02*", "Microsoft_Van_EUR*", "Microsoft_Van_NA_Modern*","Van Asia Vintage","Van Europe","Van NorthAm" ]
         },
         {
-            "Family": "PaxBaggageBelt",
+            "Family": "LuggageLoaderSystemPaxDefault",
+            "PreferedObj" : [ "Aso_Baggage_Loader_0*" ],
+            "AttachObjects": [
+                {
+                    "Family": "LuggageWorkerPax",
+                    "XYZH": [[0,0,0,180.0]]
+                },
+                {
+                    "Family": "LuggageTractorFSDT",
+                    "XYZH": [[3,-5.5,0,93]]
+                },
+                {
+                    "Family": "LuggageWagonFSDT",
+                    "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]]
+                }
+            ]
+        },
+        {
+            "Family": "LuggageLoaderSystemPaxFSDT",
             "PreferedObj" : [ "FSDT_Tug_660*" ],
-            "AlternateObj": [ "Aso_Baggage_Loader_01" ],
-            "Exclude": ["FSDT_Tug_660_CARGO*"]
+            "AlternateFamily": "LuggageLoaderSystemPaxDefault",
+            "Exclude": ["FSDT_Tug_660_CARGO*"],
+            "Animation": {
+                "FPS": 30,
+                "Reversable": true,
+                "Carriers": [
+                    {
+                        "Carrier": "WAGON BACK LINK ORIENTATION",
+                        "Frames": [4213, 645]
+                    },
+                    {
+                        "Carrier": "WAGON FRONT LINK ORIENTATION",
+                        "Frames": [650, 0]
+                    }
+                ]
+            },
+            "AttachObjects": [
+                {
+                    "Family": "LuggageWorkerPax",
+                    "XYZH": [[0,0,0,180.0]]
+                },
+                {
+                    "Family": "LuggageTractorFSDT",
+                    "XYZH": [[3,-5.5,0,93]]
+                },
+                {
+                    "Family": "LuggageWagonFSDT",
+                    "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]],
+                    "AttachObjects": [
+                        {
+                            "Family": "LuggageSmallFSDT",
+                            "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]]
+                        },
+                        {
+                            "Family": "LuggageLargeFSDT",
+                            "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "Family": "LuggageWorkerPax",
+            "PreferedObj" : [ "FSDT_Baggage_Loader_Man_02*" ],
+            "AlternateObj": [ "Tarmac_*" ],
+            "Exclude": ["FSDT_Baggage_Loader_Man_02_CARGO*"],
+            "Animation": {
+                "FPS": 30,
+                "Carriers": [
+                    {
+                        "Carrier": "WAGON BACK LINK ORIENTATION",
+                        "Frames": [0, 4213]
+                    }
+                ]
+            }
+        },
+        {
+            "Family": "WalkingWorker",
+            "PreferedObj" : [ "FSDT_Wingwalker_*" ],
+            "AlternateObj": [ "Tarmac_*" ],
+            "Animation": {
+                "FPS": 30,
+                "Carriers": [
+                    {
+                        "Carrier": "VELOCITY BODY Y",
+                        "Frames": [230,268]
+                    }
+                ]
+            }
+        },
+        {
+            "Family": "LuggageTractorFSDT",
+            "PreferedObj" : [ "FSDT_TLD_JET_16*", "FSDT_Tug_Endurance*", "FSDT_Tug_M1A*" ]
+        },
+        {
+            "Family": "LuggageTractorDefault",
+            "PreferedObj" : [ "ASO_Tug0*" ]
+        },
+        {
+            "Family": "LuggageWagonFSDT",
+            "PreferedObj" : [ "FSDT_BaggageWagon_Open", "FSDT_BaggageWagon_Closed", "FSDT_BaggageWagon_Railing" ]
+        },
+        {
+            "Family": "LuggageWagonDefault",
+            "PreferedObj" : [ "ASO_Baggage_Cart0*" ]
+        },
+        {
+            "Family": "LuggageSmallFSDT",
+            "PreferedObj" : [ "FSDT_GSX_Luggage_Small*" ]
+        },
+        {
+            "Family": "LuggageLargeFSDT",
+            "PreferedObj" : [ "FSDT_GSX_Luggage_Large*" ]
         }
     ],
     "Locations": [
@@ -107,7 +212,9 @@
             "Category": "Medium",
             "Elements": [
                 {
-                    "Family": "PaxBaggageBelt"
+                    "Family": "LuggageLoaderSystemPaxFSDT",
+                    "Locations" : [ "BuiltIn_CargoDoorRightFront", "BuiltIn_CargoDoorRightBack" ],
+                    "AnimReversePrb": 50
                 }
             ]
         },
@@ -115,7 +222,9 @@
             "Category": "Large",
             "Elements": [
                 {
-                    "Family": "PaxBaggageBelt"
+                    "Family": "LuggageLoaderSystemPaxFSDT",
+                    "Locations" : [ "BuiltIn_CargoDoorRightFront", "BuiltIn_CargoDoorRightBack" ],
+                    "AnimReversePrb": 50
                 }
             ]
         },
@@ -123,7 +232,9 @@
             "Category": "ExtraLarge",
             "Elements": [
                 {
-                    "Family": "PaxBaggageBelt"
+                    "Family": "LuggageLoaderSystemPaxFSDT",
+                    "Locations" : [ "BuiltIn_CargoDoorRightFront", "BuiltIn_CargoDoorRightBack" ],
+                    "AnimReversePrb": 50
                 }
             ]
         }

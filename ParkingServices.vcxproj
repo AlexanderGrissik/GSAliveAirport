@@ -92,6 +92,8 @@
   <ItemGroup>
     <ClCompile Include="Aircraft.cpp" />
     <ClCompile Include="AircraftTrackerThread.cpp" />
+    <ClCompile Include="AnimationConfiguredObject.cpp" />
+    <ClCompile Include="AnimationObject.cpp" />
     <ClCompile Include="AnimationThread.cpp" />
     <ClCompile Include="ConsoleController.cpp" />
     <ClCompile Include="GroundServicesThread.cpp" />
@@ -106,6 +108,8 @@
   <ItemGroup>
     <ClInclude Include="Aircraft.h" />
     <ClInclude Include="AircraftTrackerThread.h" />
+    <ClInclude Include="AnimationConfiguredObject.h" />
+    <ClInclude Include="AnimationObject.h" />
     <ClInclude Include="AnimationThread.h" />
     <ClInclude Include="ConsoleController.h" />
     <ClInclude Include="GroundObject.h" />

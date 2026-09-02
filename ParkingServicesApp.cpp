@@ -96,12 +96,6 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
     case AppCommandType::Ground:
         RequestGroundDebugSnapshot();
         break;
-    case AppCommandType::SpawnTest:
-        m_groundServices.SpawnFullTest();
-        break;
-    case AppCommandType::ClearTest:
-        m_groundServices.ClearCreated();
-        break;
     case AppCommandType::StartProbe:
         if (command.objectId) m_animation.StartProbe(*command.objectId);
         break;

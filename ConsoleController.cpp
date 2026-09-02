@@ -28,6 +28,19 @@ bool HasRoute(const AircraftSnapshot &aircraft)
     return !aircraft.fromAirport.empty() && !aircraft.toAirport.empty();
 }
 
+void PrintCargoPoint(std::ostream &output, std::string_view name,
+                     const std::optional<AircraftCargoConnectionPoint> &point)
+{
+    output << ' ' << name << '=';
+    if (!point) {
+        output << "none";
+        return;
+    }
+    output << "(forward=" << std::setprecision(1) << point->forwardMeters
+           << "m,right=" << point->rightMeters << "m,vertical="
+           << point->verticalMeters << "m)";
+}
+
 std::string Phase(const AircraftSnapshot &aircraft)
 {
     const std::string state = NormalizeTrafficState(aircraft.trafficState);
@@ -86,8 +99,6 @@ AppCommand ConsoleController::Parse(std::string_view line)
     if (command == "aircraft5" || command == "radius5") return {AppCommandType::Aircraft5};
     if (command == "parked") return {AppCommandType::Parked};
     if (command == "ground") return {AppCommandType::Ground};
-    if (command == "fsdt") return {AppCommandType::SpawnTest};
-    if (command == "clearfsdt") return {AppCommandType::ClearTest};
     if (command == "stopprobe") return {AppCommandType::StopProbe};
     if (command == "reset") return {AppCommandType::Reset};
     if (command == "catalog") return {AppCommandType::Catalog};
@@ -111,8 +122,6 @@ void ConsoleController::PrintHelp()
               << "  aircraft5           Aircraft currently within 5 km\n"
               << "  parked              Detailed list excluding STATE_SIMPLE_TAXI\n"
               << "  ground              Request one 5 km ground-object debug list\n"
-              << "  fsdt                Create the six-object direct-spawn test\n"
-              << "  clearfsdt           Remove every directly created object\n"
               << "  animprobe <ObjectID> Record animation data until stopprobe\n"
               << "  stopprobe           Stop animation recording\n"
               << "  catalog             Export categorized spawnable catalog\n"
@@ -135,14 +144,8 @@ void ConsoleController::PrintSnapshots(const std::vector<AircraftSnapshot> &airc
                   << std::setprecision(1) << data.groundSpeedKnots << "kt title="
                   << data.title << " state=" << data.trafficState << " nav="
                   << data.lightNav << " on-ground=" << data.onGround;
-        if (data.cargoConnectionPoint) {
-            std::cout << " cargo-point=(forward=" << std::setprecision(1)
-                      << data.cargoConnectionPoint->forwardMeters << "m,right="
-                      << data.cargoConnectionPoint->rightMeters << "m,vertical="
-                      << data.cargoConnectionPoint->verticalMeters << "m)";
-        } else {
-            std::cout << " cargo-point=none";
-        }
+        PrintCargoPoint(std::cout, "cargo-front", data.cargoDoorRightFront);
+        PrintCargoPoint(std::cout, "cargo-back", data.cargoDoorRightBack);
         std::cout << '\n';
     }
 }
@@ -180,18 +183,20 @@ void ConsoleController::PrintParked(const std::vector<AircraftSnapshot> &aircraf
                   << ", pushback-attached=" << data.pushbackAttached
                   << ", pushback-wait=" << data.pushbackWait
                   << ", transponder=" << data.transponderState << '\n';
-        if (data.cargoConnectionPoint) {
-            std::cout << "  cargo-point: forward=" << std::fixed
-                      << std::setprecision(1)
-                      << data.cargoConnectionPoint->forwardMeters << "m, right="
-                      << data.cargoConnectionPoint->rightMeters << "m, vertical="
-                      << data.cargoConnectionPoint->verticalMeters
-                      << "m, heading="
-                      << data.cargoConnectionPoint->relativeHeadingDegrees
-                      << "deg relative\n";
-        } else {
-            std::cout << "  cargo-point: none\n";
-        }
+        const auto printDetailedCargo = [](std::string_view name,
+                                           const std::optional<AircraftCargoConnectionPoint> &point) {
+            std::cout << "  " << name << ": ";
+            if (!point) {
+                std::cout << "none\n";
+                return;
+            }
+            std::cout << "forward=" << std::fixed << std::setprecision(1)
+                      << point->forwardMeters << "m, right=" << point->rightMeters
+                      << "m, vertical=" << point->verticalMeters << "m, heading="
+                      << point->relativeHeadingDegrees << "deg relative\n";
+        };
+        printDetailedCargo("cargo-door-right-front", data.cargoDoorRightFront);
+        printDetailedCargo("cargo-door-right-back", data.cargoDoorRightBack);
     }
     if (!found) {
         std::cout << "No aircraft outside STATE_SIMPLE_TAXI are present.\n";

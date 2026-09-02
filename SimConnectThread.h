@@ -16,6 +16,7 @@
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace parking_services
@@ -39,17 +40,23 @@ struct AnimationUpdate
     double longitude{};
     double altitudeFeet{};
     double headingDegrees{};
-    double animationFrame{};
+    double velocityBodyYMetersPerSecond{};
 };
 
-struct BaggageBeltAnimationUpdate
+struct ObjectPositionUpdate
 {
-    DWORD loaderObjectId{};
-    DWORD workerObjectId{};
-    double loaderFrame{};
-    double beltFrame{};
-    double rampAngleDegrees{};
-    double workerFrame{};
+    DWORD objectId{};
+    double latitude{};
+    double longitude{};
+    double altitudeFeet{};
+    double headingDegrees{};
+};
+
+struct AnimationCarrierUpdate
+{
+    DWORD objectId{};
+    std::string carrier;
+    double value{};
 };
 
 struct BaggageLoaderGeometry
@@ -102,10 +109,9 @@ class SimConnectThread final : public ISimConnectMessageSink
     void RemoveObject(DWORD objectId);
     void FreezeObject(DWORD objectId);
     void PublishAnimationUpdates(const std::vector<AnimationUpdate> &updates);
+    void PublishObjectPositionUpdates(const std::vector<ObjectPositionUpdate> &updates);
+    void PublishAnimationCarrierUpdates(const std::vector<AnimationCarrierUpdate> &updates);
     void CancelAnimationObject(DWORD objectId);
-    void PublishBaggageBeltAnimationUpdates(
-        const std::vector<BaggageBeltAnimationUpdate> &updates);
-    void CancelBaggageBeltAnimationObject(DWORD objectId);
     void SetBaggageLoaderRampTarget(DWORD objectId, double angleDegrees);
     void SetCargoDoorOpen(DWORD aircraftObjectId, DWORD interactivePointIndex, bool open);
     void RequestBaggageLoaderGeometry(DWORD objectId,
@@ -134,7 +140,8 @@ class SimConnectThread final : public ISimConnectMessageSink
     void Post(std::function<void()> command);
     void ProcessCommands();
     void ProcessAnimationUpdates();
-    void ProcessBaggageBeltAnimationUpdates();
+    void ProcessObjectPositionUpdates();
+    void ProcessAnimationCarrierUpdates();
     void MaintainPendingRequests();
     bool Connect();
     void Disconnect();
@@ -170,7 +177,12 @@ class SimConnectThread final : public ISimConnectMessageSink
     std::deque<std::function<void()>> m_commands;
     std::mutex m_animationMutex;
     std::map<DWORD, AnimationUpdate> m_latestAnimationUpdates;
-    std::map<DWORD, BaggageBeltAnimationUpdate> m_latestBaggageBeltAnimationUpdates;
+    std::map<DWORD, ObjectPositionUpdate> m_latestPositionUpdates;
+    std::map<std::pair<DWORD, std::string>, AnimationCarrierUpdate>
+        m_latestAnimationCarrierUpdates;
+    std::map<std::string, SIMCONNECT_DATA_DEFINITION_ID, std::less<>>
+        m_animationCarrierDefinitions;
+    DWORD m_nextAnimationCarrierDefinitionId = 100;
     mutable std::mutex m_catalogSnapshotMutex;
     std::vector<std::string> m_availableSimObjectTitles;
     bool m_catalogSnapshotReady{};

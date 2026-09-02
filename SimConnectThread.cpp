@@ -125,19 +125,7 @@ struct AnimationWireData
     double longitude{};
     double altitudeFeet{};
     double headingDegrees{};
-    double animationFrame{};
-};
-
-struct BaggageBeltLoaderAnimationWireData
-{
-    double loaderFrame{};
-    double beltFrame{};
-    double rampAngleDegrees{};
-};
-
-struct BaggageBeltWorkerAnimationWireData
-{
-    double workerFrame{};
+    double velocityBodyYMetersPerSecond{};
 };
 
 struct BaggageLoaderRampTargetWireData
@@ -161,8 +149,6 @@ static_assert(sizeof(AircraftWireData) == 3888);
 static_assert(sizeof(GroundWireData) == 280);
 static_assert(sizeof(ProbeWireData) == 324);
 static_assert(sizeof(AnimationWireData) == 40);
-static_assert(sizeof(BaggageBeltLoaderAnimationWireData) == 24);
-static_assert(sizeof(BaggageBeltWorkerAnimationWireData) == 8);
 static_assert(sizeof(BaggageLoaderRampTargetWireData) == 8);
 static_assert(sizeof(BaggageLoaderGeometryWireData) == 40);
 
@@ -222,14 +208,14 @@ AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
             point.posYFeet * kFeetToMeters,
             point.headingDegrees,
             static_cast<std::uint32_t>(index)};
-        const bool candidateOnRight = candidate.rightMeters > 0.0;
-        const bool selectedOnRight = aircraft.cargoConnectionPoint &&
-            aircraft.cargoConnectionPoint->rightMeters > 0.0;
-        if (!aircraft.cargoConnectionPoint ||
-            (candidateOnRight && !selectedOnRight) ||
-            (candidateOnRight == selectedOnRight &&
-             candidate.forwardMeters < aircraft.cargoConnectionPoint->forwardMeters)) {
-            aircraft.cargoConnectionPoint = candidate;
+        if (candidate.rightMeters <= 0.0) continue;
+        if (!aircraft.cargoDoorRightFront ||
+            candidate.forwardMeters > aircraft.cargoDoorRightFront->forwardMeters) {
+            aircraft.cargoDoorRightFront = candidate;
+        }
+        if (!aircraft.cargoDoorRightBack ||
+            candidate.forwardMeters < aircraft.cargoDoorRightBack->forwardMeters) {
+            aircraft.cargoDoorRightBack = candidate;
         }
     }
     return aircraft;
@@ -348,37 +334,41 @@ void SimConnectThread::PublishAnimationUpdates(
     m_wake.notify_all();
 }
 
-void SimConnectThread::CancelAnimationObject(DWORD objectId)
-{
-    std::scoped_lock lock(m_animationMutex);
-    m_latestAnimationUpdates.erase(objectId);
-}
-
-void SimConnectThread::PublishBaggageBeltAnimationUpdates(
-    const std::vector<BaggageBeltAnimationUpdate> &updates)
+void SimConnectThread::PublishObjectPositionUpdates(
+    const std::vector<ObjectPositionUpdate> &updates)
 {
     if (!m_connected.load()) return;
     {
         std::scoped_lock lock(m_animationMutex);
-        for (const BaggageBeltAnimationUpdate &update : updates) {
-            m_latestBaggageBeltAnimationUpdates[update.loaderObjectId] = update;
+        for (const ObjectPositionUpdate &update : updates) {
+            m_latestPositionUpdates[update.objectId] = update;
         }
     }
     m_wake.notify_all();
 }
 
-void SimConnectThread::CancelBaggageBeltAnimationObject(DWORD objectId)
+void SimConnectThread::PublishAnimationCarrierUpdates(
+    const std::vector<AnimationCarrierUpdate> &updates)
 {
-    std::scoped_lock lock(m_animationMutex);
-    for (auto update = m_latestBaggageBeltAnimationUpdates.begin();
-         update != m_latestBaggageBeltAnimationUpdates.end();) {
-        if (update->second.loaderObjectId == objectId ||
-            update->second.workerObjectId == objectId) {
-            update = m_latestBaggageBeltAnimationUpdates.erase(update);
-        } else {
-            ++update;
+    if (!m_connected.load()) return;
+    {
+        std::scoped_lock lock(m_animationMutex);
+        for (const AnimationCarrierUpdate &update : updates) {
+            m_latestAnimationCarrierUpdates[{update.objectId, update.carrier}] = update;
         }
     }
+    m_wake.notify_all();
+}
+
+void SimConnectThread::CancelAnimationObject(DWORD objectId)
+{
+    std::scoped_lock lock(m_animationMutex);
+    m_latestAnimationUpdates.erase(objectId);
+    m_latestPositionUpdates.erase(objectId);
+    std::erase_if(m_latestAnimationCarrierUpdates,
+                  [objectId](const auto &entry) {
+                      return entry.second.objectId == objectId;
+                  });
 }
 
 void SimConnectThread::SetBaggageLoaderRampTarget(DWORD objectId,
@@ -516,7 +506,8 @@ void SimConnectThread::RunLoop(std::stop_token stopToken)
 
         ProcessCommands();
         ProcessAnimationUpdates();
-        ProcessBaggageBeltAnimationUpdates();
+        ProcessObjectPositionUpdates();
+        ProcessAnimationCarrierUpdates();
         MaintainPendingRequests();
 
         std::unique_lock lock(m_commandMutex);
@@ -555,7 +546,8 @@ void SimConnectThread::ProcessAnimationUpdates()
     }
     for (const auto &[objectId, update] : updates) {
         const AnimationWireData data{update.latitude, update.longitude, update.altitudeFeet,
-                                     update.headingDegrees, update.animationFrame};
+                                      update.headingDegrees,
+                                      update.velocityBodyYMetersPerSecond};
         if (!m_session.SetObjectData(DefinitionAnimationUpdate, objectId, 0,
                                      sizeof(data), &data).Succeeded()) {
             m_log("SimConnect rejected an animation update for ObjectID " +
@@ -564,30 +556,60 @@ void SimConnectThread::ProcessAnimationUpdates()
     }
 }
 
-void SimConnectThread::ProcessBaggageBeltAnimationUpdates()
+void SimConnectThread::ProcessObjectPositionUpdates()
 {
     if (!m_session.IsConnected()) return;
-    std::map<DWORD, BaggageBeltAnimationUpdate> updates;
+    std::map<DWORD, ObjectPositionUpdate> updates;
     {
         std::scoped_lock lock(m_animationMutex);
-        updates.swap(m_latestBaggageBeltAnimationUpdates);
+        updates.swap(m_latestPositionUpdates);
     }
-    for (const auto &[loaderObjectId, update] : updates) {
-        const BaggageBeltLoaderAnimationWireData loaderData{
-            update.loaderFrame, update.beltFrame, update.rampAngleDegrees};
-        if (!m_session.SetObjectData(DefinitionBaggageBeltLoaderAnimation,
-                                     loaderObjectId, 0, sizeof(loaderData),
-                                     &loaderData).Succeeded()) {
-            m_log("SimConnect rejected a baggage-belt animation update for ObjectID " +
-                  std::to_string(loaderObjectId) + ".");
+    for (const auto &[objectId, update] : updates) {
+        SIMCONNECT_DATA_INITPOSITION position{};
+        position.Latitude = update.latitude;
+        position.Longitude = update.longitude;
+        position.Altitude = update.altitudeFeet;
+        position.Heading = update.headingDegrees;
+        position.OnGround = 1;
+        if (!m_session.SetObjectData(DefinitionObjectPosition, objectId, 0,
+                                     sizeof(position), &position).Succeeded()) {
+            m_log("SimConnect rejected an animation position update for ObjectID " +
+                  std::to_string(objectId) + ".");
         }
+    }
+}
 
-        const BaggageBeltWorkerAnimationWireData workerData{update.workerFrame};
-        if (!m_session.SetObjectData(DefinitionBaggageBeltWorkerAnimation,
-                                     update.workerObjectId, 0, sizeof(workerData),
-                                     &workerData).Succeeded()) {
-            m_log("SimConnect rejected a baggage-worker animation update for ObjectID " +
-                  std::to_string(update.workerObjectId) + ".");
+void SimConnectThread::ProcessAnimationCarrierUpdates()
+{
+    if (!m_session.IsConnected()) return;
+    std::map<std::pair<DWORD, std::string>, AnimationCarrierUpdate> updates;
+    {
+        std::scoped_lock lock(m_animationMutex);
+        updates.swap(m_latestAnimationCarrierUpdates);
+    }
+    for (const auto &[key, update] : updates) {
+        static_cast<void>(key);
+        const auto existing = m_animationCarrierDefinitions.find(update.carrier);
+        SIMCONNECT_DATA_DEFINITION_ID definition{};
+        if (existing != m_animationCarrierDefinitions.end()) {
+            definition = existing->second;
+        } else {
+            definition = static_cast<SIMCONNECT_DATA_DEFINITION_ID>(
+                m_nextAnimationCarrierDefinitionId++);
+            const char *units = update.carrier == "VELOCITY BODY Y"
+                ? "meters per second"
+                : "number";
+            if (!m_session.AddDatum(definition, update.carrier.c_str(), units,
+                                    SIMCONNECT_DATATYPE_FLOAT64)) {
+                m_log("SimConnect rejected animation carrier '" + update.carrier + "'.");
+                continue;
+            }
+            m_animationCarrierDefinitions.emplace(update.carrier, definition);
+        }
+        if (!m_session.SetObjectData(definition, update.objectId, 0, sizeof(update.value),
+                                     &update.value).Succeeded()) {
+            m_log("SimConnect rejected animation carrier '" + update.carrier +
+                  "' for ObjectID " + std::to_string(update.objectId) + ".");
         }
     }
 }
@@ -664,7 +686,10 @@ void SimConnectThread::Disconnect()
     {
         std::scoped_lock lock(m_animationMutex);
         m_latestAnimationUpdates.clear();
-        m_latestBaggageBeltAnimationUpdates.clear();
+        m_latestPositionUpdates.clear();
+        m_latestAnimationCarrierUpdates.clear();
+        m_animationCarrierDefinitions.clear();
+        m_nextAnimationCarrierDefinitionId = 100;
     }
     m_session.Close();
     m_disconnectRequested = false;
@@ -759,18 +784,6 @@ bool SimConnectThread::DefineDataAndEvents()
         m_session.AddDatum(DefinitionAnimationProbe, "PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64) &&
         m_session.AddDatum(DefinitionAnimationProbe, "PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT64) &&
         m_session.AddDatum(DefinitionAnimationProbe, "SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT32) &&
-        m_session.AddDatum(DefinitionBaggageBeltLoaderAnimation,
-                           "WAGON BACK LINK ORIENTATION", "number",
-                           SIMCONNECT_DATATYPE_FLOAT64) &&
-        m_session.AddDatum(DefinitionBaggageBeltLoaderAnimation,
-                           "WAGON FRONT LINK ORIENTATION", "number",
-                           SIMCONNECT_DATATYPE_FLOAT64) &&
-        m_session.AddDatum(DefinitionBaggageBeltLoaderAnimation,
-                           "BAGGAGELOADER ANGLE TARGET", "degrees",
-                           SIMCONNECT_DATATYPE_FLOAT64) &&
-        m_session.AddDatum(DefinitionBaggageBeltWorkerAnimation,
-                           "WAGON BACK LINK ORIENTATION", "number",
-                           SIMCONNECT_DATATYPE_FLOAT64) &&
         m_session.AddDatum(DefinitionBaggageLoaderRampTarget,
                            "BAGGAGELOADER ANGLE TARGET", "degrees",
                            SIMCONNECT_DATATYPE_FLOAT64) &&

@@ -16,8 +16,6 @@ enum DefinitionId : SIMCONNECT_DATA_DEFINITION_ID
     DefinitionGround,
     DefinitionAnimationProbe,
     DefinitionAnimationUpdate,
-    DefinitionBaggageBeltLoaderAnimation,
-    DefinitionBaggageBeltWorkerAnimation,
     DefinitionBaggageLoaderRampTarget,
     DefinitionBaggageLoaderGeometry,
     DefinitionObjectPosition,

@@ -4,22 +4,68 @@
 
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <random>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace parking_services
 {
-struct GroundServiceRequest
+struct GroundServiceAnimationCarrier
+{
+    std::string carrier;
+    double firstFrame{};
+    double lastFrame{};
+};
+
+struct GroundServiceAnimation
+{
+    double framesPerSecond{};
+    bool reversible{};
+    bool reversed{};
+    std::vector<GroundServiceAnimationCarrier> carriers;
+};
+
+// A resolved node in a configured service tree. Every node has one selected
+// spawnable SimObject title, its optional animation, and direct children.
+struct GroundServiceObject
 {
     std::string family;
     std::string title;
-    bool walking{};
+    std::optional<GroundServiceAnimation> animation;
+
+    // Relative to the direct parent. X is parent-forward; negative Y is to the
+    // parent's right, matching the XYZH convention in the configuration file.
+    double parentX{};
+    double parentY{};
+    double parentZ{};
+    double parentHeadingDegrees{};
+    std::vector<GroundServiceObject> attachments;
+};
+
+enum class GroundServiceLocationKind
+{
+    Static,
+    Route,
+    CargoDoorRightFront,
+    CargoDoorRightBack,
+};
+
+struct GroundServiceLocation
+{
+    GroundServiceLocationKind kind{GroundServiceLocationKind::Static};
     bool faceAircraft{};
     double relX1{};
     double relY1{};
     double relX2{};
     double relY2{};
+};
+
+struct GroundServiceRequest
+{
+    GroundServiceObject object;
+    GroundServiceLocation location;
 };
 
 class GroundServicesConfig final
@@ -39,14 +85,32 @@ class GroundServicesConfig final
     void ClearResolution();
 
   private:
+    struct RelativeTransform
+    {
+        double x{};
+        double y{};
+        double z{};
+        double headingDegrees{};
+    };
+
+    struct Attachment
+    {
+        std::string family;
+        std::vector<RelativeTransform> transforms;
+        std::vector<Attachment> attachments;
+    };
+
     struct Family
     {
         std::string name;
         std::vector<std::string> preferredPatterns;
         std::vector<std::string> alternatePatterns;
         std::vector<std::string> excludePatterns;
+        std::string alternateFamily;
+        std::optional<GroundServiceAnimation> animation;
+        std::vector<Attachment> attachments;
         std::vector<std::string> resolvedTitles;
-        bool usingAlternate{};
+        bool usingAlternateObjects{};
     };
 
     struct Location
@@ -65,11 +129,24 @@ class GroundServicesConfig final
     struct Element
     {
         std::string family;
-        std::string location;
+        std::vector<std::string> locations;
+        unsigned int reverseProbabilityPercent{};
     };
 
     static std::filesystem::path FindDefaultPath();
     void Load(const std::filesystem::path &path);
+    [[nodiscard]] bool BuildObject(std::string_view familyName,
+                                   bool requestReverseAnimation,
+                                   std::mt19937 &random,
+                                   std::vector<std::string> &ancestry,
+                                   GroundServiceObject &destination,
+                                   bool &usedAlternateFamily) const;
+    void BuildAttachments(const std::vector<Attachment> &attachments,
+                          std::mt19937 &random,
+                          std::vector<std::string> &ancestry,
+                          std::vector<GroundServiceObject> &destination) const;
+    [[nodiscard]] GroundServiceLocation SelectLocation(
+        std::string_view name, std::mt19937 &random) const;
 
     bool m_loaded{};
     bool m_resolved{};

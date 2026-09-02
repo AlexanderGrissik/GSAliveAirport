@@ -58,7 +58,8 @@ struct AircraftSnapshot
     bool pushbackAttached{};
     bool pushbackWait{};
     int transponderState{};
-    std::optional<AircraftCargoConnectionPoint> cargoConnectionPoint;
+    std::optional<AircraftCargoConnectionPoint> cargoDoorRightFront;
+    std::optional<AircraftCargoConnectionPoint> cargoDoorRightBack;
     double distanceFromUserMeters{};
     TrackerClock::time_point firstSeen{};
     std::optional<TrackerClock::time_point> parkedSince;
