@@ -113,9 +113,14 @@ void GroundServicesThread::MaintainObjects(std::chrono::steady_clock::time_point
 {
     std::vector<std::uint64_t> retired;
     for (auto &[token, object] : m_objects) {
-        if (object->Cancelled() || object->Finalized()) continue;
+        if (object->Retired()) {
+            retired.push_back(token);
+            continue;
+        }
+        // Still in flight (create not yet resolved) or already finalized: leave it
+        // to the create callback, or let it keep doing its animation/geometry work.
+        if (!object->Resolved() || object->Finalized()) continue;
         object->Maintain(m_services, now);
-        if (object->Retired()) retired.push_back(token);
     }
     for (const std::uint64_t token : retired) m_objects.erase(token);
     if (!retired.empty()) PublishStatus();
@@ -223,22 +228,26 @@ void GroundServicesThread::QueueService(const AircraftSnapshot &aircraft,
 void GroundServicesThread::BeginCreate(std::uint64_t token, std::unique_ptr<GSObject> object)
 {
     auto *raw = object.get();
-    const GSObjectSpawnPose pose = raw->Pose();
+    const GSObject::GSObjectPos pose = raw->Pose();
+    const AircraftId aircraftId = raw->AircraftObjectId();
     m_objects.emplace(token, std::move(object));
+    m_pendingCreations[aircraftId]++;
     PublishStatus();
     m_simConnect.CreateObject(raw->Object().title, GSObject::ToInitialPosition(pose),
-                              [this, token](DWORD objectId) {
+                              [this, token, aircraftId](DWORD objectId) {
                                   if (m_stopping.load()) {
                                       if (objectId != 0) m_simConnect.RemoveObject(objectId);
                                       return;
                                   }
-                                  Post([this, token, objectId] {
+                                  Post([this, token, aircraftId, objectId] {
                                       const auto it = m_objects.find(token);
                                       if (it == m_objects.end()) {
                                           if (objectId != 0) m_simConnect.RemoveObject(objectId);
+                                          DecrementPendingCreations(aircraftId);
                                           return;
                                       }
                                       it->second->OnCreated(m_services, objectId);
+                                      DecrementPendingCreations(aircraftId);
                                   });
                               });
 }
@@ -246,7 +255,7 @@ void GroundServicesThread::BeginCreate(std::uint64_t token, std::unique_ptr<GSOb
 // Records a successfully created object (bookkeeping). Called by GSObject via
 // the services.registerObject capability, before type-specific activation.
 void GroundServicesThread::RegisterObject(GSObject *object, AircraftId objectId,
-                                          const GSObjectSpawnPose &pose)
+                                          const GSObject::GSObjectPos &pose)
 {
     static_cast<void>(pose);
     m_createdObjects.insert(objectId);
@@ -260,7 +269,7 @@ void GroundServicesThread::RegisterObject(GSObject *object, AircraftId objectId,
 
 void GroundServicesThread::QueueAttachments(const AircraftSnapshot &aircraft,
                                             AircraftId parentObjectId,
-                                            const GSObjectSpawnPose &parentPose,
+                                            const GSObject::GSObjectPos &parentPose,
                                             const std::vector<GroundServiceObject> &attachments)
 {
     for (const GroundServiceObject &attachment : attachments) {
@@ -274,7 +283,8 @@ void GroundServicesThread::QueueAttachments(const AircraftSnapshot &aircraft,
 
 // Shared completion (GSObject::Finish): start the walking animation (with the
 // route, if any) and queue any child attachments. Called via services.finalize.
-void GroundServicesThread::FinalizeObject(GSObject *object, const GSObjectSpawnPose &actualPose)
+void GroundServicesThread::FinalizeObject(GSObject *object,
+                                          const GSObject::GSObjectPos &actualPose)
 {
     if (object->Object().animation) {
         m_animation.AddObject(object->ObjectId(), *object->Object().animation, object->Route());
@@ -285,20 +295,72 @@ void GroundServicesThread::FinalizeObject(GSObject *object, const GSObjectSpawnP
 void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId)
 {
     m_configuredAircraft.erase(aircraftId);
-    std::vector<std::uint64_t> tokens;
-    for (auto &[token, object] : m_objects) {
-        if (object->AircraftObjectId() == aircraftId) tokens.push_back(token);
-    }
-    for (const std::uint64_t token : tokens) {
-        if (auto it = m_objects.find(token); it != m_objects.end()) {
-            RemoveObject(it->second->ObjectId(), true);
-        }
+    const std::size_t pending = PendingCount(aircraftId);
+    RemoveResolvedObjects(aircraftId, /*requestSimulatorRemoval=*/true);
+    if (pending > 0) {
+        // One or more creations are still in flight; let them complete and finish
+        // the removal from DecrementPendingCreations once the count drains to zero.
+        m_deferredRemoval.insert(aircraftId);
+        m_log("Deferring removal of aircraft " + std::to_string(aircraftId) + ": " +
+              std::to_string(pending) + " ground-service creation(s) still in flight.");
     }
     PublishStatus();
-    if (!tokens.empty()) {
-        m_log("Requested removal of " + std::to_string(tokens.size()) +
-              " services for aircraft " + std::to_string(aircraftId) + ".");
+}
+
+// Removes only this aircraft's objects whose create has already resolved
+// (created objects via RemoveObject; failed creates are dropped from m_objects).
+// In-flight objects are left untouched so their create can still complete.
+void GroundServicesThread::RemoveResolvedObjects(AircraftId aircraftId,
+                                                 bool requestSimulatorRemoval)
+{
+    std::vector<std::uint64_t> tokens;
+    for (auto &[token, object] : m_objects) {
+        if (object->AircraftObjectId() != aircraftId) continue;
+        if (!object->Resolved()) continue;
+        tokens.push_back(token);
     }
+    for (const std::uint64_t token : tokens) {
+        const auto it = m_objects.find(token);
+        if (it == m_objects.end()) continue;
+        const AircraftId objectId = it->second->ObjectId();
+        if (objectId != 0) {
+            RemoveObject(objectId, requestSimulatorRemoval);
+        } else {
+            m_objects.erase(it);
+        }
+    }
+}
+
+// Completes a previously deferred removal: every one of the aircraft's creations
+// has now resolved, so remove what remains and clear its bookkeeping.
+void GroundServicesThread::FinalizeDeferredRemoval(AircraftId aircraftId)
+{
+    if (m_deferredRemoval.erase(aircraftId) == 0) return;
+    RemoveResolvedObjects(aircraftId, /*requestSimulatorRemoval=*/true);
+    m_configuredAircraft.erase(aircraftId);
+    m_log("Completed deferred removal of services for aircraft " +
+          std::to_string(aircraftId) + ".");
+    PublishStatus();
+}
+
+std::size_t GroundServicesThread::PendingCount(AircraftId aircraftId) const
+{
+    const auto it = m_pendingCreations.find(aircraftId);
+    return it == m_pendingCreations.end() ? 0 : it->second;
+}
+
+// Called (on the GS thread) when a creation for an aircraft resolves. When the
+// aircraft's in-flight count drains to zero and a removal was deferred for it,
+// finish that removal now.
+void GroundServicesThread::DecrementPendingCreations(AircraftId aircraftId)
+{
+    const auto it = m_pendingCreations.find(aircraftId);
+    if (it == m_pendingCreations.end()) return;
+    if (--it->second == 0) {
+        m_pendingCreations.erase(it);
+        if (m_deferredRemoval.contains(aircraftId)) FinalizeDeferredRemoval(aircraftId);
+    }
+    PublishStatus();
 }
 
 // Removes one created object (and any children first). The object's OnRemoved
@@ -366,19 +428,19 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
         return;
     }
 
-    // A created ground object (or one of its parents) was removed by MSFS.
-    // Cancel any pending children that depended on it, then remove it (and
-    // remove dependents that were already created).
+    // A created ground object was removed by MSFS. Created children are removed
+    // now; still-in-flight children are deferred (their create still completes) and
+    // finalized by DecrementPendingCreations once it resolves.
     std::vector<std::uint64_t> tokens;
     for (auto &[token, object] : m_objects) {
         if (object->ParentObjectId() == objectId) tokens.push_back(token);
     }
     for (const std::uint64_t token : tokens) {
         if (auto it = m_objects.find(token); it != m_objects.end()) {
-            if (it->second->Finalized()) {
+            if (it->second->Resolved()) {
                 RemoveObject(it->second->ObjectId(), true);
             } else {
-                it->second->Cancel();
+                m_deferredRemoval.insert(it->second->AircraftObjectId());
             }
         }
     }
@@ -413,15 +475,17 @@ void GroundServicesThread::RemoveAllServicesInternal()
     m_aircraftByObject.clear();
     m_parentByObject.clear();
     m_childrenByObject.clear();
+    m_pendingCreations.clear();
+    m_deferredRemoval.clear();
     PublishStatus();
 }
 
 void GroundServicesThread::PublishStatus()
 {
     std::size_t pendingCreates = 0;
-    for (const auto &[token, object] : m_objects) {
-        static_cast<void>(token);
-        if (!object->Retired()) pendingCreates++;
+    for (const auto &[aircraftId, count] : m_pendingCreations) {
+        static_cast<void>(aircraftId);
+        pendingCreates += count;
     }
     std::scoped_lock lock(m_statusMutex);
     m_status = {m_createdObjects.size(), pendingCreates, m_configuredAircraft.size()};
@@ -429,9 +493,7 @@ void GroundServicesThread::PublishStatus()
 
 bool GroundServicesThread::HasPendingFor(AircraftId aircraftId) const
 {
-    return std::ranges::any_of(m_objects, [aircraftId](const auto &entry) {
-        return entry.second->AircraftObjectId() == aircraftId && !entry.second->Retired();
-    });
+    return m_pendingCreations.contains(aircraftId);
 }
 // The capabilities a GSObject calls into. These are the only SimConnect /
 // animation touchpoints the driver exposes to the objects, which keeps them
@@ -442,14 +504,14 @@ GSObjectServices GroundServicesThread::MakeServices()
     GSObjectServices services;
     services.log = [this](std::string message) { m_log(std::move(message)); };
     services.registerObject = [this](GSObject *object, AircraftId objectId,
-                                     const GSObjectSpawnPose &pose) {
+                                     const GSObject::GSObjectPos &pose) {
         if (object) RegisterObject(object, objectId, pose);
     };
-    services.finalize = [this](GSObject *object, const GSObjectSpawnPose &pose) {
+    services.finalize = [this](GSObject *object, const GSObject::GSObjectPos &pose) {
         if (object) FinalizeObject(object, pose);
     };
     services.removeSimObject = [this](AircraftId objectId) { m_simConnect.RemoveObject(objectId); };
-    services.setPosition = [this](AircraftId objectId, const GSObjectSpawnPose &pose) {
+    services.setPosition = [this](AircraftId objectId, const GSObject::GSObjectPos &pose) {
         const ObjectPositionUpdate update{objectId, pose.latitude, pose.longitude,
                                           pose.altitudeFeet, pose.headingDegrees};
         m_simConnect.PublishObjectPositionUpdates({update});

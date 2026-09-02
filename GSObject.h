@@ -16,25 +16,6 @@
 
 namespace parking_services
 {
-// Shared placement/alignment constants used across the GSObject hierarchy.
-inline constexpr double kFeetToMeters = 0.3048;
-inline constexpr double kRadiansToDegrees = 180.0 / 3.14159265358979323846;
-inline constexpr double kCargoDoorClearanceMeters = 0.5;
-[[nodiscard]] inline double NormalizeDegrees(double degrees)
-{
-    return std::fmod(degrees + 360.0, 360.0);
-}
-
-// A spawn pose in world coordinates (feet/degrees), used for creation and motion.
-struct GSObjectSpawnPose
-{
-    double latitude{};
-    double longitude{};
-    double altitudeFeet{};
-    double headingDegrees{};
-    bool onGround{true};
-};
-
 // Resolved cargo-door attachment data for a luggage loader.
 struct GSObjectCargoDoor
 {
@@ -45,27 +26,7 @@ struct GSObjectCargoDoor
     double modelRelativeHeadingDegrees{};
 };
 
-class GSObject;
-
-// Capabilities a GSObject uses from its driver (GroundServicesThread). Every
-// member runs on the ground-services thread, so it may mutate shared state.
-// The thread implements this set; GSObject subclasses call into it instead of
-// touching SimConnect/animation directly, which keeps them decoupled and lets
-// the driver stay agnostic to the concrete object type.
-struct GSObjectServices
-{
-    std::function<void(std::string)> log;
-    std::function<void(GSObject *, AircraftId, const GSObjectSpawnPose &)> registerObject;
-    std::function<void(GSObject *, const GSObjectSpawnPose &)> finalize;
-    std::function<void(AircraftId)> removeSimObject;
-    std::function<void(AircraftId, const GSObjectSpawnPose &)> setPosition;
-    std::function<void(AircraftId)> freezeObject;
-    std::function<void(AircraftId, std::uint32_t)> openCargoDoor;
-    std::function<void(AircraftId, std::uint32_t)> closeCargoDoor;
-    std::function<void(AircraftId, double)> setRampTarget;
-    std::function<void(AircraftId)> requestBaggageGeometry;
-    std::function<bool(AircraftId)> isParentCreated;
-};
+struct GSObjectServices; // forward-declared for GSObject's capability references.
 
 // A single ground-service object request and its lifecycle. The base class owns
 // the common handling: creation, finalization (animation + attachments),
@@ -76,6 +37,16 @@ struct GSObjectServices
 class GSObject
 {
   public:
+    // A spawn pose in world coordinates (feet/degrees), used for creation and motion.
+    struct GSObjectPos
+    {
+        double latitude{};
+        double longitude{};
+        double altitudeFeet{};
+        double headingDegrees{};
+        bool onGround{true};
+    };
+
     GSObject(std::uint64_t token, AircraftSnapshot aircraft,
              GroundServiceObject object, GroundServiceLocation location,
              AircraftId parentObjectId);
@@ -93,24 +64,25 @@ class GSObject
     [[nodiscard]] AircraftId ObjectId() const { return m_objectId; }
     [[nodiscard]] AircraftId ParentObjectId() const { return m_parentObjectId; }
     [[nodiscard]] const GroundServiceObject &Object() const { return m_object; }
-    [[nodiscard]] const GSObjectSpawnPose &Pose() const { return m_pose; }
+    [[nodiscard]] const GSObjectPos &Pose() const { return m_pose; }
     [[nodiscard]] const std::optional<AnimationRoute> &Route() const { return m_route; }
     [[nodiscard]] const AircraftSnapshot &Aircraft() const { return m_aircraft; }
     [[nodiscard]] const std::optional<GSObjectCargoDoor> &CargoDoor() const
     {
         return m_cargoDoor;
     }
-    [[nodiscard]] bool Cancelled() const { return m_cancelled; }
+    // True once the async create has resolved (either produced an object or
+    // failed). Until then the object is still in flight and must be retained.
+    [[nodiscard]] bool Resolved() const { return m_createResolved; }
     [[nodiscard]] bool Finalized() const { return m_finalized; }
     // True once the create has settled and there is nothing more to track: the
-    // object was cancelled, or the create was attempted and produced no object.
+    // create was attempted and produced no sim object to manage.
     [[nodiscard]] bool Retired() const
     {
-        return m_cancelled || (m_createResolved && m_objectId == 0);
+        return m_createResolved && m_objectId == 0;
     }
 
-    void Cancel() { m_cancelled = true; }
-    void SetPose(const GSObjectSpawnPose &pose) { m_pose = pose; }
+    void SetPose(const GSObjectPos &pose) { m_pose = pose; }
     void SetRoute(std::optional<AnimationRoute> route) { m_route = std::move(route); }
 
     // Lifecycle hooks driven by GroundServicesThread (all run on the GS thread).
@@ -118,7 +90,7 @@ class GSObject
     // configured location and returns false if it cannot be placed.
     virtual bool PreparePlacement(GSObjectServices &services);
     // Computes a child's pose relative to an already-created parent object.
-    virtual void PrepareAttachment(const GSObjectSpawnPose &parentPose);
+    virtual void PrepareAttachment(const GSObjectPos &parentPose);
     virtual void OnCreated(GSObjectServices &services, AircraftId objectId);
     virtual void Maintain(GSObjectServices &services,
                           std::chrono::steady_clock::time_point now);
@@ -126,12 +98,12 @@ class GSObject
     virtual void OnRemoved(GSObjectServices &services);
 
     // Shared world-coordinate pose math.
-    [[nodiscard]] static GSObjectSpawnPose RelativeToAircraft(
+    [[nodiscard]] static GSObjectPos RelativeToAircraft(
         const AircraftSnapshot &aircraft, double relX, double relY, bool faceAircraft);
-    [[nodiscard]] static GSObjectSpawnPose RelativeToParent(const GSObjectSpawnPose &parent,
-                                                            const GroundServiceObject &child);
+    [[nodiscard]] static GSObjectPos RelativeToParent(const GSObjectPos &parent,
+                                                      const GroundServiceObject &child);
     [[nodiscard]] static SIMCONNECT_DATA_INITPOSITION ToInitialPosition(
-        const GSObjectSpawnPose &pose);
+        const GSObjectPos &pose);
 
   protected:
     // Post-creation hook. The base finalizes immediately; subclasses override to
@@ -139,19 +111,38 @@ class GSObject
     virtual void Activate(GSObjectServices &services, AircraftId objectId);
     // Shared completion: record the final pose, add animation + attachments, and
     // mark the object done.
-    void Finish(GSObjectServices &services, const GSObjectSpawnPose &actualPose);
+    void Finish(GSObjectServices &services, const GSObjectPos &actualPose);
 
     std::uint64_t m_token{};
     AircraftSnapshot m_aircraft;
     GroundServiceObject m_object;
     GroundServiceLocation m_location;
     AircraftId m_parentObjectId{};
-    GSObjectSpawnPose m_pose{};
+    GSObjectPos m_pose{};
     std::optional<AnimationRoute> m_route;
     std::optional<GSObjectCargoDoor> m_cargoDoor;
     AircraftId m_objectId{};
-    bool m_cancelled{};
     bool m_createResolved{};
     bool m_finalized{};
+};
+
+// Capabilities a GSObject uses from its driver (GroundServicesThread). Every
+// member runs on the ground-services thread, so it may mutate shared state.
+// The thread implements this set; GSObject subclasses call into it instead of
+// touching SimConnect/animation directly, which keeps them decoupled and lets
+// the driver stay agnostic to the concrete object type.
+struct GSObjectServices
+{
+    std::function<void(std::string)> log;
+    std::function<void(GSObject *, AircraftId, const GSObject::GSObjectPos &)> registerObject;
+    std::function<void(GSObject *, const GSObject::GSObjectPos &)> finalize;
+    std::function<void(AircraftId)> removeSimObject;
+    std::function<void(AircraftId, const GSObject::GSObjectPos &)> setPosition;
+    std::function<void(AircraftId)> freezeObject;
+    std::function<void(AircraftId, std::uint32_t)> openCargoDoor;
+    std::function<void(AircraftId, std::uint32_t)> closeCargoDoor;
+    std::function<void(AircraftId, double)> setRampTarget;
+    std::function<void(AircraftId)> requestBaggageGeometry;
+    std::function<bool(AircraftId)> isParentCreated;
 };
 } // namespace parking_services

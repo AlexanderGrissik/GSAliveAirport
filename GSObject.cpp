@@ -47,7 +47,7 @@ bool GSObject::PreparePlacement(GSObjectServices &services)
     return true;
 }
 
-void GSObject::PrepareAttachment(const GSObjectSpawnPose &parentPose)
+void GSObject::PrepareAttachment(const GSObject::GSObjectPos &parentPose)
 {
     m_pose = RelativeToParent(parentPose, m_object);
 }
@@ -58,14 +58,14 @@ void GSObject::OnCreated(GSObjectServices &services, AircraftId objectId)
     m_objectId = objectId;
     if (objectId == 0)
     {
-        m_cancelled = true;
         services.log("Failed to create " + m_object.title + " for aircraft " +
                      std::to_string(m_aircraft.objectId) + ".");
         return;
     }
-    if (m_cancelled || (m_parentObjectId != 0 && !services.isParentCreated(m_parentObjectId)))
+    if (m_parentObjectId != 0 && !services.isParentCreated(m_parentObjectId))
     {
-        m_cancelled = true;
+        // The create completed, but its parent is already gone; tear down this
+        // object rather than keeping an orphan.
         services.removeSimObject(objectId);
         return;
     }
@@ -96,21 +96,21 @@ void GSObject::Activate(GSObjectServices &services, AircraftId objectId)
     Finish(services, m_pose);
 }
 
-void GSObject::Finish(GSObjectServices &services, const GSObjectSpawnPose &actualPose)
+void GSObject::Finish(GSObjectServices &services, const GSObject::GSObjectPos &actualPose)
 {
     m_pose = actualPose;
     services.finalize(this, actualPose);
     m_finalized = true;
 }
 
-GSObjectSpawnPose GSObject::RelativeToAircraft(const AircraftSnapshot &aircraft, double relX,
-                                               double relY, bool faceAircraft)
+GSObject::GSObjectPos GSObject::RelativeToAircraft(const AircraftSnapshot &aircraft, double relX,
+                                         double relY, bool faceAircraft)
 {
     const auto position = RelativePosition(aircraft.headingDegrees, aircraft.longitude,
                                            aircraft.latitude, aircraft.groundAltitudeFeet,
                                            relY, relX);
-    GSObjectSpawnPose result{position.Latitude, position.Longitude, position.Altitude,
-                             position.Heading, true};
+    GSObject::GSObjectPos result{position.Latitude, position.Longitude, position.Altitude,
+                       position.Heading, true};
     if (faceAircraft)
     {
         result.headingDegrees = HeadingTowardRelativeOrigin(aircraft.headingDegrees, relY, relX);
@@ -118,7 +118,7 @@ GSObjectSpawnPose GSObject::RelativeToAircraft(const AircraftSnapshot &aircraft,
     return result;
 }
 
-GSObjectSpawnPose GSObject::RelativeToParent(const GSObjectSpawnPose &parent,
+GSObject::GSObjectPos GSObject::RelativeToParent(const GSObject::GSObjectPos &parent,
                                              const GroundServiceObject &child)
 {
     // XYZH deliberately uses a different compact convention from Locations:
@@ -133,7 +133,7 @@ GSObjectSpawnPose GSObject::RelativeToParent(const GSObjectSpawnPose &parent,
             parent.onGround && std::abs(child.parentZ) < 0.001};
 }
 
-SIMCONNECT_DATA_INITPOSITION GSObject::ToInitialPosition(const GSObjectSpawnPose &pose)
+SIMCONNECT_DATA_INITPOSITION GSObject::ToInitialPosition(const GSObject::GSObjectPos &pose)
 {
     SIMCONNECT_DATA_INITPOSITION result{};
     result.Latitude = pose.latitude;

@@ -139,7 +139,7 @@ void GSLuggageLoaderFSDT::OnGeometry(GSObjectServices &services,
         m_cargoDoor->cargoForwardMeters - std::cos(headingRadians) * rampDistanceMeters;
     const double rightMeters =
         m_cargoDoor->cargoRightMeters - std::sin(headingRadians) * rampDistanceMeters;
-    GSObjectSpawnPose actualPose =
+    GSObject::GSObjectPos actualPose =
         RelativeToAircraft(m_aircraft, rightMeters, forwardMeters, false);
     actualPose.headingDegrees = m_pose.headingDegrees;
     services.setPosition(m_objectId, actualPose);

@@ -1,6 +1,7 @@
 #include "SimConnectThread.h"
 
 #include "SimConnectIds.h"
+#include "SimObjectPositioning.h"
 
 #include <algorithm>
 #include <array>
@@ -21,7 +22,6 @@ constexpr DWORD kScanRadiusMeters = 5'000;
 constexpr auto kRequestTimeout = 8s;
 constexpr std::size_t kInteractivePointProbeCount = 32;
 constexpr std::int32_t kCargoInteractivePointType = 1;
-constexpr double kFeetToMeters = 0.3048;
 
 template <std::size_t Size> std::string FixedString(const std::array<char, Size> &value)
 {

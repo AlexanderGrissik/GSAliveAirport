@@ -4,6 +4,10 @@
 
 namespace parking_services
 {
+// Clearance (meters) kept between the configured luggage-loader object and the
+// cargo door while the loader aligns its ramp.
+inline constexpr double kCargoDoorClearanceMeters = 0.5;
+
 // An FSDT luggage loader (GroundServiceSpecialType::LuggageLoaderFSDT). It owns
 // the cargo-door attachment specifics: placement on a right cargo door, opening
 // that door, and the two-phase baggage-loader ramp alignment that positions the

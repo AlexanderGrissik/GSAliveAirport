@@ -6,6 +6,11 @@
 
 namespace parking_services
 {
+double NormalizeDegrees(double degrees)
+{
+    return std::fmod(degrees + 360.0, 360.0);
+}
+
 SIMCONNECT_DATA_INITPOSITION RelativePosition(
     double headingDegrees, double longitude, double latitude, double altitudeFeet,
     double forwardMeters, double rightMeters)
@@ -29,11 +34,10 @@ double HeadingTowardRelativeOrigin(double referenceHeadingDegrees,
                                    double forwardMeters, double rightMeters)
 {
     if (std::hypot(forwardMeters, rightMeters) < 0.001) {
-        return std::fmod(referenceHeadingDegrees + 360.0, 360.0);
+        return NormalizeDegrees(referenceHeadingDegrees);
     }
-    constexpr double radiansToDegrees = 180.0 / 3.14159265358979323846;
-    const double relativeHeading = std::atan2(-rightMeters, -forwardMeters) *
-                                   radiansToDegrees;
-    return std::fmod(referenceHeadingDegrees + relativeHeading + 360.0, 360.0);
+    const double relativeHeading =
+        std::atan2(-rightMeters, -forwardMeters) * kRadiansToDegrees;
+    return NormalizeDegrees(referenceHeadingDegrees + relativeHeading);
 }
 } // namespace parking_services

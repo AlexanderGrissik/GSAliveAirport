@@ -10,6 +10,13 @@
 
 namespace parking_services
 {
+// Shared placement/alignment constants used across the codebase.
+inline constexpr double kFeetToMeters = 0.3048;
+inline constexpr double kRadiansToDegrees = 180.0 / 3.14159265358979323846;
+
+// Normalizes an angle into the [0, 360) degree range.
+[[nodiscard]] double NormalizeDegrees(double degrees);
+
 SIMCONNECT_DATA_INITPOSITION RelativePosition(
     double headingDegrees, double longitude, double latitude, double altitudeFeet,
     double forwardMeters, double rightMeters);

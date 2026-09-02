@@ -21,7 +21,7 @@ bool GSWalker::PreparePlacement(GSObjectServices &services)
         return false;
     }
     m_pose = RelativeToAircraft(m_aircraft, m_location.relX1, m_location.relY1, false);
-    const GSObjectSpawnPose endpoint =
+    const GSObject::GSObjectPos endpoint =
         RelativeToAircraft(m_aircraft, m_location.relX2, m_location.relY2, false);
     m_route = {m_pose.latitude, m_pose.longitude, m_pose.altitudeFeet,
                endpoint.latitude, endpoint.longitude, endpoint.altitudeFeet};

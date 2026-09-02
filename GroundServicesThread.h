@@ -75,12 +75,16 @@ class GroundServicesThread final
     void QueueService(const AircraftSnapshot &aircraft, const GroundServiceRequest &request);
     void BeginCreate(std::uint64_t token, std::unique_ptr<GSObject> object);
     void RegisterObject(GSObject *object, AircraftId objectId,
-                        const GSObjectSpawnPose &pose);
-    void FinalizeObject(GSObject *object, const GSObjectSpawnPose &actualPose);
+                        const GSObject::GSObjectPos &pose);
+    void FinalizeObject(GSObject *object, const GSObject::GSObjectPos &actualPose);
     void QueueAttachments(const AircraftSnapshot &aircraft, AircraftId parentObjectId,
-                          const GSObjectSpawnPose &parentPose,
+                          const GSObject::GSObjectPos &parentPose,
                           const std::vector<GroundServiceObject> &attachments);
     void RemoveForAircraft(AircraftId aircraftId);
+    void RemoveResolvedObjects(AircraftId aircraftId, bool requestSimulatorRemoval);
+    void FinalizeDeferredRemoval(AircraftId aircraftId);
+    void DecrementPendingCreations(AircraftId aircraftId);
+    [[nodiscard]] std::size_t PendingCount(AircraftId aircraftId) const;
     void RemoveObject(AircraftId objectId, bool requestSimulatorRemoval);
     void HandleObjectRemoved(AircraftId objectId);
     void HandleConnection(bool connected);
@@ -112,6 +116,12 @@ class GroundServicesThread final
     std::unordered_map<AircraftId, AircraftId> m_aircraftByObject;
     std::unordered_map<AircraftId, AircraftId> m_parentByObject;
     std::map<AircraftId, std::set<AircraftId>> m_childrenByObject;
+    // In-flight create count per aircraft. Drives deferred deletion: an
+    // aircraft's services are removed only once this drains to zero.
+    std::map<AircraftId, std::size_t> m_pendingCreations;
+    // Aircraft whose removal was requested while creations were still in flight;
+    // finalized by FinalizeDeferredRemoval once its in-flight count drains to zero.
+    std::set<AircraftId> m_deferredRemoval;
     std::vector<AircraftSnapshot> m_aircraftSnapshotBuffer;
     std::vector<std::string> m_catalogTitleBuffer;
     std::vector<std::string> m_configurationMessageBuffer;
