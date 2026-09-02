@@ -18,8 +18,6 @@ namespace
 {
 using Json = nlohmann::json;
 constexpr char kConfigurationFileName[] = "category-json-template.json";
-constexpr std::string_view kCargoDoorRightFront = "BuiltIn_CargoDoorRightFront";
-constexpr std::string_view kCargoDoorRightBack = "BuiltIn_CargoDoorRightBack";
 
 std::string Lower(std::string_view value)
 {
@@ -136,6 +134,26 @@ std::vector<std::string> ExpandPatterns(const std::vector<std::string> &patterns
         }
     }
     return result;
+}
+
+GroundServiceSpecialType ReadSpecialType(const Json &value, std::string_view owner)
+{
+    if (!value.contains("SpecialType")) {
+        return GroundServiceSpecialType::None;
+    }
+    if (!value.at("SpecialType").is_string()) {
+        throw std::runtime_error("SpecialType for '" + std::string(owner) +
+                                 "' must be a string");
+    }
+    const std::string name = value.at("SpecialType").get<std::string>();
+    if (EqualIgnoreCase(name, "LuggageLoaderFSDT")) {
+        return GroundServiceSpecialType::LuggageLoaderFSDT;
+    }
+    if (EqualIgnoreCase(name, "WalkerFSDT")) {
+        return GroundServiceSpecialType::WalkerFSDT;
+    }
+    throw std::runtime_error("unknown SpecialType '" + name + "' for '" +
+                             std::string(owner) + "'");
 }
 
 GroundServiceAnimation ReadAnimation(const Json &value, std::string_view owner)
@@ -274,9 +292,20 @@ void GroundServicesConfig::FillRequests(
                          request.object, usedAlternateFamily)) {
             continue;
         }
-        std::uniform_int_distribution<std::size_t> locationIndex(
-            0, element.locations.size() - 1);
-        request.location = SelectLocation(element.locations[locationIndex(random)], random);
+        const GroundServiceSpecialType specialType =
+            m_families.contains(element.family)
+                ? m_families.at(element.family).specialType
+                : GroundServiceSpecialType::None;
+        if (specialType == GroundServiceSpecialType::LuggageLoaderFSDT) {
+            // Attach to a cargo door: prefer the back door, fall back to the front.
+            request.location =
+                GroundServiceLocation{GroundServiceLocationKind::CargoDoorRightAuto};
+        } else {
+            std::uniform_int_distribution<std::size_t> locationIndex(
+                0, element.locations.size() - 1);
+            request.location =
+                SelectLocation(element.locations[locationIndex(random)], random);
+        }
         destination.push_back(std::move(request));
     }
 }
@@ -390,12 +419,6 @@ void GroundServicesConfig::BuildAttachments(
 GroundServiceLocation GroundServicesConfig::SelectLocation(
     std::string_view name, std::mt19937 &random) const
 {
-    if (EqualIgnoreCase(name, kCargoDoorRightFront)) {
-        return {GroundServiceLocationKind::CargoDoorRightFront};
-    }
-    if (EqualIgnoreCase(name, kCargoDoorRightBack)) {
-        return {GroundServiceLocationKind::CargoDoorRightBack};
-    }
     const auto location = m_locations.find(name);
     if (location == m_locations.end()) return {};
     const Location &source = location->second;
@@ -481,6 +504,7 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                 }
                 family.alternateFamily = alternate->get<std::string>();
             }
+            family.specialType = ReadSpecialType(value, family.name);
             if (const auto animation = value.find("Animation"); animation != value.end()) {
                 family.animation = ReadAnimation(*animation, family.name);
             }
@@ -588,23 +612,25 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                     }
                     const bool hasLocation = entry.contains("Location");
                     const bool hasLocations = entry.contains("Locations");
-                    if (hasLocation == hasLocations) {
+                    // A LuggageLoaderFSDT family attaches itself to a cargo door, so the
+                    // category element does not need to provide a Location for it.
+                    const bool suppliesOwnPlacement =
+                        m_families.contains(element.family) &&
+                        m_families.at(element.family).specialType ==
+                            GroundServiceSpecialType::LuggageLoaderFSDT;
+                    if (!suppliesOwnPlacement && hasLocation == hasLocations) {
                         throw std::runtime_error(
                             "category element must define exactly one of Location or Locations");
                     }
                     if (hasLocation) {
                         element.locations.push_back(ReadName(entry, "Location"));
-                    } else {
+                    } else if (hasLocations) {
                         element.locations = ReadStringArray(entry, "Locations", true);
                     }
-                    if (element.locations.empty()) {
+                    if (!suppliesOwnPlacement && element.locations.empty()) {
                         throw std::runtime_error("category element Locations must not be empty");
                     }
                     for (const std::string &locationName : element.locations) {
-                        if (EqualIgnoreCase(locationName, kCargoDoorRightFront) ||
-                            EqualIgnoreCase(locationName, kCargoDoorRightBack)) {
-                            continue;
-                        }
                         if (!m_locations.contains(locationName)) {
                             throw std::runtime_error("category references unknown location '" +
                                                      locationName + "'");

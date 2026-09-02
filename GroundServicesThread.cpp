@@ -313,12 +313,13 @@ void GroundServicesThread::QueueService(const AircraftSnapshot &aircraft,
                          endpoint.altitudeFeet};
         break;
     }
-    case GroundServiceLocationKind::CargoDoorRightFront:
-    case GroundServiceLocationKind::CargoDoorRightBack: {
-        const auto &connection = request.location.kind ==
-                GroundServiceLocationKind::CargoDoorRightFront
-            ? aircraft.cargoDoorRightFront
-            : aircraft.cargoDoorRightBack;
+    case GroundServiceLocationKind::CargoDoorRightAuto: {
+        // Attach to a right cargo door: prefer the back door, fall back to the front.
+        const AircraftCargoConnectionPoint *connection =
+            aircraft.cargoDoorRightBack ? &aircraft.cargoDoorRightBack.value()
+                                        : (aircraft.cargoDoorRightFront
+                                               ? &aircraft.cargoDoorRightFront.value()
+                                               : nullptr);
         if (!connection) {
             m_log("Skipped " + request.object.family + " for aircraft " +
                   std::to_string(aircraft.objectId) + ": MSFS reported no matching right cargo door.");

@@ -44,12 +44,20 @@ struct GroundServiceObject
     std::vector<GroundServiceObject> attachments;
 };
 
+enum class GroundServiceSpecialType
+{
+    None,
+    LuggageLoaderFSDT,
+    WalkerFSDT
+};
+
 enum class GroundServiceLocationKind
 {
     Static,
     Route,
-    CargoDoorRightFront,
-    CargoDoorRightBack,
+    // Attach to a right cargo door, preferring the back door and falling back to
+    // the front door. Applied automatically to LuggageLoaderFSDT families.
+    CargoDoorRightAuto
 };
 
 struct GroundServiceLocation
@@ -107,6 +115,7 @@ class GroundServicesConfig final
         std::vector<std::string> alternatePatterns;
         std::vector<std::string> excludePatterns;
         std::string alternateFamily;
+        GroundServiceSpecialType specialType{GroundServiceSpecialType::None};
         std::optional<GroundServiceAnimation> animation;
         std::vector<Attachment> attachments;
         std::vector<std::string> resolvedTitles;

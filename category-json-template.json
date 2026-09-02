@@ -47,6 +47,7 @@
             "PreferedObj" : [ "FSDT_Tug_660*" ],
             "AlternateFamily": "LuggageLoaderSystemPaxDefault",
             "Exclude": ["FSDT_Tug_660_CARGO*"],
+            "SpecialType": "LuggageLoaderFSDT",
             "Animation": {
                 "FPS": 30,
                 "Reversable": true,
@@ -105,6 +106,7 @@
             "Family": "WalkingWorker",
             "PreferedObj" : [ "FSDT_Wingwalker_*" ],
             "AlternateObj": [ "Tarmac_*" ],
+            "SpecialType": "WalkerFSDT",
             "Animation": {
                 "FPS": 30,
                 "Carriers": [
@@ -213,7 +215,6 @@
             "Elements": [
                 {
                     "Family": "LuggageLoaderSystemPaxFSDT",
-                    "Locations" : [ "BuiltIn_CargoDoorRightFront", "BuiltIn_CargoDoorRightBack" ],
                     "AnimReversePrb": 50
                 }
             ]
@@ -223,7 +224,6 @@
             "Elements": [
                 {
                     "Family": "LuggageLoaderSystemPaxFSDT",
-                    "Locations" : [ "BuiltIn_CargoDoorRightFront", "BuiltIn_CargoDoorRightBack" ],
                     "AnimReversePrb": 50
                 }
             ]
@@ -233,7 +233,6 @@
             "Elements": [
                 {
                     "Family": "LuggageLoaderSystemPaxFSDT",
-                    "Locations" : [ "BuiltIn_CargoDoorRightFront", "BuiltIn_CargoDoorRightBack" ],
                     "AnimReversePrb": 50
                 }
             ]
