@@ -2,8 +2,7 @@
 
 #include "Aircraft.h"
 #include "AnimationObject.h"
-#include "GroundServicesConfig.h"
-#include "SimConnectThread.h"
+#include "GroundServiceTypes.h"
 #include "SimObjectPositioning.h"
 
 #include <chrono>
@@ -27,6 +26,19 @@ struct GSObjectCargoDoor
 };
 
 struct GSObjectServices; // forward-declared for GSObject's capability references.
+
+// Result of a baggage-loader geometry read: the loader's current ramp angle and
+// the pivot/end-ramp offsets (meters) the ground-services domain uses to align
+// the ramp against an open cargo door.
+struct BaggageLoaderGeometry
+{
+    bool succeeded{};
+    double angleCurrentDegrees{};
+    double endRampYMeters{};
+    double endRampZMeters{};
+    double pivotYMeters{};
+    double pivotZMeters{};
+};
 
 // A single ground-service object request and its lifecycle. The base class owns
 // the common handling: creation, finalization (animation + attachments),

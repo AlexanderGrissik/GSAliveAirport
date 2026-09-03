@@ -14,7 +14,6 @@ enum DefinitionId : SIMCONNECT_DATA_DEFINITION_ID
 {
     DefinitionAircraft = 1,
     DefinitionGround,
-    DefinitionAnimationProbe,
     DefinitionAnimationUpdate,
     DefinitionBaggageLoaderRampTarget,
     DefinitionBaggageLoaderGeometry,

@@ -1,5 +1,8 @@
 #include "GroundServicesConfig.h"
 
+#include "GSRequests/GSReqCatalog.h"
+#include "ISimConnectHandler.h"
+
 #include <Windows.h>
 #include <nlohmann/json.hpp>
 
@@ -8,6 +11,7 @@
 #include <cctype>
 #include <cmath>
 #include <fstream>
+#include <memory>
 #include <stdexcept>
 #include <unordered_set>
 #include <utility>
@@ -201,18 +205,39 @@ GroundServiceAnimation ReadAnimation(const Json &value, std::string_view owner)
 
 GroundServicesConfig GroundServicesConfig::LoadDefault()
 {
-    GroundServicesConfig configuration;
-    configuration.Load(FindDefaultPath());
-    return configuration;
+    return GroundServicesConfig{FindDefaultPath()};
+}
+
+GroundServicesConfig::GroundServicesConfig(std::filesystem::path path)
+{
+    Load(path);
+}
+
+GroundServicesConfig::GroundServicesConfig(GroundServicesConfig &&other)
+{
+    std::scoped_lock lock(m_stateMutex, other.m_stateMutex);
+    m_loaded = other.m_loaded;
+    m_resolved = other.m_resolved;
+    m_path = std::move(other.m_path);
+    m_startupMessages = std::move(other.m_startupMessages);
+    m_initializationMessages = std::move(other.m_initializationMessages);
+    m_catalog = std::move(other.m_catalog);
+    m_families = std::move(other.m_families);
+    m_locations = std::move(other.m_locations);
+    m_categories = std::move(other.m_categories);
+    other.m_loaded = false;
+    other.m_resolved = false;
 }
 
 bool GroundServicesConfig::IsLoaded() const
 {
+    std::scoped_lock lock(m_stateMutex);
     return m_loaded;
 }
 
 bool GroundServicesConfig::IsResolved() const
 {
+    std::scoped_lock lock(m_stateMutex);
     return m_resolved;
 }
 
@@ -226,9 +251,52 @@ const std::vector<std::string> &GroundServicesConfig::StartupMessages() const
     return m_startupMessages;
 }
 
+const std::vector<std::string> &GroundServicesConfig::InitializationMessages() const
+{
+    return m_initializationMessages;
+}
+
+void GroundServicesConfig::LoadCatalog(ISimConnectHandler &handler)
+{
+    if (!IsLoaded()) return;
+    ResetInitialization();
+
+    // Issue the catalog enumeration on the SimConnect thread and block this (GS)
+    // thread until the whole catalog has been collected and resolved. Only the
+    // SimConnect thread touches the session.
+    auto request = std::make_shared<GSReqCatalog>();
+    handler.EnumerateObjects(SIMCONNECT_SIMOBJECT_TYPE_ALL, request);
+    request->Wait();
+
+    std::vector<std::string> availableTitles;
+    {
+        std::scoped_lock lock(m_stateMutex);
+        if (request->Succeeded()) m_catalog.Adopt(request->Entries());
+        availableTitles.reserve(m_catalog.Entries().size());
+        for (const SimObjectCatalog::Entry &entry : m_catalog.Entries()) {
+            availableTitles.push_back(entry.title);
+        }
+    }
+    Resolve(availableTitles, m_initializationMessages);
+}
+
+void GroundServicesConfig::ResetInitialization()
+{
+    std::scoped_lock lock(m_stateMutex);
+    m_catalog.Reset();
+    m_initializationMessages.clear();
+    for (auto &[name, family] : m_families) {
+        static_cast<void>(name);
+        family.resolvedTitles.clear();
+        family.usingAlternateObjects = false;
+    }
+    m_resolved = false;
+}
+
 void GroundServicesConfig::Resolve(const std::vector<std::string> &availableTitles,
                                    std::vector<std::string> &messages)
 {
+    std::scoped_lock lock(m_stateMutex);
     messages.clear();
     if (!m_loaded) return;
 
@@ -273,6 +341,7 @@ void GroundServicesConfig::FillRequests(
     AircraftSizeCategory category, std::mt19937 &random,
     std::vector<GroundServiceRequest> &destination) const
 {
+    std::scoped_lock lock(m_stateMutex);
     destination.clear();
     if (!m_loaded || !m_resolved) return;
     const auto categoryIt = m_categories.find(category);
@@ -313,6 +382,7 @@ void GroundServicesConfig::FillRequests(
 
 void GroundServicesConfig::ClearResolution()
 {
+    std::scoped_lock lock(m_stateMutex);
     for (auto &[name, family] : m_families) {
         family.resolvedTitles.clear();
         family.usingAlternateObjects = false;

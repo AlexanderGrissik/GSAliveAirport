@@ -1,6 +1,6 @@
 #include "AircraftTrackerThread.h"
 
-#include "SimConnectThread.h"
+#include "SimConnectIds.h"
 
 #include <algorithm>
 #include <cmath>
@@ -11,28 +11,20 @@ namespace parking_services
 {
 using namespace std::chrono_literals;
 
-AircraftTrackerThread::AircraftTrackerThread(SimConnectThread &simConnect, LogSink log)
+AircraftTrackerThread::AircraftTrackerThread(ISimConnectHandler &simConnect, LogSink log)
     : m_simConnect(simConnect), m_log(std::move(log))
 {
-    m_simConnect.SubscribeConnection([this](bool connected) {
-        Post([this, connected] {
-            m_connected = connected;
-            m_scanPending = false;
-            if (connected) {
-                m_nextScan = std::chrono::steady_clock::now();
-            } else {
-                ClearState();
-            }
-        });
-    });
-    m_simConnect.SubscribeObjectRemoved(
-        [this](DWORD objectId) { Post([this, objectId] { RemoveObject(objectId); }); });
-    m_thread = std::jthread(&AircraftTrackerThread::AircraftTrackerLoop, this);
 }
 
 AircraftTrackerThread::~AircraftTrackerThread()
 {
     Stop();
+}
+
+void AircraftTrackerThread::Start()
+{
+    if (m_thread.joinable()) return;
+    m_thread = std::jthread(&AircraftTrackerThread::AircraftTrackerLoop, this);
 }
 
 void AircraftTrackerThread::Stop()
@@ -43,9 +35,38 @@ void AircraftTrackerThread::Stop()
     m_thread.join();
 }
 
+void AircraftTrackerThread::OnSimStarted()
+{
+    Post([this] {
+        m_connected = true;
+        m_scanRequest.reset();
+        m_nextScan = std::chrono::steady_clock::now();
+    });
+}
+
+void AircraftTrackerThread::OnSimDisconnected()
+{
+    OnSimStopped();
+}
+
+void AircraftTrackerThread::OnSimStopped()
+{
+    Post([this] {
+        m_connected = false;
+        m_scanRequest.reset();
+        ClearState();
+    });
+}
+
+void AircraftTrackerThread::OnObjRemoved(std::uint32_t objectId)
+{
+    Post([this, objectId] { RemoveObject(objectId); });
+}
+
 void AircraftTrackerThread::Reset()
 {
     Post([this] {
+        m_scanRequest.reset();
         ClearState();
         if (m_connected) m_nextScan = std::chrono::steady_clock::now() + 10s;
     });
@@ -110,8 +131,9 @@ void AircraftTrackerThread::RunLoop(std::stop_token stopToken)
 {
     while (!stopToken.stop_requested()) {
         ProcessCommands();
+        PollScan();
         const auto now = std::chrono::steady_clock::now();
-        if (m_connected && !m_scanPending && now >= m_nextScan) RequestScan();
+        if (m_connected && !m_scanRequest && now >= m_nextScan) RequestScan();
 
         std::unique_lock lock(m_commandMutex);
         m_wake.wait_for(lock, stopToken, 100ms, [this] { return !m_commands.empty(); });
@@ -138,16 +160,21 @@ void AircraftTrackerThread::ProcessCommands()
     for (auto &command : commands) command();
 }
 
+void AircraftTrackerThread::PollScan()
+{
+    if (!m_scanRequest || !m_scanRequest->IsFinished()) return;
+    GSAircraftScanResult result = m_scanRequest->TakeResult();
+    m_scanRequest.reset();
+    if (result.succeeded) ApplyScan(std::move(result.aircraft));
+}
+
 void AircraftTrackerThread::RequestScan()
 {
-    m_scanPending = true;
     m_nextScan = std::chrono::steady_clock::now() + 10s;
-    m_simConnect.RequestAircraftScan([this](AircraftScanResult result) mutable {
-        Post([this, result = std::move(result)]() mutable {
-            m_scanPending = false;
-            if (result.succeeded) ApplyScan(std::move(result.aircraft));
-        });
-    });
+    m_scanRequest = std::make_shared<GSReqAircraftScan>();
+    m_simConnect.RequestObjectDataByType(
+        DefinitionAircraft, static_cast<DWORD>(RetentionRadiusMeters),
+        SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT, m_scanRequest);
 }
 
 void AircraftTrackerThread::ApplyScan(std::vector<AircraftSnapshot> observations)

@@ -57,7 +57,7 @@ The application is composed from thread-owning, state-owning components:
 
 - `SimConnectThread` owns its `std::jthread`, the `SimConnectSession`, the SDK
   connection, packed wire formats, request correlation, pending scans and
-  creates, catalog enumeration, and the coalesced animation-write queue.
+  creates, and the coalesced animation-write queue.
   `SimConnectSession` is its low-level handle wrapper and is never called from
   another thread.
 - `AircraftTrackerThread` owns its `std::jthread`, the automatic 10-second
@@ -72,8 +72,8 @@ The application is composed from thread-owning, state-owning components:
   frame ranges, and animation-probe CSV. It targets 30 updates per second for
   each worker. The initial safety cap is 20 simultaneously animated workers;
   excess created workers remain standing.
-- `SimObjectCatalog` owns catalog paging, filtering, and export state, but all
-  of its SDK work is invoked inside `SimConnectThread`.
+- `GroundServicesConfig` owns `SimObjectCatalog` and resolves service families
+  from its raw, all-object catalog during serialized connection initialization.
 - `ConsoleController` owns command parsing, selection, and terminal rendering.
 - `ParkingServicesApp` runs on the main thread and only routes terminal
   commands, polls the one-shot `ground` future, and enforces shutdown order.
@@ -131,7 +131,6 @@ clearfsdt
 animprobe <ObjectID>
 stopprobe
 reset
-catalog
 help
 quit
 ```
@@ -232,11 +231,9 @@ velocity, heading, ground state, and animation carrier continuously to
 `animation_probe.csv` beside the executable. Recording continues until
 `stopprobe` is entered. This was used to derive and verify the control method.
 
-`catalog` asynchronously enumerates the complete installed spawnable catalog
-and each SimObject category. It writes `simobject_catalog.txt` beside the
-running executable, excluding aircraft, helicopters, hot-air balloons, boats,
-and animals. Every retained row includes its SimConnect type; entries that do
-not appear in a specific category are retained as `UNKNOWN`.
+The complete raw SimObject/livery catalog is enumerated once, synchronously,
+after connecting to MSFS. It is retained by `GroundServicesConfig` only until
+the session disconnects, and is used to resolve configured service families.
 
 An aircraft is marked `eligible` only as a diagnostic hint when it has remained
 on the ground below 1 knot for at least 10 seconds and exposes both an origin

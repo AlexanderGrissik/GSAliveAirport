@@ -99,17 +99,7 @@ AppCommand ConsoleController::Parse(std::string_view line)
     if (command == "aircraft5" || command == "radius5") return {AppCommandType::Aircraft5};
     if (command == "parked") return {AppCommandType::Parked};
     if (command == "ground") return {AppCommandType::Ground};
-    if (command == "stopprobe") return {AppCommandType::StopProbe};
     if (command == "reset") return {AppCommandType::Reset};
-    if (command == "catalog") return {AppCommandType::Catalog};
-    if (command == "animprobe") {
-        std::uint64_t objectId = 0;
-        if (!(input >> objectId) || objectId == 0 ||
-            objectId > (std::numeric_limits<std::uint32_t>::max)()) {
-            return {AppCommandType::Unknown};
-        }
-        return {AppCommandType::StartProbe, static_cast<std::uint32_t>(objectId)};
-    }
     return {AppCommandType::Unknown};
 }
 
@@ -122,9 +112,6 @@ void ConsoleController::PrintHelp()
               << "  aircraft5           Aircraft currently within 5 km\n"
               << "  parked              Detailed list excluding STATE_SIMPLE_TAXI\n"
               << "  ground              Request one 5 km ground-object debug list\n"
-              << "  animprobe <ObjectID> Record animation data until stopprobe\n"
-              << "  stopprobe           Stop animation recording\n"
-              << "  catalog             Export categorized spawnable catalog\n"
               << "  reset               Clear tracking and created objects\n"
               << "  help | quit\n";
 }
@@ -218,20 +205,13 @@ void ConsoleController::PrintGround(const std::vector<GroundSnapshot> &ground)
 
 void ConsoleController::PrintStatus(const ConsoleStatus &status) const
 {
-    std::cout << "SimConnect: " << (status.connected ? "connected" : "disconnected")
-              << ", tracked aircraft: " << status.trackedAircraft
+    std::cout << "tracked aircraft: " << status.trackedAircraft
               << ", nearby aircraft: " << status.nearbyAircraft
               << ", last ground debug objects: " << status.groundObjects
               << ", created services: " << status.createdServices
               << ", pending creates: " << status.pendingCreates
               << ", walking workers: " << status.walkingWorkers << '/'
-              << status.maximumWalkingWorkers << ", animation probe: ";
-    if (status.animationProbeActive) {
-        std::cout << "ObjectID " << status.animationProbeObjectId << " ("
-                  << status.animationProbeSamples << " samples)";
-    } else {
-        std::cout << "off";
-    }
+              << status.maximumWalkingWorkers;
     std::cout << '\n';
 }
 } // namespace parking_services

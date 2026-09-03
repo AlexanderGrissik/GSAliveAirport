@@ -4,10 +4,13 @@
 #include "AnimationThread.h"
 #include "GroundServicesConfig.h"
 #include "GSObject.h"
+#include "GSRequests/GSReqBaggageGeometry.h"
+#include "GSRequests/GSReqCreateObject.h"
+#include "ISimConnectHandler.h"
+#include "ISimConnectStatus.h"
 #include "LogSink.h"
 #include "SimConnectIds.h"
 
-#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -28,7 +31,6 @@
 namespace parking_services
 {
 class AircraftTrackerThread;
-class SimConnectThread;
 
 enum class GroundServicesDecision { Keep, Add, Remove };
 
@@ -46,30 +48,37 @@ struct GroundServicesStatus
 // (cargo-door ramp alignment, route walking) live in the GSObject subclasses,
 // not here; this thread only sequences their lifecycle: create, maintain,
 // geometry, finalize, and remove.
-class GroundServicesThread final
+class GroundServicesThread final : public ISimConnectStatus
 {
   public:
-    GroundServicesThread(SimConnectThread &simConnect,
+    GroundServicesThread(ISimConnectHandler &simConnect,
                          AircraftTrackerThread &aircraftTracker,
                          AnimationThread &animation,
-                         GroundServicesConfig &configuration, LogSink log);
+                         GroundServicesConfig configuration, LogSink log);
     ~GroundServicesThread();
 
     GroundServicesThread(const GroundServicesThread &) = delete;
     GroundServicesThread &operator=(const GroundServicesThread &) = delete;
 
+    void Start();
     void Stop();
     void Reset();
     [[nodiscard]] GroundServicesStatus Status() const;
+
+    void OnSimConnected() override {};
+    void OnSimDisconnected() override;
+    void OnSimStarted() override;
+    void OnSimStopped() override;
+    void OnObjRemoved(std::uint32_t objectId) override;
 
   private:
     static void GroundServicesLoop(std::stop_token stopToken, GroundServicesThread *self);
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
+    void PollRequests();
     void MaintainObjects(std::chrono::steady_clock::time_point now);
     void EvaluateTrackedAircraft();
-    void ResolveConfigurationIfAvailable();
     static GroundServicesDecision Decide(const AircraftSnapshot &aircraft);
     void EnsureAutomaticServices(const AircraftSnapshot &aircraft);
     void QueueService(const AircraftSnapshot &aircraft, const GroundServiceRequest &request);
@@ -87,19 +96,25 @@ class GroundServicesThread final
     [[nodiscard]] std::size_t PendingCount(AircraftId aircraftId) const;
     void RemoveObject(AircraftId objectId, bool requestSimulatorRemoval);
     void HandleObjectRemoved(AircraftId objectId);
-    void HandleConnection(bool connected);
+    void HandleConnect();
+    void HandleDisconnect();
     void RemoveAllServicesInternal();
     void PublishStatus();
     [[nodiscard]] bool HasPendingFor(AircraftId aircraftId) const;
     GSObjectServices MakeServices();
 
-    SimConnectThread &m_simConnect;
+    struct CreateOperation
+    {
+        AircraftId aircraftId{};
+        std::shared_ptr<GSReqCreateObject> request;
+    };
+
+    ISimConnectHandler &m_simConnect;
     AircraftTrackerThread &m_aircraftTracker;
     AnimationThread &m_animation;
-    GroundServicesConfig &m_configuration;
+    GroundServicesConfig m_configuration;
     LogSink m_log;
     bool m_connected = false;
-    std::atomic_bool m_stopping{false};
     std::uint64_t m_nextCreateToken = 1;
     // Capability bag injected into every GSObject. Built once in the constructor;
     // its lambdas capture 'this' and are stateless, so a single shared instance is
@@ -110,6 +125,9 @@ class GroundServicesThread final
     // GSObject::Create and drives its own special-type behaviour through the
     // GSObjectServices capabilities this thread injects.
     std::map<std::uint64_t, std::unique_ptr<GSObject>> m_objects;
+    std::map<std::uint64_t, CreateOperation> m_createRequests;
+    std::map<AircraftId, std::shared_ptr<GSReqBaggageGeometry>>
+        m_geometryRequests;
     std::set<AircraftId> m_createdObjects;
     std::set<AircraftId> m_configuredAircraft;
     std::map<AircraftId, std::set<AircraftId>> m_objectsByAircraft;
@@ -123,8 +141,6 @@ class GroundServicesThread final
     // finalized by FinalizeDeferredRemoval once its in-flight count drains to zero.
     std::set<AircraftId> m_deferredRemoval;
     std::vector<AircraftSnapshot> m_aircraftSnapshotBuffer;
-    std::vector<std::string> m_catalogTitleBuffer;
-    std::vector<std::string> m_configurationMessageBuffer;
     std::vector<GroundServiceRequest> m_serviceRequestBuffer;
     std::mt19937 m_random{std::random_device{}()};
 

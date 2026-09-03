@@ -1,200 +1,148 @@
 #pragma once
 
-#include "Aircraft.h"
-#include "GroundObject.h"
-#include "SimConnectSession.h"
-#include "SimObjectCatalog.h"
+#include "ISimConnectHandler.h"
+#include "ISimConnectRequest.h"
+#include "ISimConnectStatus.h"
+#include "LogSink.h"
 
-#include <atomic>
 #include <condition_variable>
+#include <cstdint>
 #include <deque>
 #include <functional>
-#include <future>
-#include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stop_token>
 #include <string>
 #include <thread>
-#include <utility>
+#include <unordered_map>
 #include <vector>
 
 namespace parking_services
 {
-struct AircraftScanResult
+struct SendResult
 {
-    bool succeeded{};
-    std::vector<AircraftSnapshot> aircraft;
+    HRESULT result{E_FAIL};
+    std::optional<DWORD> sendId;
+
+    [[nodiscard]] bool Succeeded() const { return SUCCEEDED(result); }
 };
 
-struct GroundScanResult
-{
-    bool succeeded{};
-    std::vector<GroundSnapshot> objects;
-};
-
-struct AnimationUpdate
-{
-    DWORD objectId{};
-    double latitude{};
-    double longitude{};
-    double altitudeFeet{};
-    double headingDegrees{};
-    double velocityBodyYMetersPerSecond{};
-};
-
-struct ObjectPositionUpdate
-{
-    DWORD objectId{};
-    double latitude{};
-    double longitude{};
-    double altitudeFeet{};
-    double headingDegrees{};
-};
-
-struct AnimationCarrierUpdate
-{
-    DWORD objectId{};
-    std::string carrier;
-    double value{};
-};
-
-struct BaggageLoaderGeometry
-{
-    bool succeeded{};
-    double angleCurrentDegrees{};
-    double endRampYMeters{};
-    double endRampZMeters{};
-    double pivotYMeters{};
-    double pivotZMeters{};
-};
-
-struct AnimationProbeSample
-{
-    double elapsedSeconds{};
-    DWORD objectId{};
-    std::string title;
-    double groundSpeedKnots{};
-    double velocityBodyXMetersPerSecond{};
-    double velocityBodyYMetersPerSecond{};
-    double velocityBodyZMetersPerSecond{};
-    double headingDegrees{};
-    double latitude{};
-    double longitude{};
-    double altitudeFeet{};
-    bool onGround{};
-};
-
-class SimConnectThread final : public ISimConnectMessageSink
+class SimConnectThread final : public ISimConnectHandler
 {
   public:
-    using AircraftScanCallback = std::function<void(AircraftScanResult)>;
-    using ObjectCreatedCallback = std::function<void(DWORD)>;
-    using ObjectRemovedCallback = std::function<void(DWORD)>;
-    using ConnectionCallback = std::function<void(bool)>;
-    using ProbeSampleCallback = std::function<void(AnimationProbeSample)>;
-    using BaggageLoaderGeometryCallback = std::function<void(BaggageLoaderGeometry)>;
-
     explicit SimConnectThread(LogSink log);
     ~SimConnectThread();
 
     SimConnectThread(const SimConnectThread &) = delete;
     SimConnectThread &operator=(const SimConnectThread &) = delete;
-    void Stop();
 
-    void RequestAircraftScan(AircraftScanCallback callback);
-    std::future<GroundScanResult> RequestGroundObjects();
+    void Start();
+    void Stop() override;
+
+    void EnumerateObjects(SIMCONNECT_SIMOBJECT_TYPE type,
+                          std::shared_ptr<ISimConnectRequest> request) override;
+    void RequestObjectData(SIMCONNECT_DATA_DEFINITION_ID definition, DWORD objectId,
+                           SIMCONNECT_PERIOD period, DWORD interval,
+                           std::shared_ptr<ISimConnectRequest> request) override;
+    void RequestObjectDataByType(SIMCONNECT_DATA_DEFINITION_ID definition,
+                                 DWORD radiusMeters, SIMCONNECT_SIMOBJECT_TYPE type,
+                                 std::shared_ptr<ISimConnectRequest> request) override;
     void CreateObject(std::string title, SIMCONNECT_DATA_INITPOSITION position,
-                      ObjectCreatedCallback callback);
-    void RemoveObject(DWORD objectId);
-    void FreezeObject(DWORD objectId);
-    void PublishAnimationUpdates(const std::vector<AnimationUpdate> &updates);
-    void PublishObjectPositionUpdates(const std::vector<ObjectPositionUpdate> &updates);
-    void PublishAnimationCarrierUpdates(const std::vector<AnimationCarrierUpdate> &updates);
-    void CancelAnimationObject(DWORD objectId);
-    void SetBaggageLoaderRampTarget(DWORD objectId, double angleDegrees);
-    void SetCargoDoorOpen(DWORD aircraftObjectId, DWORD interactivePointIndex, bool open);
-    void RequestBaggageLoaderGeometry(DWORD objectId,
-                                      BaggageLoaderGeometryCallback callback);
-    void SetObjectPosition(DWORD objectId, SIMCONNECT_DATA_INITPOSITION position);
-    void StartAnimationProbe(DWORD objectId, ProbeSampleCallback callback);
-    void StopAnimationProbe();
-    void RequestCatalog();
-    bool FillAvailableSimObjectTitles(std::vector<std::string> &destination) const;
+                      std::shared_ptr<ISimConnectRequest> request) override;
+    void RemoveObject(DWORD objectId,
+                      std::shared_ptr<ISimConnectRequest> request) override;
+    void SetObjectData(SIMCONNECT_DATA_DEFINITION_ID definition, DWORD objectId,
+                       DWORD arrayCount, DWORD elementSize, const void *data,
+                       std::shared_ptr<ISimConnectRequest> request) override;
+    void AddToDataDefinition(SIMCONNECT_DATA_DEFINITION_ID definition,
+                             std::string datumName, std::string units,
+                             SIMCONNECT_DATATYPE type,
+                             std::shared_ptr<ISimConnectRequest> request) override;
+    void TransmitEvent(DWORD objectId, SIMCONNECT_CLIENT_EVENT_ID eventId, DWORD data,
+                       std::shared_ptr<ISimConnectRequest> request) override;
+    void TransmitEventEx1(DWORD objectId, SIMCONNECT_CLIENT_EVENT_ID eventId,
+                          DWORD data0, DWORD data1,
+                          std::shared_ptr<ISimConnectRequest> request) override;
 
-    void SubscribeObjectRemoved(ObjectRemovedCallback callback);
-    void SubscribeConnection(ConnectionCallback callback);
-    [[nodiscard]] bool IsConnected() const;
-
-    void OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
+    void RegisterStatusObserver(ISimConnectStatus *observer);
+    void OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSize);
 
   private:
-    struct PendingAircraftScan;
-    struct PendingGroundScan;
-    struct PendingCreate;
-    struct PendingProbe;
-    struct PendingBaggageLoaderGeometry;
-
     static void SimConnectLoop(std::stop_token stopToken, SimConnectThread *self);
+    static void CALLBACK DispatchThunk(SIMCONNECT_RECV *message, DWORD messageSize,
+                                       void *context);
+
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
-    void ProcessAnimationUpdates();
-    void ProcessObjectPositionUpdates();
-    void ProcessAnimationCarrierUpdates();
-    void MaintainPendingRequests();
+    void SweepCompletedRequests();
+
     bool Connect();
     void Disconnect();
     bool DefineDataAndEvents();
 
-    void BeginAircraftScan(AircraftScanCallback callback);
-    void CompleteAircraftScan(bool succeeded);
-    void BeginGroundScan(std::shared_ptr<std::promise<GroundScanResult>> promise);
-    void CompleteGroundScan(bool succeeded);
-    void BeginCreate(std::string title, SIMCONNECT_DATA_INITPOSITION position,
-                     ObjectCreatedCallback callback);
-    void CompleteCreate(DWORD requestId, DWORD objectId);
-    void BeginProbe(DWORD objectId, ProbeSampleCallback callback);
-    void BeginBaggageLoaderGeometry(DWORD objectId,
-                                    BaggageLoaderGeometryCallback callback);
-    void EndProbe();
-    void HandleObjectData(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry, DWORD messageSize);
-    void HandleProbeData(const SIMCONNECT_RECV_SIMOBJECT_DATA &entry, DWORD messageSize);
+    void BeginEnumerateObjects(SIMCONNECT_SIMOBJECT_TYPE type,
+                               std::shared_ptr<ISimConnectRequest> request);
+    void BeginRequestObjectData(SIMCONNECT_DATA_DEFINITION_ID definition, DWORD objectId,
+                                SIMCONNECT_PERIOD period, DWORD interval,
+                                std::shared_ptr<ISimConnectRequest> request);
+    void BeginRequestObjectDataByType(SIMCONNECT_DATA_DEFINITION_ID definition,
+                                      DWORD radiusMeters, SIMCONNECT_SIMOBJECT_TYPE type,
+                                      std::shared_ptr<ISimConnectRequest> request);
+    void BeginCreateObject(std::string title, SIMCONNECT_DATA_INITPOSITION position,
+                           std::shared_ptr<ISimConnectRequest> request);
+    void BeginRemoveObject(DWORD objectId,
+                           std::shared_ptr<ISimConnectRequest> request);
+    void BeginSetObjectData(SIMCONNECT_DATA_DEFINITION_ID definition, DWORD objectId,
+                            DWORD arrayCount, DWORD elementSize,
+                            const std::vector<std::uint8_t> &payload,
+                            std::shared_ptr<ISimConnectRequest> request);
+    void BeginAddToDataDefinition(SIMCONNECT_DATA_DEFINITION_ID definition,
+                                  std::string datumName, std::string units,
+                                  SIMCONNECT_DATATYPE type,
+                                  std::shared_ptr<ISimConnectRequest> request);
+    void BeginTransmitEvent(DWORD objectId, SIMCONNECT_CLIENT_EVENT_ID eventId, DWORD data,
+                            std::shared_ptr<ISimConnectRequest> request);
+    void BeginTransmitEventEx1(DWORD objectId, SIMCONNECT_CLIENT_EVENT_ID eventId,
+                               DWORD data0, DWORD data1,
+                               std::shared_ptr<ISimConnectRequest> request);
+
+    bool TrackResponseRequest(const SendResult &send, DWORD requestId,
+                              const std::shared_ptr<ISimConnectRequest> &request);
+    void CompleteCommand(const SendResult &send, std::optional<DWORD> requestId,
+                         const std::shared_ptr<ISimConnectRequest> &request);
+    bool RouteRequestMessage(DWORD requestId, SIMCONNECT_RECV *message, DWORD messageSize);
+    bool RouteRequestFailure(const SIMCONNECT_RECV_EXCEPTION &exception);
+    void RemoveRequest(const ISimConnectRequest *request);
+    void FailPendingRequests();
+
     void HandleException(const SIMCONNECT_RECV_EXCEPTION &exception);
     void NotifyObjectRemoved(DWORD objectId);
     void NotifyConnection(bool connected);
-    void PublishAvailableSimObjectTitles(std::vector<std::string> titles);
+    void NotifySimulation(bool started);
+
+    [[nodiscard]] SendResult Capture(HRESULT result) const;
+    [[nodiscard]] DWORD NextRequestId();
+    bool AddDatum(SIMCONNECT_DATA_DEFINITION_ID definition, const char *name,
+                  const char *units, SIMCONNECT_DATATYPE type);
+    bool SubscribeSystemEvent(SIMCONNECT_CLIENT_EVENT_ID eventId, const char *name);
+    bool MapClientEvent(SIMCONNECT_CLIENT_EVENT_ID eventId, const char *name);
 
     LogSink m_log;
-    SimConnectSession m_session;
-    SimObjectCatalog m_catalog;
-    std::atomic_bool m_connected{false};
+    HANDLE m_handle = nullptr;
+    DWORD m_nextRequestId = 10'000;
+    std::vector<ISimConnectStatus *> m_statusObservers;
+    // Both maps reference the same request object. Normal response packets carry
+    // request IDs; exception packets carry send IDs.
+    std::unordered_map<DWORD, std::shared_ptr<ISimConnectRequest>> m_requestsByRequestId;
+    std::unordered_map<DWORD, std::shared_ptr<ISimConnectRequest>> m_requestsBySendId;
     bool m_reportedWaiting = false;
     bool m_disconnectRequested = false;
 
     std::mutex m_commandMutex;
     std::condition_variable_any m_wake;
     std::deque<std::function<void()>> m_commands;
-    std::mutex m_animationMutex;
-    std::map<DWORD, AnimationUpdate> m_latestAnimationUpdates;
-    std::map<DWORD, ObjectPositionUpdate> m_latestPositionUpdates;
-    std::map<std::pair<DWORD, std::string>, AnimationCarrierUpdate>
-        m_latestAnimationCarrierUpdates;
-    std::map<std::string, SIMCONNECT_DATA_DEFINITION_ID, std::less<>>
-        m_animationCarrierDefinitions;
-    DWORD m_nextAnimationCarrierDefinitionId = 100;
-    mutable std::mutex m_catalogSnapshotMutex;
-    std::vector<std::string> m_availableSimObjectTitles;
-    bool m_catalogSnapshotReady{};
-    std::mutex m_subscriberMutex;
-    std::vector<ObjectRemovedCallback> m_objectRemovedCallbacks;
-    std::vector<ConnectionCallback> m_connectionCallbacks;
-
-    std::unique_ptr<PendingAircraftScan> m_aircraftScan;
-    std::unique_ptr<PendingGroundScan> m_groundScan;
-    std::map<DWORD, PendingCreate> m_creates;
-    std::unique_ptr<PendingProbe> m_probe;
-    std::map<DWORD, PendingBaggageLoaderGeometry> m_baggageLoaderGeometryRequests;
     std::jthread m_thread;
 };
 } // namespace parking_services

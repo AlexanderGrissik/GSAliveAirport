@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Aircraft.h"
-#include "GroundServicesConfig.h"
-#include "SimConnectThread.h"
+#include "GroundServiceTypes.h"
+#include "ISimConnectHandler.h"
 
 #include <chrono>
+#include <map>
 #include <optional>
-#include <vector>
+#include <string>
+#include <utility>
 
 namespace parking_services
 {
@@ -26,10 +28,36 @@ struct AnimationRoute
     double altitude2Feet{};
 };
 
+struct AnimationUpdate
+{
+    DWORD objectId{};
+    double latitude{};
+    double longitude{};
+    double altitudeFeet{};
+    double headingDegrees{};
+    double velocityBodyYMetersPerSecond{};
+};
+
+struct ObjectPositionUpdate
+{
+    DWORD objectId{};
+    double latitude{};
+    double longitude{};
+    double altitudeFeet{};
+    double headingDegrees{};
+};
+
+struct AnimationCarrierUpdate
+{
+    DWORD objectId{};
+    std::string carrier;
+    double value{};
+};
+
 class AnimationFrame final
 {
   public:
-    explicit AnimationFrame(SimConnectThread &simConnect);
+    explicit AnimationFrame(ISimConnectHandler &simConnect);
 
     void Begin(std::chrono::steady_clock::time_point now);
     [[nodiscard]] std::chrono::steady_clock::time_point Now() const;
@@ -39,13 +67,17 @@ class AnimationFrame final
     void QueuePositionUpdate(ObjectPositionUpdate update);
     void QueueCarrierUpdate(AnimationCarrierUpdate update);
     void Flush();
+    void ResetDefinitions();
 
   private:
-    SimConnectThread &m_simConnect;
+    ISimConnectHandler &m_simConnect;
     std::chrono::steady_clock::time_point m_now{};
-    std::vector<AnimationUpdate> m_motionUpdates;
-    std::vector<ObjectPositionUpdate> m_positionUpdates;
-    std::vector<AnimationCarrierUpdate> m_carrierUpdates;
+    std::map<DWORD, AnimationUpdate> m_motionUpdates;
+    std::map<DWORD, ObjectPositionUpdate> m_positionUpdates;
+    std::map<std::pair<DWORD, std::string>, AnimationCarrierUpdate> m_carrierUpdates;
+    std::map<std::string, SIMCONNECT_DATA_DEFINITION_ID, std::less<>>
+        m_carrierDefinitions;
+    DWORD m_nextCarrierDefinitionId = 100;
 };
 
 class AnimationObject

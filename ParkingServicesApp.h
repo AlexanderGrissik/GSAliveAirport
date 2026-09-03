@@ -5,10 +5,11 @@
 #include "ConsoleController.h"
 #include "GroundServicesThread.h"
 #include "GroundServicesConfig.h"
+#include "GSRequests/GSReqGroundScan.h"
 #include "SimConnectThread.h"
 
 #include <atomic>
-#include <future>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <vector>
@@ -35,13 +36,12 @@ class ParkingServicesApp final
 
     std::atomic_bool m_quit{false};
     mutable std::mutex m_outputMutex;
-    GroundServicesConfig m_groundServicesConfig;
     SimConnectThread m_simConnect;
     AircraftTrackerThread m_aircraftTracker;
     AnimationThread m_animation;
     GroundServicesThread m_groundServices;
     ConsoleController m_console;
-    std::optional<std::future<GroundScanResult>> m_groundRequest;
+    std::shared_ptr<GSReqGroundScan> m_groundRequest;
     std::vector<GroundSnapshot> m_lastGroundObjects;
     std::vector<AircraftSnapshot> m_aircraftSnapshotBuffer;
 };

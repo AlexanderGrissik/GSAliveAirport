@@ -1,10 +1,36 @@
 #include "AnimationObject.h"
 
+#include "SimConnectIds.h"
+#include "GSRequests/GSReqCommand.h"
+
+#include <algorithm>
 #include <utility>
 
 namespace parking_services
 {
-AnimationFrame::AnimationFrame(SimConnectThread &simConnect) : m_simConnect(simConnect) {}
+namespace
+{
+struct AnimationWireData
+{
+    double latitude{};
+    double longitude{};
+    double altitudeFeet{};
+    double headingDegrees{};
+    double velocityBodyYMetersPerSecond{};
+};
+
+static_assert(sizeof(AnimationWireData) == 40);
+
+std::shared_ptr<GSReqCommand> CommandRequest()
+{
+    return std::make_shared<GSReqCommand>();
+}
+} // namespace
+
+AnimationFrame::AnimationFrame(ISimConnectHandler &simConnect)
+    : m_simConnect(simConnect)
+{
+}
 
 void AnimationFrame::Begin(std::chrono::steady_clock::time_point now)
 {
@@ -21,40 +47,82 @@ std::chrono::steady_clock::time_point AnimationFrame::Now() const
 
 void AnimationFrame::FreezeObject(AircraftId objectId)
 {
-    m_simConnect.FreezeObject(objectId);
+    m_simConnect.TransmitEvent(objectId, EventFreezeLatitudeLongitude, 1,
+                               CommandRequest());
+    m_simConnect.TransmitEvent(objectId, EventFreezeAltitude, 1,
+                               CommandRequest());
+    m_simConnect.TransmitEvent(objectId, EventFreezeAttitude, 1,
+                               CommandRequest());
 }
 
 void AnimationFrame::CancelObjectAnimation(AircraftId objectId)
 {
-    m_simConnect.CancelAnimationObject(objectId);
+    m_motionUpdates.erase(objectId);
+    m_positionUpdates.erase(objectId);
+    std::erase_if(m_carrierUpdates, [objectId](const auto &entry) {
+        return entry.second.objectId == objectId;
+    });
 }
 
 void AnimationFrame::QueueMotionUpdate(AnimationUpdate update)
 {
-    m_motionUpdates.push_back(std::move(update));
+    m_motionUpdates[update.objectId] = std::move(update);
 }
 
 void AnimationFrame::QueuePositionUpdate(ObjectPositionUpdate update)
 {
-    m_positionUpdates.push_back(std::move(update));
+    m_positionUpdates[update.objectId] = std::move(update);
 }
 
 void AnimationFrame::QueueCarrierUpdate(AnimationCarrierUpdate update)
 {
-    m_carrierUpdates.push_back(std::move(update));
+    const auto key = std::pair{update.objectId, update.carrier};
+    m_carrierUpdates[key] = std::move(update);
 }
 
 void AnimationFrame::Flush()
 {
-    if (!m_motionUpdates.empty()) {
-        m_simConnect.PublishAnimationUpdates(m_motionUpdates);
+    for (const auto &[objectId, update] : m_motionUpdates) {
+        const AnimationWireData data{update.latitude, update.longitude,
+                                     update.altitudeFeet, update.headingDegrees,
+                                     update.velocityBodyYMetersPerSecond};
+        m_simConnect.SetObjectData(DefinitionAnimationUpdate, objectId, 0,
+                                   sizeof(data), &data, CommandRequest());
     }
-    if (!m_positionUpdates.empty()) {
-        m_simConnect.PublishObjectPositionUpdates(m_positionUpdates);
+
+    for (const auto &[objectId, update] : m_positionUpdates) {
+        SIMCONNECT_DATA_INITPOSITION position{};
+        position.Latitude = update.latitude;
+        position.Longitude = update.longitude;
+        position.Altitude = update.altitudeFeet;
+        position.Heading = update.headingDegrees;
+        position.OnGround = 1;
+        m_simConnect.SetObjectData(DefinitionObjectPosition, objectId, 0,
+                                   sizeof(position), &position, CommandRequest());
     }
-    if (!m_carrierUpdates.empty()) {
-        m_simConnect.PublishAnimationCarrierUpdates(m_carrierUpdates);
+
+    for (const auto &[key, update] : m_carrierUpdates) {
+        static_cast<void>(key);
+        auto definition = m_carrierDefinitions.find(update.carrier);
+        if (definition == m_carrierDefinitions.end()) {
+            const auto definitionId = static_cast<SIMCONNECT_DATA_DEFINITION_ID>(
+                m_nextCarrierDefinitionId++);
+            definition = m_carrierDefinitions.emplace(update.carrier, definitionId).first;
+            m_simConnect.AddToDataDefinition(
+                definitionId, update.carrier,
+                update.carrier == "VELOCITY BODY Y" ? "meters per second" : "number",
+                SIMCONNECT_DATATYPE_FLOAT64, CommandRequest());
+        }
+        m_simConnect.SetObjectData(definition->second, update.objectId, 0,
+                                   sizeof(update.value), &update.value,
+                                   CommandRequest());
     }
+}
+
+void AnimationFrame::ResetDefinitions()
+{
+    m_carrierDefinitions.clear();
+    m_nextCarrierDefinitionId = 100;
 }
 
 std::optional<AnimationProximityTarget> AnimationObject::ProximityTarget() const

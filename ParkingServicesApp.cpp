@@ -1,5 +1,7 @@
 #include "ParkingServicesApp.h"
 
+#include "SimConnectIds.h"
+
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -10,19 +12,20 @@ namespace parking_services
 using namespace std::chrono_literals;
 
 ParkingServicesApp::ParkingServicesApp()
-    : m_groundServicesConfig(GroundServicesConfig::LoadDefault()),
-      m_simConnect([this](std::string message) { LogLine(std::move(message)); }),
+    : m_simConnect([this](std::string message) { LogLine(std::move(message)); }),
       m_aircraftTracker(m_simConnect,
                         [this](std::string message) { LogLine(std::move(message)); }),
       m_animation(m_simConnect, m_aircraftTracker,
                   [this](std::string message) { LogLine(std::move(message)); }),
       m_groundServices(m_simConnect, m_aircraftTracker, m_animation,
-                       m_groundServicesConfig,
+                       GroundServicesConfig::LoadDefault(),
                        [this](std::string message) { LogLine(std::move(message)); })
 {
-    for (const std::string &message : m_groundServicesConfig.StartupMessages()) {
-        LogLine(message);
-    }
+    // Register every status observer before any thread starts, so the SimConnect dispatch
+    // thread can never observe a half-populated observer list (registration is lock-free).
+    m_simConnect.RegisterStatusObserver(&m_animation);
+    m_simConnect.RegisterStatusObserver(&m_groundServices);
+    m_simConnect.RegisterStatusObserver(&m_aircraftTracker);
 }
 
 ParkingServicesApp::~ParkingServicesApp()
@@ -35,6 +38,11 @@ ParkingServicesApp::~ParkingServicesApp()
 
 int ParkingServicesApp::Run()
 {
+    m_simConnect.Start();
+    m_aircraftTracker.Start();
+    m_animation.Start();
+    m_groundServices.Start();
+
     std::cout << "ParkingServices for MSFS 2024\n"
               << "Automatic aircraft tracking: discover at 1 km, retain to 5 km.\n"
               << "Type 'help' for commands.\n";
@@ -65,13 +73,10 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
     case AppCommandType::Status: {
         const auto services = m_groundServices.Status();
         const auto animation = m_animation.Status();
-        m_console.PrintStatus({m_simConnect.IsConnected(), m_aircraftTracker.TrackedCount(),
-                               m_aircraftTracker.NearbyCount(), m_lastGroundObjects.size(),
-                               services.createdObjects, services.pendingCreates,
-                               animation.walkingWorkers,
-                               AnimationThread::MaximumWalkingWorkers,
-                               animation.probeActive, animation.probeObjectId,
-                               animation.probeSamples});
+        m_console.PrintStatus({m_aircraftTracker.TrackedCount(), m_aircraftTracker.NearbyCount(),
+                               m_lastGroundObjects.size(), services.createdObjects,
+                               services.pendingCreates, animation.walkingWorkers,
+                               AnimationThread::MaximumWalkingWorkers});
         break;
     }
     case AppCommandType::Tracked:
@@ -96,17 +101,8 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
     case AppCommandType::Ground:
         RequestGroundDebugSnapshot();
         break;
-    case AppCommandType::StartProbe:
-        if (command.objectId) m_animation.StartProbe(*command.objectId);
-        break;
-    case AppCommandType::StopProbe:
-        m_animation.StopProbe();
-        break;
     case AppCommandType::Reset:
         ResetEverything();
-        break;
-    case AppCommandType::Catalog:
-        m_simConnect.RequestCatalog();
         break;
     case AppCommandType::Unknown:
         std::cout << "Unknown command or invalid ObjectID. Type 'help'.\n";
@@ -120,15 +116,18 @@ void ParkingServicesApp::RequestGroundDebugSnapshot()
         std::cout << "A ground-object debug request is already in progress.\n";
         return;
     }
-    m_groundRequest.emplace(m_simConnect.RequestGroundObjects());
+    m_groundRequest = std::make_shared<GSReqGroundScan>();
+    m_simConnect.RequestObjectDataByType(DefinitionGround, 5'000,
+                                         SIMCONNECT_SIMOBJECT_TYPE_GROUND,
+                                         m_groundRequest);
     std::cout << "Requested the current 5 km ground-object debug snapshot.\n";
 }
 
 void ParkingServicesApp::PollGroundDebugSnapshot()
 {
-    if (!m_groundRequest ||
-        m_groundRequest->wait_for(0ms) != std::future_status::ready) return;
-    GroundScanResult result = m_groundRequest->get();
+    if (!m_groundRequest || !m_groundRequest->IsFinished()) return;
+
+    GSGroundScanResult result = m_groundRequest->TakeResult();
     m_groundRequest.reset();
     if (!result.succeeded) {
         std::cout << "Ground-object debug request failed or timed out.\n";

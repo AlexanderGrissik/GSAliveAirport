@@ -1,48 +1,28 @@
 #pragma once
 
-#include "SimConnectSession.h"
-
-#include <functional>
-#include <map>
-#include <optional>
-#include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace parking_services
 {
+// The raw, enumerated SimObject/livery catalog. Pure data: it holds the entries
+// collected by a GSReqCatalog (executed on the SimConnect thread) and offers
+// lookups. It performs no SimConnect I/O itself. Owned solely by
+// GroundServicesConfig, and only ever reached through it.
 class SimObjectCatalog final
 {
   public:
-    using CompletionCallback = std::function<void(std::vector<std::string>)>;
-
-    explicit SimObjectCatalog(LogSink log);
-
-    void Request(SimConnectSession &session, CompletionCallback callback = {});
-    void HandleData(SimConnectSession &session,
-                    const SIMCONNECT_RECV_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST &message,
-                    DWORD messageSize);
-    void Reset();
-    [[nodiscard]] bool InProgress() const;
-
-  private:
-    using Entry = std::pair<std::string, std::string>;
-    struct Bucket
+    struct Entry
     {
-        std::string label;
-        SIMCONNECT_SIMOBJECT_TYPE type{};
-        bool excluded{};
-        bool complete{};
-        std::set<Entry> entries;
+        std::string title;
+        std::string livery;
     };
 
-    void FinishIfComplete();
+    void Adopt(std::vector<Entry> entries);
+    void Reset();
+    [[nodiscard]] const std::vector<Entry> &Entries() const { return m_entries; }
 
-    LogSink m_log;
-    std::map<DWORD, Bucket> m_buckets;
-    std::optional<DWORD> m_allRequestId;
-    std::vector<CompletionCallback> m_callbacks;
-    bool m_inProgress = false;
+  private:
+    std::vector<Entry> m_entries;
 };
 } // namespace parking_services

@@ -13,19 +13,16 @@ namespace parking_services
 {
 enum class AppCommandType
 {
-    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground,
-    StartProbe, StopProbe, Reset, Catalog, Unknown,
+    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground, Reset, Unknown,
 };
 
 struct AppCommand
 {
     AppCommandType type{AppCommandType::None};
-    std::optional<std::uint32_t> objectId;
 };
 
 struct ConsoleStatus
 {
-    bool connected{};
     std::size_t trackedAircraft{};
     std::size_t nearbyAircraft{};
     std::size_t groundObjects{};
@@ -33,9 +30,6 @@ struct ConsoleStatus
     std::size_t pendingCreates{};
     std::size_t walkingWorkers{};
     std::size_t maximumWalkingWorkers{};
-    bool animationProbeActive{};
-    std::uint32_t animationProbeObjectId{};
-    std::size_t animationProbeSamples{};
 };
 
 class ConsoleController final

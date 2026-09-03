@@ -2,12 +2,9 @@
 
 #include "AircraftTrackerThread.h"
 #include "AnimationConfiguredObject.h"
-#include "SimConnectThread.h"
 #include "SimObjectPositioning.h"
 
 #include <algorithm>
-#include <array>
-#include <iomanip>
 #include <utility>
 
 namespace parking_services
@@ -19,24 +16,22 @@ namespace
 constexpr auto kUpdateInterval = std::chrono::microseconds(33'333);
 }
 
-AnimationThread::AnimationThread(SimConnectThread &simConnect,
+AnimationThread::AnimationThread(ISimConnectHandler &simConnect,
                                  AircraftTrackerThread &aircraftTracker, LogSink log)
     : m_simConnect(simConnect), m_aircraftTracker(aircraftTracker),
       m_log(std::move(log)), m_frame(m_simConnect)
 {
-    m_simConnect.SubscribeConnection([this](bool connected) {
-        if (!connected) Post([this] { ResetInternal(); });
-    });
-    m_simConnect.SubscribeObjectRemoved(
-        [this](AircraftId objectId) {
-            Post([this, objectId] { HandleSimulatorObjectRemoved(objectId); });
-        });
-    m_thread = std::jthread(&AnimationThread::AnimationLoop, this);
 }
 
 AnimationThread::~AnimationThread()
 {
     Stop();
+}
+
+void AnimationThread::Start()
+{
+    if (m_thread.joinable()) return;
+    m_thread = std::jthread(&AnimationThread::AnimationLoop, this);
 }
 
 void AnimationThread::Stop()
@@ -45,6 +40,29 @@ void AnimationThread::Stop()
     m_thread.request_stop();
     m_wake.notify_all();
     m_thread.join();
+}
+
+void AnimationThread::OnSimStarted()
+{
+    // No action needed on (re)connect; the loop picks up new work on demand.
+}
+
+void AnimationThread::OnSimDisconnected()
+{
+    Post([this] {
+        ResetInternal();
+        m_frame.ResetDefinitions();
+    });
+}
+
+void AnimationThread::OnSimStopped()
+{
+    Post([this] { ResetInternal(); });
+}
+
+void AnimationThread::OnObjRemoved(std::uint32_t objectId)
+{
+    Post([this, objectId] { HandleSimulatorObjectRemoved(objectId); });
 }
 
 void AnimationThread::AddObject(AircraftId objectId, GroundServiceAnimation animation,
@@ -63,16 +81,6 @@ void AnimationThread::RemoveObject(AircraftId objectId)
 void AnimationThread::Reset()
 {
     Post([this] { ResetInternal(); });
-}
-
-void AnimationThread::StartProbe(AircraftId objectId)
-{
-    Post([this, objectId] { StartProbeInternal(objectId); });
-}
-
-void AnimationThread::StopProbe(bool announce)
-{
-    Post([this, announce] { StopProbeInternal(announce); });
 }
 
 AnimationStatus AnimationThread::Status() const
@@ -203,17 +211,15 @@ void AnimationThread::RemoveObjectInternal(AircraftId objectId)
         }
     }
     if (changed) PublishStatus();
-    if (m_probeActive && m_probeObjectId == objectId) StopProbeInternal(false);
 }
 
 void AnimationThread::HandleSimulatorObjectRemoved(AircraftId objectId)
 {
     const bool wasAnimated = ContainsAnimationObject(objectId);
-    const bool wasProbed = m_probeActive && m_probeObjectId == objectId;
     RemoveObjectInternal(objectId);
-    if (wasAnimated || wasProbed) {
+    if (wasAnimated) {
         m_log("MSFS removed ObjectID " + std::to_string(objectId) +
-              "; cleared its animation and probe state.");
+              "; cleared its animation.");
     }
 }
 
@@ -224,81 +230,6 @@ void AnimationThread::ResetInternal()
         animation->Cancel(m_frame);
     }
     m_animations.clear();
-    StopProbeInternal(false);
-    PublishStatus();
-}
-
-void AnimationThread::StartProbeInternal(AircraftId objectId)
-{
-    StopProbeInternal(false);
-    if (!m_simConnect.IsConnected() || objectId == 0) {
-        m_log("Could not start animation probe: SimConnect is unavailable or ObjectID is invalid.");
-        return;
-    }
-    std::array<wchar_t, 32768> executablePath{};
-    const DWORD length = GetModuleFileNameW(nullptr, executablePath.data(),
-                                            static_cast<DWORD>(executablePath.size()));
-    m_probePath = "animation_probe.csv";
-    if (length != 0 && length < executablePath.size()) {
-        m_probePath = std::filesystem::path(executablePath.data()).parent_path() /
-                      m_probePath;
-    }
-    m_probeFile.open(m_probePath, std::ios::trunc);
-    if (!m_probeFile) {
-        m_log("Could not open animation_probe.csv for writing.");
-        return;
-    }
-    m_probeFile << "elapsed_seconds,object_id,title,ground_velocity_knots,velocity_body_x_mps,"
-                   "velocity_body_y_mps,velocity_body_z_mps,heading_degrees,latitude,longitude,"
-                   "altitude_feet,on_ground\n";
-    m_probeActive = true;
-    m_probeObjectId = objectId;
-    m_probeSamples = 0;
-    PublishStatus();
-    m_simConnect.StartAnimationProbe(objectId, [this](AnimationProbeSample sample) mutable {
-        Post([this, sample = std::move(sample)]() mutable {
-            RecordProbeSample(std::move(sample));
-        });
-    });
-    m_log("Recording ObjectID " + std::to_string(objectId) +
-          " until stopprobe. Output: " + m_probePath.string());
-}
-
-void AnimationThread::StopProbeInternal(bool announce)
-{
-    if (!m_probeActive) {
-        if (announce) m_log("No animation probe is currently recording.");
-        return;
-    }
-    m_simConnect.StopAnimationProbe();
-    m_probeFile.flush();
-    m_probeFile.close();
-    const auto samples = m_probeSamples;
-    m_probeActive = false;
-    m_probeObjectId = 0;
-    PublishStatus();
-    if (announce) {
-        m_log("Stopped animation probe after " + std::to_string(samples) +
-              " samples. Output: " + m_probePath.string());
-    }
-}
-
-void AnimationThread::RecordProbeSample(AnimationProbeSample sample)
-{
-    if (!m_probeActive || sample.objectId != m_probeObjectId || !m_probeFile) return;
-    for (std::size_t quote = 0;
-         (quote = sample.title.find('"', quote)) != std::string::npos; quote += 2) {
-        sample.title.insert(quote, 1, '"');
-    }
-    m_probeFile << std::fixed << std::setprecision(6) << sample.elapsedSeconds << ','
-                << sample.objectId << ",\"" << sample.title << "\","
-                << sample.groundSpeedKnots << ',' << sample.velocityBodyXMetersPerSecond << ','
-                << sample.velocityBodyYMetersPerSecond << ','
-                << sample.velocityBodyZMetersPerSecond << ',' << sample.headingDegrees << ','
-                << sample.latitude << ',' << sample.longitude << ',' << sample.altitudeFeet << ','
-                << sample.onGround << '\n';
-    ++m_probeSamples;
-    if (m_probeSamples % 20 == 0) m_probeFile.flush();
     PublishStatus();
 }
 
@@ -309,7 +240,7 @@ void AnimationThread::PublishStatus()
             return entry.second->IsWalking();
         }));
     std::scoped_lock lock(m_statusMutex);
-    m_status = {walkingWorkers, m_probeActive, m_probeObjectId, m_probeSamples};
+    m_status = {walkingWorkers};
 }
 
 bool AnimationThread::ContainsAnimationObject(AircraftId objectId) const

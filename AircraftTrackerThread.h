@@ -1,12 +1,16 @@
 #pragma once
 
 #include "Aircraft.h"
+#include "ISimConnectHandler.h"
+#include "ISimConnectStatus.h"
 #include "LogSink.h"
+#include "GSRequests/GSReqAircraftScan.h"
 
 #include <condition_variable>
 #include <deque>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <stop_token>
@@ -15,8 +19,6 @@
 
 namespace parking_services
 {
-class SimConnectThread;
-
 struct ApproximateUserPosition
 {
     AircraftId objectId{};
@@ -24,20 +26,27 @@ struct ApproximateUserPosition
     double longitude{};
 };
 
-class AircraftTrackerThread final
+class AircraftTrackerThread final : public ISimConnectStatus
 {
   public:
     static constexpr double DiscoveryRadiusMeters = 1'000.0;
     static constexpr double RetentionRadiusMeters = 5'000.0;
 
-    AircraftTrackerThread(SimConnectThread &simConnect, LogSink log);
+    AircraftTrackerThread(ISimConnectHandler &simConnect, LogSink log);
     ~AircraftTrackerThread();
 
     AircraftTrackerThread(const AircraftTrackerThread &) = delete;
     AircraftTrackerThread &operator=(const AircraftTrackerThread &) = delete;
 
+    void Start();
     void Stop();
     void Reset();
+
+    void OnSimConnected() override {};
+    void OnSimDisconnected() override;
+    void OnSimStarted() override;
+    void OnSimStopped() override;
+    void OnObjRemoved(std::uint32_t objectId) override;
 
     void FillTrackedAircraftSnapshot(std::vector<AircraftSnapshot> &destination) const;
     void FillNearbyAircraftSnapshot(
@@ -54,16 +63,17 @@ class AircraftTrackerThread final
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
+    void PollScan();
     void RequestScan();
     void ApplyScan(std::vector<AircraftSnapshot> observations);
     void RemoveObject(AircraftId objectId);
     void ClearState();
     void PublishSnapshot();
 
-    SimConnectThread &m_simConnect;
+    ISimConnectHandler &m_simConnect;
     LogSink m_log;
     bool m_connected = false;
-    bool m_scanPending = false;
+    std::shared_ptr<GSReqAircraftScan> m_scanRequest;
     std::chrono::steady_clock::time_point m_nextScan{};
     std::map<AircraftId, AircraftSnapshot> m_tracked;
     std::map<AircraftId, AircraftSnapshot> m_nearby;

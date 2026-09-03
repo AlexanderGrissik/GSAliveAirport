@@ -1,8 +1,9 @@
 #include "GroundServicesThread.h"
 
 #include "AircraftTrackerThread.h"
+#include "GSRequests/GSReqCommand.h"
 #include "GSObject.h"
-#include "SimConnectThread.h"
+#include "SimConnectData.h"
 #include "SimObjectPositioning.h"
 
 #include <algorithm>
@@ -17,21 +18,24 @@ namespace
 {
 constexpr double kSpawnSpeedKnots = 1.0;
 constexpr double kRemovalSpeedKnots = 2.0;
+
+std::shared_ptr<GSReqCommand> CommandRequest()
+{
+    return std::make_shared<GSReqCommand>();
+}
 } // namespace
 
-GroundServicesThread::GroundServicesThread(SimConnectThread &simConnect,
+GroundServicesThread::GroundServicesThread(ISimConnectHandler &simConnect,
                                            AircraftTrackerThread &aircraftTracker,
                                            AnimationThread &animation,
-                                           GroundServicesConfig &configuration, LogSink log)
+                                           GroundServicesConfig configuration, LogSink log)
     : m_simConnect(simConnect), m_aircraftTracker(aircraftTracker),
-      m_animation(animation), m_configuration(configuration), m_log(std::move(log))
+      m_animation(animation), m_configuration(std::move(configuration)), m_log(std::move(log))
 {
+    for (const std::string &message : m_configuration.StartupMessages()) {
+        m_log(message);
+    }
     m_services = MakeServices();
-    m_simConnect.SubscribeConnection(
-        [this](bool connected) { Post([this, connected] { HandleConnection(connected); }); });
-    m_simConnect.SubscribeObjectRemoved(
-        [this](DWORD objectId) { Post([this, objectId] { HandleObjectRemoved(objectId); }); });
-    m_thread = std::jthread(&GroundServicesThread::GroundServicesLoop, this);
 }
 
 GroundServicesThread::~GroundServicesThread()
@@ -39,10 +43,15 @@ GroundServicesThread::~GroundServicesThread()
     Stop();
 }
 
+void GroundServicesThread::Start()
+{
+    if (m_thread.joinable()) return;
+    m_thread = std::jthread(&GroundServicesThread::GroundServicesLoop, this);
+}
+
 void GroundServicesThread::Stop()
 {
     if (!m_thread.joinable()) return;
-    m_stopping.store(true);
     m_thread.request_stop();
     m_wake.notify_all();
     m_thread.join();
@@ -73,6 +82,7 @@ void GroundServicesThread::RunLoop(std::stop_token stopToken)
     auto nextDecision = std::chrono::steady_clock::now();
     while (!stopToken.stop_requested()) {
         ProcessCommands();
+        PollRequests();
         const auto now = std::chrono::steady_clock::now();
         if (m_connected) MaintainObjects(now);
         if (m_connected && now >= nextDecision) {
@@ -105,6 +115,51 @@ void GroundServicesThread::ProcessCommands()
     for (auto &command : commands) command();
 }
 
+void GroundServicesThread::PollRequests()
+{
+    std::vector<std::uint64_t> completedCreates;
+    for (const auto &[token, operation] : m_createRequests) {
+        if (operation.request->IsFinished()) completedCreates.push_back(token);
+    }
+    for (const std::uint64_t token : completedCreates) {
+        const auto operationIt = m_createRequests.find(token);
+        if (operationIt == m_createRequests.end()) continue;
+        const AircraftId aircraftId = operationIt->second.aircraftId;
+        const DWORD objectId = operationIt->second.request->ObjectId();
+        m_createRequests.erase(operationIt);
+
+        const auto object = m_objects.find(token);
+        if (object == m_objects.end()) {
+            if (objectId != 0) m_simConnect.RemoveObject(objectId, CommandRequest());
+            DecrementPendingCreations(aircraftId);
+            continue;
+        }
+        object->second->OnCreated(m_services, objectId);
+        DecrementPendingCreations(aircraftId);
+    }
+
+    std::vector<AircraftId> completedGeometry;
+    for (const auto &[objectId, request] : m_geometryRequests) {
+        if (request->IsFinished()) completedGeometry.push_back(objectId);
+    }
+    for (const AircraftId objectId : completedGeometry) {
+        const auto requestIt = m_geometryRequests.find(objectId);
+        if (requestIt == m_geometryRequests.end()) continue;
+        const GSBaggageGeometryResult result = requestIt->second->Result();
+        m_geometryRequests.erase(requestIt);
+
+        for (auto &entry : m_objects) {
+            GSObject *object = entry.second.get();
+            if (object->ObjectId() != objectId) continue;
+            object->OnGeometry(
+                m_services,
+                {result.succeeded, result.angleCurrentDegrees, result.endRampYMeters,
+                 result.endRampZMeters, result.pivotYMeters, result.pivotZMeters});
+            break;
+        }
+    }
+}
+
 // Drives one maintenance tick for every live object. Each object decides for
 // itself whether it needs anything (e.g. a cargo-door loader requesting ramp
 // geometry); objects that finish (cancelled, or created with no object to track)
@@ -118,7 +173,7 @@ void GroundServicesThread::MaintainObjects(std::chrono::steady_clock::time_point
             continue;
         }
         // Still in flight (create not yet resolved) or already finalized: leave it
-        // to the create callback, or let it keep doing its animation/geometry work.
+        // to its create request, or let it keep doing its animation/geometry work.
         if (!object->Resolved() || object->Finalized()) continue;
         object->Maintain(m_services, now);
     }
@@ -127,7 +182,6 @@ void GroundServicesThread::MaintainObjects(std::chrono::steady_clock::time_point
 }
 void GroundServicesThread::EvaluateTrackedAircraft()
 {
-    ResolveConfigurationIfAvailable();
     m_aircraftTracker.FillTrackedAircraftSnapshot(m_aircraftSnapshotBuffer);
     std::set<AircraftId> present;
     for (const AircraftSnapshot &aircraft : m_aircraftSnapshotBuffer) {
@@ -157,16 +211,6 @@ void GroundServicesThread::EvaluateTrackedAircraft()
     for (const AircraftId aircraftId : owned) {
         if (!present.contains(aircraftId)) RemoveForAircraft(aircraftId);
     }
-}
-
-void GroundServicesThread::ResolveConfigurationIfAvailable()
-{
-    if (!m_configuration.IsLoaded() || m_configuration.IsResolved() ||
-        !m_simConnect.FillAvailableSimObjectTitles(m_catalogTitleBuffer)) {
-        return;
-    }
-    m_configuration.Resolve(m_catalogTitleBuffer, m_configurationMessageBuffer);
-    for (const std::string &message : m_configurationMessageBuffer) m_log(message);
 }
 
 GroundServicesDecision GroundServicesThread::Decide(const AircraftSnapshot &aircraft)
@@ -222,8 +266,8 @@ void GroundServicesThread::QueueService(const AircraftSnapshot &aircraft,
     BeginCreate(token, std::move(object));
 }
 // Starts the async create for one object. The object itself (a GSObject
-// subclass) already knows its pose and route; the callback hands the result
-// back to the object through OnCreated, which decides whether to finalize or
+// subclass) already knows its pose and route; the request hands the result back
+// to the object through OnCreated, which decides whether to finalize or
 // continue (e.g. a cargo-door loader defers until its ramp aligns).
 void GroundServicesThread::BeginCreate(std::uint64_t token, std::unique_ptr<GSObject> object)
 {
@@ -233,23 +277,10 @@ void GroundServicesThread::BeginCreate(std::uint64_t token, std::unique_ptr<GSOb
     m_objects.emplace(token, std::move(object));
     m_pendingCreations[aircraftId]++;
     PublishStatus();
+    auto request = std::make_shared<GSReqCreateObject>(&m_simConnect);
+    m_createRequests.emplace(token, CreateOperation{aircraftId, request});
     m_simConnect.CreateObject(raw->Object().title, GSObject::ToInitialPosition(pose),
-                              [this, token, aircraftId](DWORD objectId) {
-                                  if (m_stopping.load()) {
-                                      if (objectId != 0) m_simConnect.RemoveObject(objectId);
-                                      return;
-                                  }
-                                  Post([this, token, aircraftId, objectId] {
-                                      const auto it = m_objects.find(token);
-                                      if (it == m_objects.end()) {
-                                          if (objectId != 0) m_simConnect.RemoveObject(objectId);
-                                          DecrementPendingCreations(aircraftId);
-                                          return;
-                                      }
-                                      it->second->OnCreated(m_services, objectId);
-                                      DecrementPendingCreations(aircraftId);
-                                  });
-                              });
+                              std::move(request));
 }
 
 // Records a successfully created object (bookkeeping). Called by GSObject via
@@ -392,7 +423,10 @@ void GroundServicesThread::RemoveObject(AircraftId objectId, bool requestSimulat
     }
 
     m_animation.RemoveObject(objectId);
-    if (requestSimulatorRemoval) m_simConnect.RemoveObject(objectId);
+    m_geometryRequests.erase(objectId);
+    if (requestSimulatorRemoval) {
+        m_simConnect.RemoveObject(objectId, CommandRequest());
+    }
 
     m_childrenByObject.erase(objectId);
     if (const auto parent = m_parentByObject.find(objectId); parent != m_parentByObject.end()) {
@@ -452,13 +486,45 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
     }
     PublishStatus();
 }
-void GroundServicesThread::HandleConnection(bool connected)
+void GroundServicesThread::OnSimStarted()
 {
-    m_connected = connected;
-    if (connected) return;
+    Post([this] { HandleConnect(); });
+}
+
+void GroundServicesThread::OnSimDisconnected()
+{
+    Post([this] { HandleDisconnect(); });
+}
+
+void GroundServicesThread::OnSimStopped()
+{
+    Post([this] { HandleDisconnect(); });
+}
+
+void GroundServicesThread::OnObjRemoved(std::uint32_t objectId)
+{
+    Post([this, objectId] { HandleObjectRemoved(objectId); });
+}
+
+void GroundServicesThread::HandleConnect()
+{
+    // Load (or refresh) the SimObject catalog on the SimConnect thread and
+    // resolve the configured service families against it. Runs on this thread
+    // and blocks only until the catalog request completes.
+    m_configuration.LoadCatalog(m_simConnect);
+    for (const std::string &message : m_configuration.InitializationMessages()) {
+        m_log(message);
+    }
+    m_connected = true;
+    PublishStatus();
+}
+
+void GroundServicesThread::HandleDisconnect()
+{
+    m_connected = false;
     RemoveAllServicesInternal();
     m_animation.Reset();
-    m_configuration.ClearResolution();
+    m_configuration.ResetInitialization();
     PublishStatus();
 }
 
@@ -469,7 +535,13 @@ void GroundServicesThread::RemoveAllServicesInternal()
     for (const AircraftId objectId : objects) {
         if (m_createdObjects.contains(objectId)) RemoveObject(objectId, true);
     }
+    for (const auto &[token, operation] : m_createRequests) {
+        static_cast<void>(token);
+        operation.request->Abandon();
+    }
+    m_createRequests.clear();
     m_objects.clear();
+    m_geometryRequests.clear();
     m_configuredAircraft.clear();
     m_objectsByAircraft.clear();
     m_aircraftByObject.clear();
@@ -510,35 +582,42 @@ GSObjectServices GroundServicesThread::MakeServices()
     services.finalize = [this](GSObject *object, const GSObject::GSObjectPos &pose) {
         if (object) FinalizeObject(object, pose);
     };
-    services.removeSimObject = [this](AircraftId objectId) { m_simConnect.RemoveObject(objectId); };
-    services.setPosition = [this](AircraftId objectId, const GSObject::GSObjectPos &pose) {
-        const ObjectPositionUpdate update{objectId, pose.latitude, pose.longitude,
-                                          pose.altitudeFeet, pose.headingDegrees};
-        m_simConnect.PublishObjectPositionUpdates({update});
+    services.removeSimObject = [this](AircraftId objectId) {
+        m_simConnect.RemoveObject(objectId, CommandRequest());
     };
-    services.freezeObject = [this](AircraftId objectId) { m_simConnect.FreezeObject(objectId); };
+    services.setPosition = [this](AircraftId objectId, const GSObject::GSObjectPos &pose) {
+        SIMCONNECT_DATA_INITPOSITION position = GSObject::ToInitialPosition(pose);
+        position.OnGround = 1;
+        m_simConnect.SetObjectData(DefinitionObjectPosition, objectId, 0,
+                                   sizeof(position), &position, CommandRequest());
+    };
+    services.freezeObject = [this](AircraftId objectId) {
+        m_simConnect.TransmitEvent(objectId, EventFreezeLatitudeLongitude, 1,
+                                   CommandRequest());
+        m_simConnect.TransmitEvent(objectId, EventFreezeAltitude, 1,
+                                   CommandRequest());
+        m_simConnect.TransmitEvent(objectId, EventFreezeAttitude, 1,
+                                   CommandRequest());
+    };
     services.openCargoDoor = [this](AircraftId aircraftId, std::uint32_t point) {
-        m_simConnect.SetCargoDoorOpen(aircraftId, point, true);
+        m_simConnect.TransmitEventEx1(aircraftId, EventOpenAircraftDoors, point + 1, 1,
+                                      CommandRequest());
     };
     services.closeCargoDoor = [this](AircraftId aircraftId, std::uint32_t point) {
-        m_simConnect.SetCargoDoorOpen(aircraftId, point, false);
+        m_simConnect.TransmitEventEx1(aircraftId, EventCloseAircraftDoors, point + 1, 1,
+                                      CommandRequest());
     };
     services.setRampTarget = [this](AircraftId objectId, double angle) {
-        m_simConnect.SetBaggageLoaderRampTarget(objectId, angle);
+        const BaggageLoaderRampTargetWireData data{angle};
+        m_simConnect.SetObjectData(DefinitionBaggageLoaderRampTarget, objectId, 0,
+                                   sizeof(data), &data, CommandRequest());
     };
     services.requestBaggageGeometry = [this](AircraftId objectId) {
-        m_simConnect.RequestBaggageLoaderGeometry(
-            objectId, [this, objectId](BaggageLoaderGeometry geometry) {
-                Post([this, objectId, geometry] {
-                    for (auto &entry : m_objects) {
-                        GSObject *object = entry.second.get();
-                        if (object->ObjectId() == objectId) {
-                            object->OnGeometry(m_services, geometry);
-                            return;
-                        }
-                    }
-                });
-            });
+        auto request = std::make_shared<GSReqBaggageGeometry>();
+        m_geometryRequests[objectId] = request;
+        m_simConnect.RequestObjectData(DefinitionBaggageLoaderGeometry, objectId,
+                                       SIMCONNECT_PERIOD_ONCE, 0,
+                                       std::move(request));
     };
     services.isParentCreated = [this](AircraftId parentObjectId) {
         return m_createdObjects.contains(parentObjectId);
