@@ -15,6 +15,8 @@ namespace parking_services
 {
 namespace
 {
+constexpr SIMCONNECT_DATA_DEFINITION_ID kGroundDefinition = 2;
+
 std::string Lower(std::string value)
 {
     std::ranges::transform(value, value.begin(), [](unsigned char character) {
@@ -213,5 +215,79 @@ void ConsoleController::PrintStatus(const ConsoleStatus &status) const
               << ", walking workers: " << status.walkingWorkers << '/'
               << status.maximumWalkingWorkers;
     std::cout << '\n';
+}
+
+ConsoleController::ConsoleController(ISimConnectHandler &simConnect)
+    : m_simConnect(simConnect)
+{
+}
+
+void ConsoleController::OnSimConnected()
+{
+    m_simConnect.AddDatum(kGroundDefinition, "TITLE", "",
+                          SIMCONNECT_DATATYPE_STRING256, NewSetupRequest());
+    m_simConnect.AddDatum(kGroundDefinition, "PLANE LATITUDE", "degrees",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+    m_simConnect.AddDatum(kGroundDefinition, "PLANE LONGITUDE", "degrees",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+    m_simConnect.AddDatum(kGroundDefinition, "GROUND VELOCITY", "knots",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+}
+
+void ConsoleController::RequestGroundDebugSnapshot()
+{
+    if (m_groundRequest) {
+        std::cout << "A ground-object debug request is already in progress.\n";
+        return;
+    }
+    m_groundRequest = std::make_unique<GSReqGroundScan>();
+    m_simConnect.RequestObjectDataByType(kGroundDefinition, 5'000,
+                                         SIMCONNECT_SIMOBJECT_TYPE_GROUND,
+                                         *m_groundRequest);
+    std::cout << "Requested the current 5 km ground-object debug snapshot.\n";
+}
+
+void ConsoleController::PollGroundDebugSnapshot()
+{
+    CollectFinishedSetupRequests();
+    if (!m_groundRequest || !m_groundRequest->IsFinished()) return;
+
+    GSGroundScanResult result = m_groundRequest->TakeResult();
+    m_groundRequest.reset();
+    if (!result.succeeded) {
+        std::cout << "Ground-object debug request failed or timed out.\n";
+        PrintPrompt();
+        return;
+    }
+    m_lastGroundObjects = std::move(result.objects);
+    PrintGround(m_lastGroundObjects);
+    PrintPrompt();
+}
+
+GSReqCommand &ConsoleController::NewSetupRequest()
+{
+    auto request = std::make_unique<GSReqCommand>();
+    GSReqCommand &reference = *request;
+    std::scoped_lock lock(m_setupRequestMutex);
+    m_setupRequests.push_back(std::move(request));
+    return reference;
+}
+
+void ConsoleController::CollectFinishedSetupRequests()
+{
+    std::scoped_lock lock(m_setupRequestMutex);
+    std::erase_if(m_setupRequests, [](const auto &request) {
+        return request->IsFinished();
+    });
+}
+
+std::size_t ConsoleController::LastGroundCount() const
+{
+    return m_lastGroundObjects.size();
+}
+
+void ConsoleController::Reset()
+{
+    m_lastGroundObjects.clear();
 }
 } // namespace parking_services

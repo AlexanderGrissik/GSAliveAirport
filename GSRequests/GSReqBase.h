@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ISimConnectRequest.h"
+#include "../ISimConnectRequest.h"
 
 #include <chrono>
 #include <mutex>

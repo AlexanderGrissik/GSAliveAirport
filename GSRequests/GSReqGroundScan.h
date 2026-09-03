@@ -1,13 +1,25 @@
 #pragma once
 
 #include "GSReqBase.h"
-#include "../GroundObject.h"
 
+#include <cstdint>
 #include <map>
+#include <string>
 #include <vector>
 
 namespace parking_services
 {
+using GroundObjectId = std::uint32_t;
+
+struct GroundSnapshot
+{
+    GroundObjectId objectId{};
+    std::string title;
+    double latitude{};
+    double longitude{};
+    double groundSpeedKnots{};
+};
+
 struct GSGroundScanResult
 {
     bool succeeded{};

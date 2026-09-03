@@ -1,9 +1,16 @@
 #pragma once
 
 #include "Aircraft.h"
-#include "GroundObject.h"
+#include "ISimConnectHandler.h"
+#include "ISimConnectStatus.h"
+#include "GSRequests/GSReqCommand.h"
+#include "GSRequests/GSReqGroundScan.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <functional>
+#include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -32,9 +39,15 @@ struct ConsoleStatus
     std::size_t maximumWalkingWorkers{};
 };
 
-class ConsoleController final
+class ConsoleController final : public ISimConnectStatus
 {
   public:
+    explicit ConsoleController(ISimConnectHandler &simConnect);
+    ~ConsoleController() = default;
+
+    ConsoleController(const ConsoleController &) = delete;
+    ConsoleController &operator=(const ConsoleController &) = delete;
+
     void Pump(const std::function<void(AppCommand)> &handler);
     static AppCommand Parse(std::string_view line);
     static void PrintHelp();
@@ -45,7 +58,26 @@ class ConsoleController final
     static void PrintGround(const std::vector<GroundSnapshot> &ground);
     void PrintStatus(const ConsoleStatus &status) const;
 
+    void RequestGroundDebugSnapshot();
+    void PollGroundDebugSnapshot();
+    [[nodiscard]] std::size_t LastGroundCount() const;
+    void Reset();
+
+    void OnSimConnected() override;
+    void OnSimDisconnected() override {}
+    void OnSimStarted() override {}
+    void OnSimStopped() override {}
+    void OnObjRemoved(std::uint32_t) override {}
+
   private:
+    GSReqCommand &NewSetupRequest();
+    void CollectFinishedSetupRequests();
+
+    ISimConnectHandler &m_simConnect;
     std::string m_line;
+    std::unique_ptr<GSReqGroundScan> m_groundRequest;
+    std::mutex m_setupRequestMutex;
+    std::vector<std::unique_ptr<GSReqCommand>> m_setupRequests;
+    std::vector<GroundSnapshot> m_lastGroundObjects;
 };
 } // namespace parking_services
