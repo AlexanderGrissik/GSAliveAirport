@@ -159,12 +159,12 @@ GroundServiceSpecialType ReadSpecialType(const Json &value, std::string_view own
                              std::string(owner) + "'");
 }
 
-GroundServiceAnimation ReadAnimation(const Json &value, std::string_view owner)
+AnimationConfiguration ReadAnimation(const Json &value, std::string_view owner)
 {
     if (!value.is_object()) {
         throw std::runtime_error("Animation for '" + std::string(owner) + "' must be an object");
     }
-    GroundServiceAnimation animation{};
+    AnimationConfiguration animation{};
     animation.framesPerSecond = ReadNumber(value, "FPS");
     if (animation.framesPerSecond <= 0.0) {
         throw std::runtime_error("Animation FPS must be greater than zero");
@@ -184,8 +184,8 @@ GroundServiceAnimation ReadAnimation(const Json &value, std::string_view owner)
         if (!carrierValue.is_object()) {
             throw std::runtime_error("each Animation Carrier must be an object");
         }
-        GroundServiceAnimationCarrier carrier{};
-        carrier.carrier = ReadName(carrierValue, "Carrier");
+        AnimationCarrier carrier{};
+        carrier.name = ReadName(carrierValue, "Carrier");
         const auto frames = carrierValue.find("Frames");
         if (frames == carrierValue.end() || !frames->is_array() || frames->size() != 2 ||
             !(*frames)[0].is_number() || !(*frames)[1].is_number()) {

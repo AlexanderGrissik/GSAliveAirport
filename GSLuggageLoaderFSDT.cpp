@@ -1,5 +1,7 @@
 #include "GSLuggageLoaderFSDT.h"
 
+#include "GSCommon.h"
+
 #include <algorithm>
 #include <cmath>
 #include <utility>
@@ -20,9 +22,9 @@ bool GSLuggageLoaderFSDT::PreparePlacement(GSObjectServices &services)
 {
     if (m_location.kind != GroundServiceLocationKind::CargoDoorRightAuto)
     {
-        services.log("Skipped " + m_object.family + " for aircraft " +
-                     std::to_string(m_aircraft.objectId) +
-                     ": a luggage loader expects a cargo-door placement.");
+        GSLog("Skipped " + m_object.family + " for aircraft " +
+              std::to_string(m_aircraft.objectId) +
+              ": a luggage loader expects a cargo-door placement.");
         return false;
     }
     // Attach to a right cargo door: prefer the back door, fall back to the front.
@@ -33,9 +35,9 @@ bool GSLuggageLoaderFSDT::PreparePlacement(GSObjectServices &services)
                                               : nullptr);
     if (!connection)
     {
-        services.log("Skipped " + m_object.family + " for aircraft " +
-                     std::to_string(m_aircraft.objectId) +
-                     ": MSFS reported no matching right cargo door.");
+        GSLog("Skipped " + m_object.family + " for aircraft " +
+              std::to_string(m_aircraft.objectId) +
+              ": MSFS reported no matching right cargo door.");
         return false;
     }
     m_pose = RelativeToAircraft(m_aircraft, connection->rightMeters,
@@ -88,9 +90,9 @@ void GSLuggageLoaderFSDT::OnGeometry(GSObjectServices &services,
         !std::isfinite(geometry.endRampYMeters) || !std::isfinite(geometry.endRampZMeters) ||
         !std::isfinite(geometry.pivotYMeters) || !std::isfinite(geometry.pivotZMeters))
     {
-        services.log("Could not read cargo-door ramp geometry for ObjectID " +
-                     std::to_string(m_objectId) +
-                     "; keeping the configured object at the door point.");
+        GSLog("Could not read cargo-door ramp geometry for ObjectID " +
+              std::to_string(m_objectId) +
+              "; keeping the configured object at the door point.");
         Finish(services, m_pose);
         return;
     }
@@ -103,9 +105,9 @@ void GSLuggageLoaderFSDT::OnGeometry(GSObjectServices &services,
                        geometry.endRampZMeters - geometry.pivotZMeters);
         if (rampLength < 0.01)
         {
-            services.log("MSFS returned no usable cargo-door ramp geometry for ObjectID " +
-                         std::to_string(m_objectId) +
-                         "; keeping the configured object at the door point.");
+            GSLog("MSFS returned no usable cargo-door ramp geometry for ObjectID " +
+                  std::to_string(m_objectId) +
+                  "; keeping the configured object at the door point.");
             Finish(services, m_pose);
             return;
         }
@@ -144,8 +146,8 @@ void GSLuggageLoaderFSDT::OnGeometry(GSObjectServices &services,
     actualPose.headingDegrees = m_pose.headingDegrees;
     services.setPosition(m_objectId, actualPose);
     Finish(services, actualPose);
-    services.log("Aligned configured cargo-door object ObjectID " + std::to_string(m_objectId) +
-                 " with " + std::to_string(kCargoDoorClearanceMeters) + " m door clearance.");
+    GSLog("Aligned configured cargo-door object ObjectID " + std::to_string(m_objectId) +
+          " with " + std::to_string(kCargoDoorClearanceMeters) + " m door clearance.");
 }
 
 void GSLuggageLoaderFSDT::OnRemoved(GSObjectServices &services)

@@ -1,5 +1,7 @@
 #include "SimConnectThread.h"
 
+#include "GSCommon.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
@@ -17,8 +19,6 @@ constexpr SIMCONNECT_CLIENT_EVENT_ID kEventSimStart = 1;
 constexpr SIMCONNECT_CLIENT_EVENT_ID kEventSimStop = 2;
 constexpr SIMCONNECT_CLIENT_EVENT_ID kEventObjectRemoved = 3;
 }
-
-SimConnectThread::SimConnectThread(LogSink log) : m_log(std::move(log)) {}
 
 SimConnectThread::~SimConnectThread()
 {
@@ -163,7 +163,7 @@ void SimConnectThread::RunLoop(std::stop_token stopToken)
                 SimConnect_CallDispatch(m_handle, DispatchThunk, this);
             if (m_disconnectRequested || FAILED(dispatch)) {
                 if (FAILED(dispatch) && !m_disconnectRequested) {
-                    m_log("SimConnect dispatch failed; reconnecting.");
+                    GSLog("SimConnect dispatch failed; reconnecting.");
                 }
                 Disconnect();
                 m_disconnectRequested = false;
@@ -225,20 +225,20 @@ bool SimConnectThread::Connect()
     HANDLE handle = nullptr;
     if (FAILED(SimConnect_Open(&handle, "ParkingServices", nullptr, 0, nullptr, 0))) {
         if (!m_reportedWaiting) {
-            m_log("Waiting for Microsoft Flight Simulator 2024...");
+            GSLog("Waiting for Microsoft Flight Simulator 2024...");
             m_reportedWaiting = true;
         }
         return false;
     }
     m_handle = handle;
     if (!SubscribeLifecycleEvents()) {
-        m_log("Failed to subscribe to SimConnect lifecycle events; reconnecting.");
+        GSLog("Failed to subscribe to SimConnect lifecycle events; reconnecting.");
         SimConnect_Close(m_handle);
         m_handle = nullptr;
         return false;
     }
     m_reportedWaiting = false;
-    m_log("Connected to MSFS 2024.");
+    GSLog("Connected to MSFS 2024.");
     NotifyConnection(true);
     return true;
 }
@@ -541,16 +541,16 @@ void SimConnectThread::OnSimConnectMessage(SIMCONNECT_RECV *message,
     if (!message) return;
     switch (message->dwID) {
     case SIMCONNECT_RECV_ID_QUIT:
-        m_log("MSFS closed the SimConnect connection.");
+        GSLog("MSFS closed the SimConnect connection.");
         m_disconnectRequested = true;
         break;
     case SIMCONNECT_RECV_ID_EVENT: {
         const auto &event = *reinterpret_cast<SIMCONNECT_RECV_EVENT *>(message);
         if (event.uEventID == kEventSimStart) {
-            m_log("Simulation started.");
+            GSLog("Simulation started.");
             NotifySimulation(true);
         } else if (event.uEventID == kEventSimStop) {
-            m_log("Simulation stopped.");
+            GSLog("Simulation stopped.");
             NotifySimulation(false);
         }
         break;
@@ -604,7 +604,7 @@ void SimConnectThread::HandleException(
     }
     message << ')';
     if (!RouteRequestFailure(exception)) message << " for an untracked operation";
-    m_log(message.str());
+    GSLog(message.str());
 }
 
 void SimConnectThread::NotifyObjectRemoved(DWORD objectId)
@@ -656,7 +656,7 @@ bool SimConnectThread::SubscribeSystemEvent(
 {
     if (!m_handle ||
         FAILED(SimConnect_SubscribeToSystemEvent(m_handle, eventId, name))) {
-        m_log(std::string("Failed to subscribe to SimConnect event: ") + name);
+        GSLog(std::string("Failed to subscribe to SimConnect event: ") + name);
         return false;
     }
     return true;

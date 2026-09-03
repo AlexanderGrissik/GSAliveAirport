@@ -1,11 +1,10 @@
 #pragma once
 
 #include "Aircraft.h"
-#include "ISimConnectHandler.h"
-#include "ISimConnectStatus.h"
-#include "LogSink.h"
 #include "GSRequests/GSReqAircraftScan.h"
 #include "GSRequests/GSReqCommand.h"
+#include "ISimConnectHandler.h"
+#include "ISimConnectStatus.h"
 
 #include <condition_variable>
 #include <deque>
@@ -33,7 +32,7 @@ class AircraftTrackerThread final : public ISimConnectStatus
     static constexpr double DiscoveryRadiusMeters = 1'000.0;
     static constexpr double RetentionRadiusMeters = 5'000.0;
 
-    AircraftTrackerThread(ISimConnectHandler &simConnect, LogSink log);
+    explicit AircraftTrackerThread(ISimConnectHandler &simConnect);
     ~AircraftTrackerThread();
 
     AircraftTrackerThread(const AircraftTrackerThread &) = delete;
@@ -75,7 +74,6 @@ class AircraftTrackerThread final : public ISimConnectStatus
     void PublishSnapshot();
 
     ISimConnectHandler &m_simConnect;
-    LogSink m_log;
     bool m_connected = false;
     std::unique_ptr<GSReqAircraftScan> m_scanRequest;
     std::vector<std::unique_ptr<GSReqCommand>> m_setupRequests;

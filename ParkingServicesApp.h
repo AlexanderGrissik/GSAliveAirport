@@ -8,7 +8,6 @@
 #include "SimConnectThread.h"
 
 #include <atomic>
-#include <mutex>
 
 namespace parking_services
 {
@@ -26,10 +25,8 @@ class ParkingServicesApp final
   private:
     void HandleCommand(AppCommand command);
     void ResetEverything();
-    void LogLine(std::string message) const;
 
     std::atomic_bool m_quit{false};
-    mutable std::mutex m_outputMutex;
     SimConnectThread m_simConnect;
     AircraftTrackerThread m_aircraftTracker;
     AnimationThread m_animation;

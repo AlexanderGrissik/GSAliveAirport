@@ -3,7 +3,6 @@
 #include "ISimConnectHandler.h"
 #include "ISimConnectRequest.h"
 #include "ISimConnectStatus.h"
-#include "LogSink.h"
 
 #include <condition_variable>
 #include <cstdint>
@@ -30,7 +29,7 @@ struct SendResult
 class SimConnectThread final : public ISimConnectHandler
 {
   public:
-    explicit SimConnectThread(LogSink log);
+    SimConnectThread() = default;
     ~SimConnectThread();
 
     SimConnectThread(const SimConnectThread &) = delete;
@@ -131,7 +130,6 @@ class SimConnectThread final : public ISimConnectHandler
     [[nodiscard]] DWORD NextRequestId();
     bool SubscribeSystemEvent(SIMCONNECT_CLIENT_EVENT_ID eventId, const char *name);
 
-    LogSink m_log;
     HANDLE m_handle = nullptr;
     DWORD m_nextRequestId = 10'000;
     std::vector<ISimConnectStatus *> m_statusObservers;

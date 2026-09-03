@@ -212,8 +212,8 @@ void ConsoleController::PrintStatus(const ConsoleStatus &status) const
               << ", last ground debug objects: " << status.groundObjects
               << ", created services: " << status.createdServices
               << ", pending creates: " << status.pendingCreates
-              << ", walking workers: " << status.walkingWorkers << '/'
-              << status.maximumWalkingWorkers;
+              << ", moving animated objects: " << status.movingObjects << '/'
+              << status.maximumMovingObjects;
     std::cout << '\n';
 }
 

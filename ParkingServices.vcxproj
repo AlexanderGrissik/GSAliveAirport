@@ -92,12 +92,12 @@
   <ItemGroup>
     <ClCompile Include="Aircraft.cpp" />
     <ClCompile Include="AircraftTrackerThread.cpp" />
-    <ClCompile Include="AnimationConfiguredObject.cpp" />
-    <ClCompile Include="AnimationObject.cpp" />
+    <ClCompile Include="AnimatedObject.cpp" />
     <ClCompile Include="AnimationThread.cpp" />
     <ClCompile Include="ConsoleController.cpp" />
     <ClCompile Include="GroundServicesThread.cpp" />
     <ClCompile Include="GroundServicesConfig.cpp" />
+    <ClCompile Include="GSCommon.cpp" />
     <ClCompile Include="GSObject.cpp" />
     <ClCompile Include="GSWalker.cpp" />
     <ClCompile Include="GSLuggageLoaderFSDT.cpp" />
@@ -117,13 +117,11 @@
   <ItemGroup>
     <ClInclude Include="Aircraft.h" />
     <ClInclude Include="AircraftTrackerThread.h" />
-    <ClInclude Include="AnimationConfiguredObject.h" />
-    <ClInclude Include="AnimationObject.h" />
+    <ClInclude Include="AnimatedObject.h" />
     <ClInclude Include="AnimationThread.h" />
     <ClInclude Include="ConsoleController.h" />
     <ClInclude Include="GroundServicesThread.h" />
     <ClInclude Include="GroundServicesConfig.h" />
-    <ClInclude Include="GroundServiceTypes.h" />
     <ClInclude Include="GSObject.h" />
     <ClInclude Include="GSWalker.h" />
     <ClInclude Include="GSLuggageLoaderFSDT.h" />
@@ -137,7 +135,7 @@
     <ClInclude Include="ISimConnectHandler.h" />
     <ClInclude Include="ISimConnectRequest.h" />
     <ClInclude Include="ISimConnectStatus.h" />
-    <ClInclude Include="LogSink.h" />
+    <ClInclude Include="GSCommon.h" />
     <ClInclude Include="ParkingServicesApp.h" />
     <ClInclude Include="SimConnectThread.h" />
     <ClInclude Include="SimObjectCatalog.h" />

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Aircraft.h"
-#include "AnimationObject.h"
-#include "GroundServiceTypes.h"
+#include "AnimatedObject.h"
 #include "SimObjectPositioning.h"
 
 #include <chrono>
@@ -12,9 +11,62 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace parking_services
 {
+// A resolved configuration node used to create one simulator ground object.
+struct GroundServiceObject
+{
+    std::string family;
+    std::string title;
+    std::optional<AnimationConfiguration> animation;
+
+    // Relative to the direct parent. X is parent-forward; negative Y is to the
+    // parent's right, matching the XYZH convention in the configuration file.
+    double parentX{};
+    double parentY{};
+    double parentZ{};
+    double parentHeadingDegrees{};
+    std::vector<GroundServiceObject> attachments;
+};
+
+enum class GroundServiceSpecialType
+{
+    None,
+    LuggageLoaderFSDT,
+    WalkerFSDT
+};
+
+enum class GroundServiceLocationKind
+{
+    Static,
+    Route,
+    // Attach to a right cargo door, preferring the back door and falling back to
+    // the front door. Applied automatically to LuggageLoaderFSDT families.
+    CargoDoorRightAuto
+};
+
+struct GroundServiceLocation
+{
+    GroundServiceLocationKind kind{GroundServiceLocationKind::Static};
+    bool faceAircraft{};
+    double relX1{};
+    double relY1{};
+    double relX2{};
+    double relY2{};
+};
+
+struct GroundServiceRequest
+{
+    GroundServiceObject object;
+    GroundServiceLocation location;
+    // Carried through so the ground-service object factory can dispatch to the
+    // right GSObject subclass (WalkerFSDT / LuggageLoaderFSDT / plain).
+    GroundServiceSpecialType specialType{GroundServiceSpecialType::None};
+};
+
 // Resolved cargo-door attachment data for a luggage loader.
 struct GSObjectCargoDoor
 {
@@ -77,7 +129,10 @@ class GSObject
     [[nodiscard]] AircraftId ParentObjectId() const { return m_parentObjectId; }
     [[nodiscard]] const GroundServiceObject &Object() const { return m_object; }
     [[nodiscard]] const GSObjectPos &Pose() const { return m_pose; }
-    [[nodiscard]] const std::optional<AnimationRoute> &Route() const { return m_route; }
+    [[nodiscard]] const std::vector<AnimationCoordinate> &MovementCoordinates() const
+    {
+        return m_movementCoordinates;
+    }
     [[nodiscard]] const AircraftSnapshot &Aircraft() const { return m_aircraft; }
     [[nodiscard]] const std::optional<GSObjectCargoDoor> &CargoDoor() const
     {
@@ -95,7 +150,10 @@ class GSObject
     }
 
     void SetPose(const GSObjectPos &pose) { m_pose = pose; }
-    void SetRoute(std::optional<AnimationRoute> route) { m_route = std::move(route); }
+    void SetMovementCoordinates(std::vector<AnimationCoordinate> coordinates)
+    {
+        m_movementCoordinates = std::move(coordinates);
+    }
 
     // Lifecycle hooks driven by GroundServicesThread (all run on the GS thread).
     // PreparePlacement computes this object's pose/route/attachment from its
@@ -131,7 +189,7 @@ class GSObject
     GroundServiceLocation m_location;
     AircraftId m_parentObjectId{};
     GSObjectPos m_pose{};
-    std::optional<AnimationRoute> m_route;
+    std::vector<AnimationCoordinate> m_movementCoordinates;
     std::optional<GSObjectCargoDoor> m_cargoDoor;
     AircraftId m_objectId{};
     bool m_createResolved{};
@@ -145,7 +203,6 @@ class GSObject
 // the driver stay agnostic to the concrete object type.
 struct GSObjectServices
 {
-    std::function<void(std::string)> log;
     std::function<void(GSObject *, AircraftId, const GSObject::GSObjectPos &)> registerObject;
     std::function<void(GSObject *, const GSObject::GSObjectPos &)> finalize;
     std::function<void(AircraftId)> removeSimObject;

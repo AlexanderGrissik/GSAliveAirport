@@ -1,5 +1,7 @@
 #include "ParkingServicesApp.h"
 
+#include "GSCommon.h"
+
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -10,19 +12,14 @@ namespace parking_services
 using namespace std::chrono_literals;
 
 ParkingServicesApp::ParkingServicesApp()
-    : m_simConnect([this](std::string message) { LogLine(std::move(message)); }),
-      m_aircraftTracker(m_simConnect,
-                        [this](std::string message) { LogLine(std::move(message)); }),
-      m_animation(m_simConnect, m_aircraftTracker,
-                  [this](std::string message) { LogLine(std::move(message)); }),
+    : m_aircraftTracker(m_simConnect),
+      m_animation(m_simConnect, m_aircraftTracker),
       m_groundServices(m_simConnect, m_aircraftTracker, m_animation,
-                       GroundServicesConfig::LoadDefault(),
-                       [this](std::string message) { LogLine(std::move(message)); }),
+                       GroundServicesConfig::LoadDefault()),
       m_console(m_simConnect)
 {
     // Register every status observer before any thread starts, so the SimConnect dispatch
     // thread can never observe a half-populated observer list (registration is lock-free).
-    m_simConnect.RegisterStatusObserver(&m_animation);
     m_simConnect.RegisterStatusObserver(&m_groundServices);
     m_simConnect.RegisterStatusObserver(&m_aircraftTracker);
     m_simConnect.RegisterStatusObserver(&m_console);
@@ -76,8 +73,8 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
         const auto animation = m_animation.Status();
         m_console.PrintStatus({m_aircraftTracker.TrackedCount(), m_aircraftTracker.NearbyCount(),
                                m_console.LastGroundCount(), services.createdObjects,
-                               services.pendingCreates, animation.walkingWorkers,
-                               AnimationThread::MaximumWalkingWorkers});
+                               services.pendingCreates, animation.movingObjects,
+                               AnimationThread::MaximumMovingObjects});
         break;
     }
     case AppCommandType::Tracked:
@@ -114,16 +111,9 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
 void ParkingServicesApp::ResetEverything()
 {
     m_groundServices.Reset();
-    m_animation.Reset();
     m_aircraftTracker.Reset();
     m_console.Reset();
-    LogLine("Reset requested for aircraft tracking, ground services, and animation.");
-}
-
-void ParkingServicesApp::LogLine(std::string message) const
-{
-    std::scoped_lock lock(m_outputMutex);
-    std::cout << "\n[probe] " << message << '\n';
+    GSLog("Reset requested for aircraft tracking and ground services.");
 }
 } // namespace parking_services
 

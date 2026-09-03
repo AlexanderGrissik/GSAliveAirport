@@ -1,5 +1,6 @@
 #include "GSObject.h"
 
+#include "GSCommon.h"
 #include "GSLuggageLoaderFSDT.h"
 #include "GSWalker.h"
 
@@ -33,13 +34,13 @@ std::unique_ptr<GSObject> GSObject::Create(std::uint64_t token,
     }
 }
 
-bool GSObject::PreparePlacement(GSObjectServices &services)
+bool GSObject::PreparePlacement(GSObjectServices &)
 {
     if (m_location.kind != GroundServiceLocationKind::Static)
     {
-        services.log("Skipped " + m_object.family + " for aircraft " +
-                     std::to_string(m_aircraft.objectId) +
-                     ": a plain ground-service object only supports static placement.");
+        GSLog("Skipped " + m_object.family + " for aircraft " +
+              std::to_string(m_aircraft.objectId) +
+              ": a plain ground-service object only supports static placement.");
         return false;
     }
     m_pose = RelativeToAircraft(m_aircraft, m_location.relX1, m_location.relY1,
@@ -58,8 +59,8 @@ void GSObject::OnCreated(GSObjectServices &services, AircraftId objectId)
     m_objectId = objectId;
     if (objectId == 0)
     {
-        services.log("Failed to create " + m_object.title + " for aircraft " +
-                     std::to_string(m_aircraft.objectId) + ".");
+        GSLog("Failed to create " + m_object.title + " for aircraft " +
+              std::to_string(m_aircraft.objectId) + ".");
         return;
     }
     if (m_parentObjectId != 0 && !services.isParentCreated(m_parentObjectId))

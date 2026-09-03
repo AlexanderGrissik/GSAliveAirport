@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Aircraft.h"
-#include "GroundServiceTypes.h"
+#include "GSObject.h"
 #include "SimObjectCatalog.h"
 
 #include <filesystem>
@@ -75,7 +75,7 @@ class GroundServicesConfig final
         std::vector<std::string> excludePatterns;
         std::string alternateFamily;
         GroundServiceSpecialType specialType{GroundServiceSpecialType::None};
-        std::optional<GroundServiceAnimation> animation;
+        std::optional<AnimationConfiguration> animation;
         std::vector<Attachment> attachments;
         std::vector<std::string> resolvedTitles;
         bool usingAlternateObjects{};

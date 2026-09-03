@@ -35,8 +35,8 @@ struct ConsoleStatus
     std::size_t groundObjects{};
     std::size_t createdServices{};
     std::size_t pendingCreates{};
-    std::size_t walkingWorkers{};
-    std::size_t maximumWalkingWorkers{};
+    std::size_t movingObjects{};
+    std::size_t maximumMovingObjects{};
 };
 
 class ConsoleController final : public ISimConnectStatus

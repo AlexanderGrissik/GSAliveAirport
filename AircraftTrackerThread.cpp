@@ -1,5 +1,7 @@
 #include "AircraftTrackerThread.h"
 
+#include "GSCommon.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -69,8 +71,8 @@ constexpr std::array kAircraftDatums{
 };
 } // namespace
 
-AircraftTrackerThread::AircraftTrackerThread(ISimConnectHandler &simConnect, LogSink log)
-    : m_simConnect(simConnect), m_log(std::move(log))
+AircraftTrackerThread::AircraftTrackerThread(ISimConnectHandler &simConnect)
+    : m_simConnect(simConnect)
 {
 }
 
@@ -288,7 +290,7 @@ void AircraftTrackerThread::ApplyScan(std::vector<AircraftSnapshot> observations
     const auto user = std::ranges::find_if(
         observations, [](const AircraftSnapshot &aircraft) { return aircraft.isUser; });
     if (user == observations.end()) {
-        m_log("Aircraft scan did not contain the user aircraft; retained the previous snapshot.");
+        GSLog("Aircraft scan did not contain the user aircraft; retained the previous snapshot.");
         return;
     }
 
@@ -343,7 +345,7 @@ void AircraftTrackerThread::ApplyScan(std::vector<AircraftSnapshot> observations
     m_nearby = std::move(nextNearby);
     PublishSnapshot();
     if (added != 0 || removed != 0) {
-        m_log("Tracker update: added " + std::to_string(added) + ", removed " +
+        GSLog("Tracker update: added " + std::to_string(added) + ", removed " +
               std::to_string(removed) + ", total " + std::to_string(m_tracked.size()) + ".");
     }
 }
@@ -357,9 +359,9 @@ void AircraftTrackerThread::RemoveObject(AircraftId objectId)
     if (removed || observed || userRemoved) {
         PublishSnapshot();
         if (userRemoved) {
-            m_log("MSFS removed the user-aircraft ObjectID; invalidated its approximate position.");
+            GSLog("MSFS removed the user-aircraft ObjectID; invalidated its approximate position.");
         } else {
-            m_log("MSFS removed aircraft ObjectID " + std::to_string(objectId) +
+            GSLog("MSFS removed aircraft ObjectID " + std::to_string(objectId) +
                   (removed ? "; evicted it from the tracked set."
                            : "; removed it from the nearby snapshot."));
         }

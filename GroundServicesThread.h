@@ -9,7 +9,6 @@
 #include "GSRequests/GSReqCreateObject.h"
 #include "ISimConnectHandler.h"
 #include "ISimConnectStatus.h"
-#include "LogSink.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -54,7 +53,7 @@ class GroundServicesThread final : public ISimConnectStatus
     GroundServicesThread(ISimConnectHandler &simConnect,
                          AircraftTrackerThread &aircraftTracker,
                          AnimationThread &animation,
-                         GroundServicesConfig configuration, LogSink log);
+                         GroundServicesConfig configuration);
     ~GroundServicesThread();
 
     GroundServicesThread(const GroundServicesThread &) = delete;
@@ -116,7 +115,6 @@ class GroundServicesThread final : public ISimConnectStatus
     AircraftTrackerThread &m_aircraftTracker;
     AnimationThread &m_animation;
     GroundServicesConfig m_configuration;
-    LogSink m_log;
     bool m_connected = false;
     std::uint64_t m_nextCreateToken = 1;
     // Capability bag injected into every GSObject. Built once in the constructor;

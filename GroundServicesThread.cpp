@@ -1,6 +1,7 @@
 #include "GroundServicesThread.h"
 
 #include "AircraftTrackerThread.h"
+#include "GSCommon.h"
 #include "GSObject.h"
 #include "SimObjectPositioning.h"
 
@@ -38,12 +39,12 @@ static_assert(sizeof(BaggageLoaderRampTargetWireData) == 8);
 GroundServicesThread::GroundServicesThread(ISimConnectHandler &simConnect,
                                            AircraftTrackerThread &aircraftTracker,
                                            AnimationThread &animation,
-                                           GroundServicesConfig configuration, LogSink log)
+                                           GroundServicesConfig configuration)
     : m_simConnect(simConnect), m_aircraftTracker(aircraftTracker),
-      m_animation(animation), m_configuration(std::move(configuration)), m_log(std::move(log))
+      m_animation(animation), m_configuration(std::move(configuration))
 {
     for (const std::string &message : m_configuration.StartupMessages()) {
-        m_log(message);
+        GSLog(message);
     }
     m_services = MakeServices();
 }
@@ -76,7 +77,7 @@ void GroundServicesThread::Reset()
 {
     Post([this] {
         RemoveAllServicesInternal();
-        m_log("Reset ground-service state and requested removal of all created objects.");
+        GSLog("Reset ground-service state and requested removal of all created objects.");
     });
 }
 
@@ -132,6 +133,7 @@ void GroundServicesThread::ProcessCommands()
 
 void GroundServicesThread::InitializeSimConnect()
 {
+    m_animation.InitializeSimConnect();
     CollectFinishedCommandRequests();
     m_simConnect.AddDatum(kRampTargetDefinition, "BAGGAGELOADER ANGLE TARGET",
                           "degrees", SIMCONNECT_DATATYPE_FLOAT64,
@@ -309,7 +311,7 @@ void GroundServicesThread::EnsureAutomaticServices(const AircraftSnapshot &aircr
     for (const GroundServiceRequest &request : m_serviceRequestBuffer) {
         QueueService(aircraft, request);
     }
-    m_log("Applied " + std::to_string(m_serviceRequestBuffer.size()) +
+    GSLog("Applied " + std::to_string(m_serviceRequestBuffer.size()) +
           " configured " + std::string(AircraftSizeCategoryName(*category)) +
           " service request(s) to aircraft " + std::to_string(aircraft.objectId) +
           " (wingspan " + std::to_string(aircraft.wingSpanMeters) + " m.");
@@ -327,7 +329,7 @@ void GroundServicesThread::QueueService(const AircraftSnapshot &aircraft,
     auto object = GSObject::Create(token, aircraft, request);
     if (!object) return;
     if (!object->PreparePlacement(m_services)) {
-        m_log("Skipped " + request.object.family + " for aircraft " +
+        GSLog("Skipped " + request.object.family + " for aircraft " +
               std::to_string(aircraft.objectId) + ": no valid placement was found.");
         return;
     }
@@ -381,13 +383,22 @@ void GroundServicesThread::QueueAttachments(const AircraftSnapshot &aircraft,
     }
 }
 
-// Shared completion (GSObject::Finish): start the walking animation (with the
-// route, if any) and queue any child attachments. Called via services.finalize.
+// Shared completion (GSObject::Finish): construct the complete generic animation
+// and hand it to AnimationThread, then queue any child attachments.
 void GroundServicesThread::FinalizeObject(GSObject *object,
                                           const GSObject::GSObjectPos &actualPose)
 {
     if (object->Object().animation) {
-        m_animation.AddObject(object->ObjectId(), *object->Object().animation, object->Route());
+        std::vector<AnimationCoordinate> coordinates =
+            object->MovementCoordinates();
+        if (coordinates.empty()) {
+            coordinates.push_back({actualPose.latitude, actualPose.longitude,
+                                   actualPose.altitudeFeet,
+                                   actualPose.headingDegrees});
+        }
+        m_animation.AddObject(std::make_unique<AnimatedObject>(
+            object->ObjectId(), *object->Object().animation,
+            std::move(coordinates)));
     }
     QueueAttachments(object->Aircraft(), object->ObjectId(), actualPose,
                      object->Object().attachments);
@@ -401,7 +412,7 @@ void GroundServicesThread::RemoveForAircraft(AircraftId aircraftId)
         // One or more creations are still in flight; let them complete and finish
         // the removal from DecrementPendingCreations once the count drains to zero.
         m_deferredRemoval.insert(aircraftId);
-        m_log("Deferring removal of aircraft " + std::to_string(aircraftId) + ": " +
+        GSLog("Deferring removal of aircraft " + std::to_string(aircraftId) + ": " +
               std::to_string(pending) + " ground-service creation(s) still in flight.");
     }
     PublishStatus();
@@ -438,7 +449,7 @@ void GroundServicesThread::FinalizeDeferredRemoval(AircraftId aircraftId)
     if (m_deferredRemoval.erase(aircraftId) == 0) return;
     RemoveResolvedObjects(aircraftId, /*requestSimulatorRemoval=*/true);
     m_configuredAircraft.erase(aircraftId);
-    m_log("Completed deferred removal of services for aircraft " +
+    GSLog("Completed deferred removal of services for aircraft " +
           std::to_string(aircraftId) + ".");
     PublishStatus();
 }
@@ -524,7 +535,7 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
             return entry.second->AircraftObjectId() == objectId;
         });
     if (isTrackedAircraft) {
-        m_log("MSFS removed tracked aircraft ObjectID " + std::to_string(objectId) +
+        GSLog("MSFS removed tracked aircraft ObjectID " + std::to_string(objectId) +
               "; removing its pending and created ground services.");
         RemoveForAircraft(objectId);
         return;
@@ -549,7 +560,7 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
     const bool wasCreated = m_createdObjects.contains(objectId);
     if (wasCreated) RemoveObject(objectId, false);
     if (wasCreated) {
-        m_log("MSFS removed created ground ObjectID " + std::to_string(objectId) +
+        GSLog("MSFS removed created ground ObjectID " + std::to_string(objectId) +
               "; removed it and its dependent objects from tracking.");
     }
     PublishStatus();
@@ -581,7 +592,7 @@ void GroundServicesThread::HandleConnect()
     // and blocks only until the catalog request completes.
     m_configuration.LoadCatalog(m_simConnect);
     for (const std::string &message : m_configuration.InitializationMessages()) {
-        m_log(message);
+        GSLog(message);
     }
     m_connected = true;
     PublishStatus();
@@ -636,7 +647,6 @@ bool GroundServicesThread::HasPendingFor(AircraftId aircraftId) const
 GSObjectServices GroundServicesThread::MakeServices()
 {
     GSObjectServices services;
-    services.log = [this](std::string message) { m_log(std::move(message)); };
     services.registerObject = [this](GSObject *object, AircraftId objectId,
                                      const GSObject::GSObjectPos &pose) {
         if (object) RegisterObject(object, objectId, pose);
