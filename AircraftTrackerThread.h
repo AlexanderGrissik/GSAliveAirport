@@ -5,6 +5,7 @@
 #include "ISimConnectStatus.h"
 #include "LogSink.h"
 #include "GSRequests/GSReqAircraftScan.h"
+#include "GSRequests/GSReqCommand.h"
 
 #include <condition_variable>
 #include <deque>
@@ -42,7 +43,7 @@ class AircraftTrackerThread final : public ISimConnectStatus
     void Stop();
     void Reset();
 
-    void OnSimConnected() override {};
+    void OnSimConnected() override;
     void OnSimDisconnected() override;
     void OnSimStarted() override;
     void OnSimStopped() override;
@@ -63,6 +64,9 @@ class AircraftTrackerThread final : public ISimConnectStatus
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
+    void InitializeSimConnect();
+    GSReqCommand &NewSetupRequest();
+    void CollectFinishedSetupRequests();
     void PollScan();
     void RequestScan();
     void ApplyScan(std::vector<AircraftSnapshot> observations);
@@ -73,7 +77,9 @@ class AircraftTrackerThread final : public ISimConnectStatus
     ISimConnectHandler &m_simConnect;
     LogSink m_log;
     bool m_connected = false;
-    std::shared_ptr<GSReqAircraftScan> m_scanRequest;
+    std::unique_ptr<GSReqAircraftScan> m_scanRequest;
+    std::vector<std::unique_ptr<GSReqCommand>> m_setupRequests;
+    bool m_discardScanResult{};
     std::chrono::steady_clock::time_point m_nextScan{};
     std::map<AircraftId, AircraftSnapshot> m_tracked;
     std::map<AircraftId, AircraftSnapshot> m_nearby;

@@ -1,15 +1,19 @@
 #include "AnimationObject.h"
 
-#include "SimConnectIds.h"
-#include "GSRequests/GSReqCommand.h"
-
 #include <algorithm>
+#include <memory>
 #include <utility>
 
 namespace parking_services
 {
 namespace
 {
+constexpr SIMCONNECT_DATA_DEFINITION_ID kAnimationDefinition = 3;
+constexpr SIMCONNECT_DATA_DEFINITION_ID kPositionDefinition = 6;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kFreezeLatitudeLongitudeEvent = 5;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kFreezeAltitudeEvent = 6;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kFreezeAttitudeEvent = 7;
+
 struct AnimationWireData
 {
     double latitude{};
@@ -20,11 +24,6 @@ struct AnimationWireData
 };
 
 static_assert(sizeof(AnimationWireData) == 40);
-
-std::shared_ptr<GSReqCommand> CommandRequest()
-{
-    return std::make_shared<GSReqCommand>();
-}
 } // namespace
 
 AnimationFrame::AnimationFrame(ISimConnectHandler &simConnect)
@@ -32,8 +31,50 @@ AnimationFrame::AnimationFrame(ISimConnectHandler &simConnect)
 {
 }
 
+void AnimationFrame::InitializeSimConnect()
+{
+    CollectFinishedRequests();
+    m_simConnect.AddDatum(kAnimationDefinition, "PLANE LATITUDE", "degrees",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
+    m_simConnect.AddDatum(kAnimationDefinition, "PLANE LONGITUDE", "degrees",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
+    m_simConnect.AddDatum(kAnimationDefinition, "PLANE ALTITUDE", "feet",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
+    m_simConnect.AddDatum(kAnimationDefinition, "PLANE HEADING DEGREES TRUE",
+                          "degrees", SIMCONNECT_DATATYPE_FLOAT64,
+                          NewCommandRequest());
+    m_simConnect.AddDatum(kAnimationDefinition, "VELOCITY BODY Y",
+                          "meters per second", SIMCONNECT_DATATYPE_FLOAT64,
+                          NewCommandRequest());
+    m_simConnect.AddDatum(kPositionDefinition, "Initial Position", "",
+                          SIMCONNECT_DATATYPE_INITPOSITION, NewCommandRequest());
+    m_simConnect.MapClientEvent(kFreezeLatitudeLongitudeEvent,
+                                "FREEZE_LATITUDE_LONGITUDE_SET",
+                                NewCommandRequest());
+    m_simConnect.MapClientEvent(kFreezeAltitudeEvent, "FREEZE_ALTITUDE_SET",
+                                NewCommandRequest());
+    m_simConnect.MapClientEvent(kFreezeAttitudeEvent, "FREEZE_ATTITUDE_SET",
+                                NewCommandRequest());
+}
+
+GSReqCommand &AnimationFrame::NewCommandRequest()
+{
+    auto request = std::make_unique<GSReqCommand>();
+    GSReqCommand &reference = *request;
+    m_commandRequests.push_back(std::move(request));
+    return reference;
+}
+
+void AnimationFrame::CollectFinishedRequests()
+{
+    std::erase_if(m_commandRequests, [](const auto &request) {
+        return request->IsFinished();
+    });
+}
+
 void AnimationFrame::Begin(std::chrono::steady_clock::time_point now)
 {
+    CollectFinishedRequests();
     m_now = now;
     m_motionUpdates.clear();
     m_positionUpdates.clear();
@@ -47,12 +88,12 @@ std::chrono::steady_clock::time_point AnimationFrame::Now() const
 
 void AnimationFrame::FreezeObject(AircraftId objectId)
 {
-    m_simConnect.TransmitEvent(objectId, EventFreezeLatitudeLongitude, 1,
-                               CommandRequest());
-    m_simConnect.TransmitEvent(objectId, EventFreezeAltitude, 1,
-                               CommandRequest());
-    m_simConnect.TransmitEvent(objectId, EventFreezeAttitude, 1,
-                               CommandRequest());
+    m_simConnect.TransmitEvent(objectId, kFreezeLatitudeLongitudeEvent, 1,
+                               NewCommandRequest());
+    m_simConnect.TransmitEvent(objectId, kFreezeAltitudeEvent, 1,
+                               NewCommandRequest());
+    m_simConnect.TransmitEvent(objectId, kFreezeAttitudeEvent, 1,
+                               NewCommandRequest());
 }
 
 void AnimationFrame::CancelObjectAnimation(AircraftId objectId)
@@ -86,8 +127,8 @@ void AnimationFrame::Flush()
         const AnimationWireData data{update.latitude, update.longitude,
                                      update.altitudeFeet, update.headingDegrees,
                                      update.velocityBodyYMetersPerSecond};
-        m_simConnect.SetObjectData(DefinitionAnimationUpdate, objectId, 0,
-                                   sizeof(data), &data, CommandRequest());
+        m_simConnect.SetObjectData(kAnimationDefinition, objectId, 0,
+                                   sizeof(data), &data, NewCommandRequest());
     }
 
     for (const auto &[objectId, update] : m_positionUpdates) {
@@ -97,8 +138,8 @@ void AnimationFrame::Flush()
         position.Altitude = update.altitudeFeet;
         position.Heading = update.headingDegrees;
         position.OnGround = 1;
-        m_simConnect.SetObjectData(DefinitionObjectPosition, objectId, 0,
-                                   sizeof(position), &position, CommandRequest());
+        m_simConnect.SetObjectData(kPositionDefinition, objectId, 0,
+                                   sizeof(position), &position, NewCommandRequest());
     }
 
     for (const auto &[key, update] : m_carrierUpdates) {
@@ -108,14 +149,14 @@ void AnimationFrame::Flush()
             const auto definitionId = static_cast<SIMCONNECT_DATA_DEFINITION_ID>(
                 m_nextCarrierDefinitionId++);
             definition = m_carrierDefinitions.emplace(update.carrier, definitionId).first;
-            m_simConnect.AddToDataDefinition(
+            m_simConnect.AddDatum(
                 definitionId, update.carrier,
                 update.carrier == "VELOCITY BODY Y" ? "meters per second" : "number",
-                SIMCONNECT_DATATYPE_FLOAT64, CommandRequest());
+                SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
         }
         m_simConnect.SetObjectData(definition->second, update.objectId, 0,
                                    sizeof(update.value), &update.value,
-                                   CommandRequest());
+                                   NewCommandRequest());
     }
 }
 

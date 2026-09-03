@@ -140,8 +140,6 @@
     <ClInclude Include="ISimConnectStatus.h" />
     <ClInclude Include="LogSink.h" />
     <ClInclude Include="ParkingServicesApp.h" />
-    <ClInclude Include="SimConnectData.h" />
-    <ClInclude Include="SimConnectIds.h" />
     <ClInclude Include="SimConnectThread.h" />
     <ClInclude Include="SimObjectCatalog.h" />
     <ClInclude Include="SimObjectPositioning.h" />

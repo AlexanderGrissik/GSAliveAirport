@@ -42,6 +42,11 @@ void AnimationThread::Stop()
     m_thread.join();
 }
 
+void AnimationThread::OnSimConnected()
+{
+    Post([this] { m_frame.InitializeSimConnect(); });
+}
+
 void AnimationThread::OnSimStarted()
 {
     // No action needed on (re)connect; the loop picks up new work on demand.

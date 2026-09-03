@@ -11,7 +11,6 @@
 #include <cctype>
 #include <cmath>
 #include <fstream>
-#include <memory>
 #include <stdexcept>
 #include <unordered_set>
 #include <utility>
@@ -264,14 +263,14 @@ void GroundServicesConfig::LoadCatalog(ISimConnectHandler &handler)
     // Issue the catalog enumeration on the SimConnect thread and block this (GS)
     // thread until the whole catalog has been collected and resolved. Only the
     // SimConnect thread touches the session.
-    auto request = std::make_shared<GSReqCatalog>();
+    GSReqCatalog request;
     handler.EnumerateObjects(SIMCONNECT_SIMOBJECT_TYPE_ALL, request);
-    request->Wait();
+    request.Wait();
 
     std::vector<std::string> availableTitles;
     {
         std::scoped_lock lock(m_stateMutex);
-        if (request->Succeeded()) m_catalog.Adopt(request->Entries());
+        if (request.Succeeded()) m_catalog.Adopt(request.Entries());
         availableTitles.reserve(m_catalog.Entries().size());
         for (const SimObjectCatalog::Entry &entry : m_catalog.Entries()) {
             availableTitles.push_back(entry.title);

@@ -2,13 +2,16 @@
 
 #include "Aircraft.h"
 #include "GroundServiceTypes.h"
+#include "GSRequests/GSReqCommand.h"
 #include "ISimConnectHandler.h"
 
 #include <chrono>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace parking_services
 {
@@ -59,6 +62,7 @@ class AnimationFrame final
   public:
     explicit AnimationFrame(ISimConnectHandler &simConnect);
 
+    void InitializeSimConnect();
     void Begin(std::chrono::steady_clock::time_point now);
     [[nodiscard]] std::chrono::steady_clock::time_point Now() const;
     void FreezeObject(AircraftId objectId);
@@ -70,6 +74,9 @@ class AnimationFrame final
     void ResetDefinitions();
 
   private:
+    GSReqCommand &NewCommandRequest();
+    void CollectFinishedRequests();
+
     ISimConnectHandler &m_simConnect;
     std::chrono::steady_clock::time_point m_now{};
     std::map<DWORD, AnimationUpdate> m_motionUpdates;
@@ -78,6 +85,7 @@ class AnimationFrame final
     std::map<std::string, SIMCONNECT_DATA_DEFINITION_ID, std::less<>>
         m_carrierDefinitions;
     DWORD m_nextCarrierDefinitionId = 100;
+    std::vector<std::unique_ptr<GSReqCommand>> m_commandRequests;
 };
 
 class AnimationObject

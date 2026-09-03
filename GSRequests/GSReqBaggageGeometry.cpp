@@ -1,7 +1,5 @@
 #include "GSReqBaggageGeometry.h"
 
-#include "../SimConnectData.h"
-
 #include <algorithm>
 #include <cstring>
 #include <optional>
@@ -13,6 +11,19 @@ using namespace std::chrono_literals;
 namespace
 {
 constexpr auto kRequestTimeout = 8s;
+
+#pragma pack(push, 1)
+struct BaggageLoaderGeometryWireData
+{
+    double angleCurrentDegrees{};
+    double endRampYMeters{};
+    double endRampZMeters{};
+    double pivotYMeters{};
+    double pivotZMeters{};
+};
+#pragma pack(pop)
+
+static_assert(sizeof(BaggageLoaderGeometryWireData) == 40);
 
 std::optional<BaggageLoaderGeometryWireData> ReadPayload(
     const SIMCONNECT_RECV_SIMOBJECT_DATA &entry, DWORD messageSize)

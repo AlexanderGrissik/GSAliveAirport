@@ -1,9 +1,7 @@
 #include "GroundServicesThread.h"
 
 #include "AircraftTrackerThread.h"
-#include "GSRequests/GSReqCommand.h"
 #include "GSObject.h"
-#include "SimConnectData.h"
 #include "SimObjectPositioning.h"
 
 #include <algorithm>
@@ -18,11 +16,23 @@ namespace
 {
 constexpr double kSpawnSpeedKnots = 1.0;
 constexpr double kRemovalSpeedKnots = 2.0;
+constexpr SIMCONNECT_DATA_DEFINITION_ID kRampTargetDefinition = 4;
+constexpr SIMCONNECT_DATA_DEFINITION_ID kGeometryDefinition = 5;
+constexpr SIMCONNECT_DATA_DEFINITION_ID kPositionDefinition = 7;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kFreezeLatitudeLongitudeEvent = 20;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kFreezeAltitudeEvent = 21;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kFreezeAttitudeEvent = 22;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kOpenAircraftDoorsEvent = 23;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kCloseAircraftDoorsEvent = 24;
 
-std::shared_ptr<GSReqCommand> CommandRequest()
+#pragma pack(push, 1)
+struct BaggageLoaderRampTargetWireData
 {
-    return std::make_shared<GSReqCommand>();
-}
+    double angleDegrees{};
+};
+#pragma pack(pop)
+
+static_assert(sizeof(BaggageLoaderRampTargetWireData) == 8);
 } // namespace
 
 GroundServicesThread::GroundServicesThread(ISimConnectHandler &simConnect,
@@ -55,6 +65,11 @@ void GroundServicesThread::Stop()
     m_thread.request_stop();
     m_wake.notify_all();
     m_thread.join();
+}
+
+void GroundServicesThread::OnSimConnected()
+{
+    Post([this] { InitializeSimConnect(); });
 }
 
 void GroundServicesThread::Reset()
@@ -115,8 +130,44 @@ void GroundServicesThread::ProcessCommands()
     for (auto &command : commands) command();
 }
 
+void GroundServicesThread::InitializeSimConnect()
+{
+    CollectFinishedCommandRequests();
+    m_simConnect.AddDatum(kRampTargetDefinition, "BAGGAGELOADER ANGLE TARGET",
+                          "degrees", SIMCONNECT_DATATYPE_FLOAT64,
+                          NewCommandRequest());
+    m_simConnect.AddDatum(kGeometryDefinition, "BAGGAGELOADER ANGLE CURRENT",
+                          "degrees", SIMCONNECT_DATATYPE_FLOAT64,
+                          NewCommandRequest());
+    m_simConnect.AddDatum(kGeometryDefinition, "BAGGAGELOADER END RAMP Y",
+                          "meters", SIMCONNECT_DATATYPE_FLOAT64,
+                          NewCommandRequest());
+    m_simConnect.AddDatum(kGeometryDefinition, "BAGGAGELOADER END RAMP Z",
+                          "meters", SIMCONNECT_DATATYPE_FLOAT64,
+                          NewCommandRequest());
+    m_simConnect.AddDatum(kGeometryDefinition, "BAGGAGELOADER PIVOT Y", "meters",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
+    m_simConnect.AddDatum(kGeometryDefinition, "BAGGAGELOADER PIVOT Z", "meters",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
+    m_simConnect.AddDatum(kPositionDefinition, "Initial Position", "",
+                          SIMCONNECT_DATATYPE_INITPOSITION, NewCommandRequest());
+    m_simConnect.MapClientEvent(kFreezeLatitudeLongitudeEvent,
+                                "FREEZE_LATITUDE_LONGITUDE_SET",
+                                NewCommandRequest());
+    m_simConnect.MapClientEvent(kFreezeAltitudeEvent, "FREEZE_ALTITUDE_SET",
+                                NewCommandRequest());
+    m_simConnect.MapClientEvent(kFreezeAttitudeEvent, "FREEZE_ATTITUDE_SET",
+                                NewCommandRequest());
+    m_simConnect.MapClientEvent(kOpenAircraftDoorsEvent, "OPEN_AIRCRAFT_DOORS",
+                                NewCommandRequest());
+    m_simConnect.MapClientEvent(kCloseAircraftDoorsEvent, "CLOSE_AIRCRAFT_DOORS",
+                                NewCommandRequest());
+}
+
 void GroundServicesThread::PollRequests()
 {
+    CollectFinishedCommandRequests();
+
     std::vector<std::uint64_t> completedCreates;
     for (const auto &[token, operation] : m_createRequests) {
         if (operation.request->IsFinished()) completedCreates.push_back(token);
@@ -130,7 +181,9 @@ void GroundServicesThread::PollRequests()
 
         const auto object = m_objects.find(token);
         if (object == m_objects.end()) {
-            if (objectId != 0) m_simConnect.RemoveObject(objectId, CommandRequest());
+            if (objectId != 0) {
+                m_simConnect.RemoveObject(objectId, NewCommandRequest());
+            }
             DecrementPendingCreations(aircraftId);
             continue;
         }
@@ -158,6 +211,21 @@ void GroundServicesThread::PollRequests()
             break;
         }
     }
+}
+
+GSReqCommand &GroundServicesThread::NewCommandRequest()
+{
+    auto request = std::make_unique<GSReqCommand>();
+    GSReqCommand &reference = *request;
+    m_commandRequests.push_back(std::move(request));
+    return reference;
+}
+
+void GroundServicesThread::CollectFinishedCommandRequests()
+{
+    std::erase_if(m_commandRequests, [](const auto &request) {
+        return request->IsFinished();
+    });
 }
 
 // Drives one maintenance tick for every live object. Each object decides for
@@ -277,10 +345,11 @@ void GroundServicesThread::BeginCreate(std::uint64_t token, std::unique_ptr<GSOb
     m_objects.emplace(token, std::move(object));
     m_pendingCreations[aircraftId]++;
     PublishStatus();
-    auto request = std::make_shared<GSReqCreateObject>(&m_simConnect);
-    m_createRequests.emplace(token, CreateOperation{aircraftId, request});
+    auto request = std::make_unique<GSReqCreateObject>();
+    GSReqCreateObject &requestReference = *request;
+    m_createRequests.emplace(token, CreateOperation{aircraftId, std::move(request)});
     m_simConnect.CreateObject(raw->Object().title, GSObject::ToInitialPosition(pose),
-                              std::move(request));
+                              requestReference);
 }
 
 // Records a successfully created object (bookkeeping). Called by GSObject via
@@ -423,9 +492,8 @@ void GroundServicesThread::RemoveObject(AircraftId objectId, bool requestSimulat
     }
 
     m_animation.RemoveObject(objectId);
-    m_geometryRequests.erase(objectId);
     if (requestSimulatorRemoval) {
-        m_simConnect.RemoveObject(objectId, CommandRequest());
+        m_simConnect.RemoveObject(objectId, NewCommandRequest());
     }
 
     m_childrenByObject.erase(objectId);
@@ -535,13 +603,7 @@ void GroundServicesThread::RemoveAllServicesInternal()
     for (const AircraftId objectId : objects) {
         if (m_createdObjects.contains(objectId)) RemoveObject(objectId, true);
     }
-    for (const auto &[token, operation] : m_createRequests) {
-        static_cast<void>(token);
-        operation.request->Abandon();
-    }
-    m_createRequests.clear();
     m_objects.clear();
-    m_geometryRequests.clear();
     m_configuredAircraft.clear();
     m_objectsByAircraft.clear();
     m_aircraftByObject.clear();
@@ -583,41 +645,43 @@ GSObjectServices GroundServicesThread::MakeServices()
         if (object) FinalizeObject(object, pose);
     };
     services.removeSimObject = [this](AircraftId objectId) {
-        m_simConnect.RemoveObject(objectId, CommandRequest());
+        m_simConnect.RemoveObject(objectId, NewCommandRequest());
     };
     services.setPosition = [this](AircraftId objectId, const GSObject::GSObjectPos &pose) {
         SIMCONNECT_DATA_INITPOSITION position = GSObject::ToInitialPosition(pose);
         position.OnGround = 1;
-        m_simConnect.SetObjectData(DefinitionObjectPosition, objectId, 0,
-                                   sizeof(position), &position, CommandRequest());
+        m_simConnect.SetObjectData(kPositionDefinition, objectId, 0,
+                                   sizeof(position), &position, NewCommandRequest());
     };
     services.freezeObject = [this](AircraftId objectId) {
-        m_simConnect.TransmitEvent(objectId, EventFreezeLatitudeLongitude, 1,
-                                   CommandRequest());
-        m_simConnect.TransmitEvent(objectId, EventFreezeAltitude, 1,
-                                   CommandRequest());
-        m_simConnect.TransmitEvent(objectId, EventFreezeAttitude, 1,
-                                   CommandRequest());
+        m_simConnect.TransmitEvent(objectId, kFreezeLatitudeLongitudeEvent, 1,
+                                   NewCommandRequest());
+        m_simConnect.TransmitEvent(objectId, kFreezeAltitudeEvent, 1,
+                                   NewCommandRequest());
+        m_simConnect.TransmitEvent(objectId, kFreezeAttitudeEvent, 1,
+                                   NewCommandRequest());
     };
     services.openCargoDoor = [this](AircraftId aircraftId, std::uint32_t point) {
-        m_simConnect.TransmitEventEx1(aircraftId, EventOpenAircraftDoors, point + 1, 1,
-                                      CommandRequest());
+        m_simConnect.TransmitEventEx1(aircraftId, kOpenAircraftDoorsEvent, point + 1, 1,
+                                      NewCommandRequest());
     };
     services.closeCargoDoor = [this](AircraftId aircraftId, std::uint32_t point) {
-        m_simConnect.TransmitEventEx1(aircraftId, EventCloseAircraftDoors, point + 1, 1,
-                                      CommandRequest());
+        m_simConnect.TransmitEventEx1(aircraftId, kCloseAircraftDoorsEvent, point + 1, 1,
+                                      NewCommandRequest());
     };
     services.setRampTarget = [this](AircraftId objectId, double angle) {
         const BaggageLoaderRampTargetWireData data{angle};
-        m_simConnect.SetObjectData(DefinitionBaggageLoaderRampTarget, objectId, 0,
-                                   sizeof(data), &data, CommandRequest());
+        m_simConnect.SetObjectData(kRampTargetDefinition, objectId, 0,
+                                   sizeof(data), &data, NewCommandRequest());
     };
     services.requestBaggageGeometry = [this](AircraftId objectId) {
-        auto request = std::make_shared<GSReqBaggageGeometry>();
-        m_geometryRequests[objectId] = request;
-        m_simConnect.RequestObjectData(DefinitionBaggageLoaderGeometry, objectId,
+        if (m_geometryRequests.contains(objectId)) return;
+        auto request = std::make_unique<GSReqBaggageGeometry>();
+        GSReqBaggageGeometry &requestReference = *request;
+        m_geometryRequests.emplace(objectId, std::move(request));
+        m_simConnect.RequestObjectData(kGeometryDefinition, objectId,
                                        SIMCONNECT_PERIOD_ONCE, 0,
-                                       std::move(request));
+                                       requestReference);
     };
     services.isParentCreated = [this](AircraftId parentObjectId) {
         return m_createdObjects.contains(parentObjectId);

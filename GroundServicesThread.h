@@ -5,11 +5,11 @@
 #include "GroundServicesConfig.h"
 #include "GSObject.h"
 #include "GSRequests/GSReqBaggageGeometry.h"
+#include "GSRequests/GSReqCommand.h"
 #include "GSRequests/GSReqCreateObject.h"
 #include "ISimConnectHandler.h"
 #include "ISimConnectStatus.h"
 #include "LogSink.h"
-#include "SimConnectIds.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -65,7 +65,7 @@ class GroundServicesThread final : public ISimConnectStatus
     void Reset();
     [[nodiscard]] GroundServicesStatus Status() const;
 
-    void OnSimConnected() override {};
+    void OnSimConnected() override;
     void OnSimDisconnected() override;
     void OnSimStarted() override;
     void OnSimStopped() override;
@@ -76,7 +76,10 @@ class GroundServicesThread final : public ISimConnectStatus
     void RunLoop(std::stop_token stopToken);
     void Post(std::function<void()> command);
     void ProcessCommands();
+    void InitializeSimConnect();
     void PollRequests();
+    GSReqCommand &NewCommandRequest();
+    void CollectFinishedCommandRequests();
     void MaintainObjects(std::chrono::steady_clock::time_point now);
     void EvaluateTrackedAircraft();
     static GroundServicesDecision Decide(const AircraftSnapshot &aircraft);
@@ -106,7 +109,7 @@ class GroundServicesThread final : public ISimConnectStatus
     struct CreateOperation
     {
         AircraftId aircraftId{};
-        std::shared_ptr<GSReqCreateObject> request;
+        std::unique_ptr<GSReqCreateObject> request;
     };
 
     ISimConnectHandler &m_simConnect;
@@ -126,8 +129,9 @@ class GroundServicesThread final : public ISimConnectStatus
     // GSObjectServices capabilities this thread injects.
     std::map<std::uint64_t, std::unique_ptr<GSObject>> m_objects;
     std::map<std::uint64_t, CreateOperation> m_createRequests;
-    std::map<AircraftId, std::shared_ptr<GSReqBaggageGeometry>>
+    std::map<AircraftId, std::unique_ptr<GSReqBaggageGeometry>>
         m_geometryRequests;
+    std::vector<std::unique_ptr<GSReqCommand>> m_commandRequests;
     std::set<AircraftId> m_createdObjects;
     std::set<AircraftId> m_configuredAircraft;
     std::map<AircraftId, std::set<AircraftId>> m_objectsByAircraft;

@@ -19,7 +19,8 @@ class ISimConnectRequest
     // Operations with no success reply receive nullptr after the SDK accepts
     // the command. IsComplete tells the SimConnect thread when the request has
     // consumed all expected messages. The terminal callback is made only after
-    // the thread has removed the request from all of its tracking structures.
+    // the thread has removed the request from all of its tracking structures;
+    // it synchronously marks the result and never owns or deletes the request.
     virtual void OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) = 0;
     virtual void OnSuccess() = 0;
     virtual void OnFailure() = 0;

@@ -44,7 +44,7 @@ class AnimationThread final : public ISimConnectStatus
     void Reset();
     [[nodiscard]] AnimationStatus Status() const;
 
-    void OnSimConnected() override  {};
+    void OnSimConnected() override;
     void OnSimDisconnected() override;
     void OnSimStarted() override;
     void OnSimStopped() override;

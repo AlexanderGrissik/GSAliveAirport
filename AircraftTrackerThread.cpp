@@ -1,8 +1,7 @@
 #include "AircraftTrackerThread.h"
 
-#include "SimConnectIds.h"
-
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <set>
 #include <utility>
@@ -10,6 +9,65 @@
 namespace parking_services
 {
 using namespace std::chrono_literals;
+
+namespace
+{
+constexpr SIMCONNECT_DATA_DEFINITION_ID kAircraftDefinition = 1;
+constexpr std::size_t kInteractivePointProbeCount = 32;
+
+struct DatumSpec
+{
+    const char *name;
+    const char *units;
+    SIMCONNECT_DATATYPE type;
+};
+
+constexpr std::array kAircraftDatums{
+    DatumSpec{"TITLE", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"ATC ID", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"ATC AIRLINE", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"ATC FLIGHT NUMBER", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"GROUND ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"GROUND VELOCITY", "knots", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"WING SPAN", "meters", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"AI TRAFFIC CURRENT AIRPORT", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"AI TRAFFIC ASSIGNED PARKING", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"AI TRAFFIC ASSIGNED RUNWAY", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"AI TRAFFIC FROMAIRPORT", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"AI TRAFFIC TOAIRPORT", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"AI TRAFFIC ETD", "seconds", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"AI TRAFFIC ETA", "seconds", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"AI TRAFFIC STATE", "", SIMCONNECT_DATATYPE_STRING256},
+    DatumSpec{"AI TRAFFIC ISIFR", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"NUMBER OF ENGINES", "number", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG COMBUSTION:1", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG COMBUSTION:2", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG COMBUSTION:3", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG COMBUSTION:4", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG STARTER ACTIVE:1", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG STARTER ACTIVE:2", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG STARTER ACTIVE:3", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"GENERAL ENG STARTER ACTIVE:4", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"TURB ENG N1:1", "percent", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"TURB ENG N1:2", "percent", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"TURB ENG N1:3", "percent", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"TURB ENG N1:4", "percent", SIMCONNECT_DATATYPE_FLOAT64},
+    DatumSpec{"LIGHT BEACON", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"LIGHT NAV", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"LIGHT TAXI", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"LIGHT STROBE", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"BRAKE PARKING POSITION", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"PUSHBACK ATTACHED", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"PUSHBACK WAIT", "bool", SIMCONNECT_DATATYPE_INT32},
+    DatumSpec{"TRANSPONDER STATE:1", "enum", SIMCONNECT_DATATYPE_INT32},
+};
+} // namespace
 
 AircraftTrackerThread::AircraftTrackerThread(ISimConnectHandler &simConnect, LogSink log)
     : m_simConnect(simConnect), m_log(std::move(log))
@@ -35,11 +93,15 @@ void AircraftTrackerThread::Stop()
     m_thread.join();
 }
 
+void AircraftTrackerThread::OnSimConnected()
+{
+    Post([this] { InitializeSimConnect(); });
+}
+
 void AircraftTrackerThread::OnSimStarted()
 {
     Post([this] {
         m_connected = true;
-        m_scanRequest.reset();
         m_nextScan = std::chrono::steady_clock::now();
     });
 }
@@ -53,7 +115,7 @@ void AircraftTrackerThread::OnSimStopped()
 {
     Post([this] {
         m_connected = false;
-        m_scanRequest.reset();
+        m_discardScanResult = true;
         ClearState();
     });
 }
@@ -66,7 +128,7 @@ void AircraftTrackerThread::OnObjRemoved(std::uint32_t objectId)
 void AircraftTrackerThread::Reset()
 {
     Post([this] {
-        m_scanRequest.reset();
+        m_discardScanResult = true;
         ClearState();
         if (m_connected) m_nextScan = std::chrono::steady_clock::now() + 10s;
     });
@@ -160,21 +222,65 @@ void AircraftTrackerThread::ProcessCommands()
     for (auto &command : commands) command();
 }
 
+void AircraftTrackerThread::InitializeSimConnect()
+{
+    CollectFinishedSetupRequests();
+    for (const DatumSpec &datum : kAircraftDatums) {
+        m_simConnect.AddDatum(kAircraftDefinition, datum.name, datum.units,
+                              datum.type, NewSetupRequest());
+    }
+    for (std::size_t index = 0; index < kInteractivePointProbeCount; ++index) {
+        const std::string suffix = ":" + std::to_string(index);
+        m_simConnect.AddDatum(kAircraftDefinition,
+                              "INTERACTIVE POINT TYPE EX1" + suffix, "enum",
+                              SIMCONNECT_DATATYPE_INT32, NewSetupRequest());
+        m_simConnect.AddDatum(kAircraftDefinition,
+                              "INTERACTIVE POINT POSX EX1" + suffix, "feet",
+                              SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+        m_simConnect.AddDatum(kAircraftDefinition,
+                              "INTERACTIVE POINT POSY EX1" + suffix, "feet",
+                              SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+        m_simConnect.AddDatum(kAircraftDefinition,
+                              "INTERACTIVE POINT POSZ EX1" + suffix, "feet",
+                              SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+        m_simConnect.AddDatum(kAircraftDefinition,
+                              "INTERACTIVE POINT HEADING EX1" + suffix, "degrees",
+                              SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+    }
+}
+
+GSReqCommand &AircraftTrackerThread::NewSetupRequest()
+{
+    auto request = std::make_unique<GSReqCommand>();
+    GSReqCommand &reference = *request;
+    m_setupRequests.push_back(std::move(request));
+    return reference;
+}
+
+void AircraftTrackerThread::CollectFinishedSetupRequests()
+{
+    std::erase_if(m_setupRequests, [](const auto &request) {
+        return request->IsFinished();
+    });
+}
+
 void AircraftTrackerThread::PollScan()
 {
+    CollectFinishedSetupRequests();
     if (!m_scanRequest || !m_scanRequest->IsFinished()) return;
     GSAircraftScanResult result = m_scanRequest->TakeResult();
     m_scanRequest.reset();
-    if (result.succeeded) ApplyScan(std::move(result.aircraft));
+    const bool discard = std::exchange(m_discardScanResult, false);
+    if (result.succeeded && !discard) ApplyScan(std::move(result.aircraft));
 }
 
 void AircraftTrackerThread::RequestScan()
 {
     m_nextScan = std::chrono::steady_clock::now() + 10s;
-    m_scanRequest = std::make_shared<GSReqAircraftScan>();
+    m_scanRequest = std::make_unique<GSReqAircraftScan>();
     m_simConnect.RequestObjectDataByType(
-        DefinitionAircraft, static_cast<DWORD>(RetentionRadiusMeters),
-        SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT, m_scanRequest);
+        kAircraftDefinition, static_cast<DWORD>(RetentionRadiusMeters),
+        SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT, *m_scanRequest);
 }
 
 void AircraftTrackerThread::ApplyScan(std::vector<AircraftSnapshot> observations)

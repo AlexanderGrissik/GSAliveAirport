@@ -1,7 +1,5 @@
 #include "ParkingServicesApp.h"
 
-#include "SimConnectIds.h"
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -10,6 +8,11 @@
 namespace parking_services
 {
 using namespace std::chrono_literals;
+
+namespace
+{
+constexpr SIMCONNECT_DATA_DEFINITION_ID kGroundDefinition = 2;
+}
 
 ParkingServicesApp::ParkingServicesApp()
     : m_simConnect([this](std::string message) { LogLine(std::move(message)); }),
@@ -26,6 +29,7 @@ ParkingServicesApp::ParkingServicesApp()
     m_simConnect.RegisterStatusObserver(&m_animation);
     m_simConnect.RegisterStatusObserver(&m_groundServices);
     m_simConnect.RegisterStatusObserver(&m_aircraftTracker);
+    m_simConnect.RegisterStatusObserver(this);
 }
 
 ParkingServicesApp::~ParkingServicesApp()
@@ -57,6 +61,18 @@ int ParkingServicesApp::Run()
         std::this_thread::sleep_for(10ms);
     }
     return 0;
+}
+
+void ParkingServicesApp::OnSimConnected()
+{
+    m_simConnect.AddDatum(kGroundDefinition, "TITLE", "",
+                          SIMCONNECT_DATATYPE_STRING256, NewSetupRequest());
+    m_simConnect.AddDatum(kGroundDefinition, "PLANE LATITUDE", "degrees",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+    m_simConnect.AddDatum(kGroundDefinition, "PLANE LONGITUDE", "degrees",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
+    m_simConnect.AddDatum(kGroundDefinition, "GROUND VELOCITY", "knots",
+                          SIMCONNECT_DATATYPE_FLOAT64, NewSetupRequest());
 }
 
 void ParkingServicesApp::HandleCommand(AppCommand command)
@@ -116,15 +132,16 @@ void ParkingServicesApp::RequestGroundDebugSnapshot()
         std::cout << "A ground-object debug request is already in progress.\n";
         return;
     }
-    m_groundRequest = std::make_shared<GSReqGroundScan>();
-    m_simConnect.RequestObjectDataByType(DefinitionGround, 5'000,
+    m_groundRequest = std::make_unique<GSReqGroundScan>();
+    m_simConnect.RequestObjectDataByType(kGroundDefinition, 5'000,
                                          SIMCONNECT_SIMOBJECT_TYPE_GROUND,
-                                         m_groundRequest);
+                                         *m_groundRequest);
     std::cout << "Requested the current 5 km ground-object debug snapshot.\n";
 }
 
 void ParkingServicesApp::PollGroundDebugSnapshot()
 {
+    CollectFinishedSetupRequests();
     if (!m_groundRequest || !m_groundRequest->IsFinished()) return;
 
     GSGroundScanResult result = m_groundRequest->TakeResult();
@@ -137,6 +154,23 @@ void ParkingServicesApp::PollGroundDebugSnapshot()
     m_lastGroundObjects = std::move(result.objects);
     ConsoleController::PrintGround(m_lastGroundObjects);
     ConsoleController::PrintPrompt();
+}
+
+GSReqCommand &ParkingServicesApp::NewSetupRequest()
+{
+    auto request = std::make_unique<GSReqCommand>();
+    GSReqCommand &reference = *request;
+    std::scoped_lock lock(m_setupRequestMutex);
+    m_setupRequests.push_back(std::move(request));
+    return reference;
+}
+
+void ParkingServicesApp::CollectFinishedSetupRequests()
+{
+    std::scoped_lock lock(m_setupRequestMutex);
+    std::erase_if(m_setupRequests, [](const auto &request) {
+        return request->IsFinished();
+    });
 }
 
 void ParkingServicesApp::ResetEverything()
