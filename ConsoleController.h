@@ -21,7 +21,7 @@ namespace parking_services
 enum class AppCommandType
 {
     None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground,
-    Reposition, Find, Log, Reset, Unknown,
+    Reposition, Find, Log, Reset, Reload, Unknown,
 };
 
 struct AppCommand

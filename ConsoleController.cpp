@@ -176,6 +176,7 @@ AppCommand ConsoleController::Parse(std::string_view line)
         return result;
     }
     if (command == "reset") return {AppCommandType::Reset};
+    if (command == "reload") return {AppCommandType::Reload};
     return {AppCommandType::Unknown};
 }
 
@@ -192,6 +193,7 @@ void ConsoleController::PrintHelp()
               << "  find FAMILY         Print nearest root tree and live MSFS poses\n"
               << "  log                 Toggle background event/periodic logging\n"
               << "  reset               Clear tracking and created objects\n"
+              << "  reload              Reread the JSON config and rebuild services\n"
               << "  help | quit\n";
 }
 

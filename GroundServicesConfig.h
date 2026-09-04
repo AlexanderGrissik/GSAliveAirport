@@ -43,6 +43,7 @@ class GroundServicesConfig final
     // connect job.
     void LoadCatalog(ISimConnectHandler &handler);
     void ResetInitialization();
+    void Reload();
     void Resolve(const std::vector<std::string> &availableTitles,
                  std::vector<std::string> &messages);
     void FillRequests(AircraftSizeCategory category, std::mt19937 &random,

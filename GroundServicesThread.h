@@ -58,6 +58,7 @@ class GroundServicesThread final : public ISimConnectStatus
     void Start();
     void Stop();
     void Reset();
+    void ReloadConfiguration();
     void RepositionStaticObject(AircraftId objectId, double x, double y,
                                 double z, double headingDegrees);
     void FindClosestRootObject(std::string family);

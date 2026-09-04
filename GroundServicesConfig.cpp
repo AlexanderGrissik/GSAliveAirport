@@ -292,6 +292,25 @@ void GroundServicesConfig::ResetInitialization()
     m_resolved = false;
 }
 
+void GroundServicesConfig::Reload()
+{
+    std::scoped_lock lock(m_stateMutex);
+    m_families.clear();
+    m_locations.clear();
+    m_categories.clear();
+    m_startupMessages.clear();
+    m_resolved = false;
+    m_loaded = false;
+    Load(m_path);
+    if (!m_catalog.Entries().empty()) {
+        std::vector<std::string> availableTitles;
+        for (const auto &entry : m_catalog.Entries()) {
+            availableTitles.push_back(entry.title);
+        }
+        Resolve(availableTitles, m_initializationMessages);
+    }
+}
+
 void GroundServicesConfig::Resolve(const std::vector<std::string> &availableTitles,
                                    std::vector<std::string> &messages)
 {

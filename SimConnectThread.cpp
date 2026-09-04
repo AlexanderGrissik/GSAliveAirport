@@ -174,7 +174,7 @@ void SimConnectThread::RunLoop(std::stop_token stopToken)
         SweepCompletedRequests();
 
         std::unique_lock lock(m_commandMutex);
-        m_wake.wait_for(lock, stopToken, 5ms,
+        m_wake.wait_for(lock, stopToken, 200ms,
                         [this] { return !m_commands.empty(); });
     }
     ProcessCommands();

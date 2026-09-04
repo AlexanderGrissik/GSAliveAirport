@@ -117,6 +117,9 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
     case AppCommandType::Reset:
         ResetEverything();
         break;
+    case AppCommandType::Reload:
+        m_groundServices.ReloadConfiguration();
+        break;
     case AppCommandType::Unknown:
         std::cout << "Unknown command or invalid arguments. Type 'help'.\n";
         break;

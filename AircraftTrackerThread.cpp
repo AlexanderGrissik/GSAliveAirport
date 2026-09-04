@@ -206,7 +206,7 @@ void AircraftTrackerThread::RunLoop(std::stop_token stopToken)
         if (m_connected && !m_scanRequest && now >= m_nextScan) RequestScan();
 
         std::unique_lock lock(m_commandMutex);
-        m_wake.wait_for(lock, stopToken, 100ms, [this] { return !m_commands.empty(); });
+        m_wake.wait_for(lock, stopToken, 200ms, [this] { return !m_commands.empty(); });
     }
     ProcessCommands();
 }

@@ -182,6 +182,25 @@
                     }
                 ]
             }
+        },
+        {
+            "Family": "CateringDefault",
+            "PreferedObj": [ "ASO_Catering_Truck_01" ],
+            "SpecialType": "CateringDefault" 
+        },
+        {
+            "Family": "CateringFSDT",
+            "PreferedObj" : [ "FSDT_Catering_01*", "FSDT_Catering_EU*" ],
+            "AlternateFamily": "LavalatoryDefault",
+            "Animation": {
+                "FPS": 30,
+                "Carriers": [
+                    {
+                    "Carrier": "WAGON FRONT LINK ORIENTATION",
+                    "Frames": [0, 1755]
+                    }
+                ]
+            }
         }
     ],
     "Locations": [

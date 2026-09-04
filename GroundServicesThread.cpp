@@ -81,6 +81,25 @@ void GroundServicesThread::Reset()
     });
 }
 
+void GroundServicesThread::ReloadConfiguration()
+{
+    Post([this] {
+        RemoveAllServicesInternal();
+        m_configuration.Reload();
+        for (const std::string &message : m_configuration.StartupMessages()) {
+            GSLog(message);
+        }
+        for (const std::string &message : m_configuration.InitializationMessages()) {
+            GSLog(message);
+        }
+        if (m_connected && m_configuration.IsResolved()) {
+            EvaluateTrackedAircraft();
+        }
+        PublishStatus();
+        GSPrint("Reloaded ground-service configuration and rebuilt services for tracked aircraft.");
+    });
+}
+
 void GroundServicesThread::RepositionStaticObject(
     AircraftId objectId, double x, double y, double z,
     double headingDegrees)
@@ -126,7 +145,7 @@ void GroundServicesThread::RunLoop(std::stop_token stopToken)
             }
         }
         std::unique_lock lock(m_commandMutex);
-        m_wake.wait_for(lock, stopToken, 500ms, [this] { return !m_commands.empty(); });
+        m_wake.wait_for(lock, stopToken, 200ms, [this] { return !m_commands.empty(); });
     }
     ProcessCommands();
     RemoveAllServicesInternal();
