@@ -1,6 +1,7 @@
 #include "SimConnectThread.h"
 
 #include "GSCommon.h"
+#include "GSRequests/GSReqCommand.h"
 
 #include <algorithm>
 #include <chrono>
@@ -110,6 +111,23 @@ void SimConnectThread::AddDatum(
           units = std::move(units), type, request = &request]() mutable {
         BeginAddDatum(definition, std::move(datumName), std::move(units), type,
                       request);
+    });
+}
+
+void SimConnectThread::DefineFacilityDataField(SIMCONNECT_DATA_DEFINITION_ID definition,
+                                                std::string field)
+{
+    Post([this, definition, field = std::move(field)]() mutable {
+        BeginDefineFacilityDataField(definition, std::move(field));
+    });
+}
+
+void SimConnectThread::RequestFacilityData(const std::string &icao,
+                                           SIMCONNECT_DATA_DEFINITION_ID definition,
+                                           ISimConnectRequest &request)
+{
+    Post([this, icao = std::move(icao), definition, request = &request]() mutable {
+        BeginRequestFacilityData(std::move(icao), definition, request);
     });
 }
 
@@ -375,6 +393,36 @@ void SimConnectThread::BeginAddDatum(
     CompleteCommand(send, std::nullopt, request);
 }
 
+void SimConnectThread::BeginDefineFacilityDataField(
+    SIMCONNECT_DATA_DEFINITION_ID definition, std::string field)
+{
+    // One-shot setup command with no dispatch reply. A local completer is safe:
+    // GSReqCommand completes on its first OnMessage, so it is untracked before
+    // this returns and no handler reference outlives it.
+    GSReqCommand command;
+    const SendResult send = Capture(
+        m_handle && !field.empty()
+            ? SimConnect_AddToFacilityDefinition(m_handle, definition, field.c_str())
+            : E_HANDLE);
+    CompleteCommand(send, std::nullopt, &command);
+}
+
+void SimConnectThread::BeginRequestFacilityData(std::string icao,
+                                                SIMCONNECT_DATA_DEFINITION_ID definition,
+                                                ISimConnectRequest *request)
+{
+    if (request->IsComplete()) {
+        request->OnFailure();
+        return;
+    }
+    const DWORD requestId = NextRequestId();
+    const SendResult send = Capture(
+        m_handle && !icao.empty()
+            ? SimConnect_RequestFacilityData(m_handle, definition, requestId, icao.c_str(), "")
+            : E_HANDLE);
+    TrackResponseRequest(send, requestId, request);
+}
+
 void SimConnectThread::BeginMapClientEvent(
     SIMCONNECT_CLIENT_EVENT_ID eventId, std::string eventName,
     ISimConnectRequest *request)
@@ -579,6 +627,18 @@ void SimConnectThread::OnSimConnectMessage(SIMCONNECT_RECV *message,
         const auto &entry =
             *reinterpret_cast<SIMCONNECT_RECV_ASSIGNED_OBJECT_ID *>(message);
         RouteRequestMessage(entry.dwRequestID, message, messageSize);
+        break;
+    }
+    case SIMCONNECT_RECV_ID_FACILITY_DATA: {
+        const auto &entry =
+            *reinterpret_cast<SIMCONNECT_RECV_FACILITY_DATA *>(message);
+        RouteRequestMessage(entry.UserRequestId, message, messageSize);
+        break;
+    }
+    case SIMCONNECT_RECV_ID_FACILITY_DATA_END: {
+        const auto &entry =
+            *reinterpret_cast<SIMCONNECT_RECV_FACILITY_DATA_END *>(message);
+        RouteRequestMessage(entry.RequestId, message, messageSize);
         break;
     }
     case SIMCONNECT_RECV_ID_EXCEPTION:

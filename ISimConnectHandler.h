@@ -48,6 +48,14 @@ class ISimConnectHandler
                           std::string datumName, std::string units,
                           SIMCONNECT_DATATYPE type,
                           ISimConnectRequest &request) = 0;
+    // Facility-data definition setup and request. These are agnostic of which
+    // members a caller registered: the caller owns the definition ID, the member
+    // ordering, and the request that receives the streamed records.
+    virtual void DefineFacilityDataField(SIMCONNECT_DATA_DEFINITION_ID definition,
+                                         std::string field) = 0;
+    virtual void RequestFacilityData(const std::string &icao,
+                                     SIMCONNECT_DATA_DEFINITION_ID definition,
+                                     ISimConnectRequest &request) = 0;
     virtual void MapClientEvent(SIMCONNECT_CLIENT_EVENT_ID eventId,
                                 std::string eventName,
                                 ISimConnectRequest &request) = 0;

@@ -22,6 +22,7 @@
     <ClCompile Include="GSRequests\GSReqCommand.cpp" />
     <ClCompile Include="GSRequests\GSReqCreateObject.cpp" />
     <ClCompile Include="GSRequests\GSReqGroundScan.cpp" />
+    <ClCompile Include="GSRequests\GSReqRoads.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ParkingServicesApp.cpp" />
     <ClCompile Include="SimConnectThread.cpp" />
@@ -50,6 +51,7 @@
     <ClInclude Include="GSRequests\GSReqCommand.h" />
     <ClInclude Include="GSRequests\GSReqCreateObject.h" />
     <ClInclude Include="GSRequests\GSReqGroundScan.h" />
+    <ClInclude Include="GSRequests\GSReqRoads.h" />
     <ClInclude Include="ISimConnectHandler.h" />
     <ClInclude Include="ISimConnectRequest.h" />
     <ClInclude Include="ISimConnectStatus.h" />

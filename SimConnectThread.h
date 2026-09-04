@@ -57,6 +57,11 @@ class SimConnectThread final : public ISimConnectHandler
                   std::string datumName, std::string units,
                   SIMCONNECT_DATATYPE type,
                   ISimConnectRequest &request) override;
+    void DefineFacilityDataField(SIMCONNECT_DATA_DEFINITION_ID definition,
+                                 std::string field) override;
+    void RequestFacilityData(const std::string &icao,
+                             SIMCONNECT_DATA_DEFINITION_ID definition,
+                             ISimConnectRequest &request) override;
     void MapClientEvent(SIMCONNECT_CLIENT_EVENT_ID eventId,
                         std::string eventName,
                         ISimConnectRequest &request) override;
@@ -103,6 +108,11 @@ class SimConnectThread final : public ISimConnectHandler
                        std::string datumName, std::string units,
                        SIMCONNECT_DATATYPE type,
                        ISimConnectRequest *request);
+    void BeginDefineFacilityDataField(SIMCONNECT_DATA_DEFINITION_ID definition,
+                                      std::string field);
+    void BeginRequestFacilityData(std::string icao,
+                                  SIMCONNECT_DATA_DEFINITION_ID definition,
+                                  ISimConnectRequest *request);
     void BeginMapClientEvent(SIMCONNECT_CLIENT_EVENT_ID eventId,
                              std::string eventName,
                              ISimConnectRequest *request);

@@ -5,6 +5,7 @@
 #include "ISimConnectStatus.h"
 #include "GSRequests/GSReqCommand.h"
 #include "GSRequests/GSReqGroundScan.h"
+#include "GSRequests/GSReqRoads.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -20,13 +21,14 @@ namespace parking_services
 {
 enum class AppCommandType
 {
-    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground,
+    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground, Roads,
     Log, Reset, Reload, Unknown,
 };
 
 struct AppCommand
 {
     AppCommandType type{AppCommandType::None};
+    std::string argument;
 };
 
 struct ConsoleStatus
@@ -58,9 +60,12 @@ class ConsoleController final : public ISimConnectStatus
     static void PrintParked(const std::vector<AircraftSnapshot> &aircraft);
     static void PrintGround(const std::vector<GroundSnapshot> &ground);
     void PrintStatus(const ConsoleStatus &status) const;
+    static void PrintRoads(const GSRoadsResult &roads);
 
     void RequestGroundDebugSnapshot();
     void PollGroundDebugSnapshot();
+    void RequestRoads(const std::string &icao);
+    void PollRoadsSnapshot();
     [[nodiscard]] std::size_t LastGroundCount() const;
     void Reset();
 
@@ -79,6 +84,7 @@ class ConsoleController final : public ISimConnectStatus
     std::string m_lastCommand;
     std::size_t m_cursor{};
     std::unique_ptr<GSReqGroundScan> m_groundRequest;
+    std::unique_ptr<GSReqRoads> m_roadsRequest;
     std::mutex m_setupRequestMutex;
     std::vector<std::unique_ptr<GSReqCommand>> m_setupRequests;
     std::vector<GroundSnapshot> m_lastGroundObjects;

@@ -132,6 +132,18 @@ AppCommand ConsoleController::Parse(std::string_view line)
     if (command == "aircraft5" || command == "radius5") return {AppCommandType::Aircraft5};
     if (command == "parked") return {AppCommandType::Parked};
     if (command == "ground") return {AppCommandType::Ground};
+    if (command == "roads") {
+        std::string icao;
+        if (!(input >> icao) || icao.empty()) return {AppCommandType::Unknown};
+        std::ranges::transform(icao, icao.begin(),
+                               [](unsigned char c) {
+                                   return static_cast<char>(std::toupper(c));
+                               });
+        AppCommand result;
+        result.type = AppCommandType::Roads;
+        result.argument = icao;
+        return result;
+    }
     if (command == "log") return {AppCommandType::Log};
     if (command == "reset") return {AppCommandType::Reset};
     if (command == "reload") return {AppCommandType::Reload};
@@ -147,6 +159,7 @@ void ConsoleController::PrintHelp()
               << "  aircraft5           Aircraft currently within 5 km\n"
               << "  parked              Detailed list excluding STATE_SIMPLE_TAXI\n"
               << "  ground              Request one 5 km ground-object debug list\n"
+              << "  roads <ICAO>        List non-aircraft roads (TYPE 6/7) and endpoints\n"
               << "  log                 Toggle background event/periodic logging\n"
               << "  reset               Clear tracking and created objects\n"
               << "  reload              Reread the JSON config and rebuild services\n"
@@ -300,6 +313,68 @@ void ConsoleController::PollGroundDebugSnapshot()
     PrintGround(m_lastGroundObjects);
     PrintPrompt();
 }
+void ConsoleController::RequestRoads(const std::string &icao)
+{
+    if (icao.empty()) {
+        std::cout << "Usage: roads <ICAO>  (e.g. roads KJFK)\n";
+        PrintPrompt();
+        return;
+    }
+    if (m_roadsRequest) {
+        std::cout << "A roads request is already in progress.\n";
+        PrintPrompt();
+        return;
+    }
+    m_roadsRequest = std::make_unique<GSReqRoads>();
+    m_roadsRequest->Drive(m_simConnect, icao);
+    std::cout << "Requesting facility data for roads at " << icao << "...\n";
+}
+
+void ConsoleController::PollRoadsSnapshot()
+{
+    if (!m_roadsRequest || !m_roadsRequest->IsFinished()) return;
+
+    GSRoadsResult result = m_roadsRequest->TakeResult();
+    m_roadsRequest.reset();
+    if (!result.succeeded) {
+        std::cout << "Roads request failed or timed out.\n";
+        PrintPrompt();
+        return;
+    }
+    PrintRoads(result);
+    PrintPrompt();
+}
+
+void ConsoleController::PrintRoads(const GSRoadsResult &roads)
+{
+    if (roads.hasAirport) {
+        std::cout << "ARP: " << std::fixed << std::setprecision(5)
+                  << roads.airportLatitude << ", " << roads.airportLongitude << " ("
+                  << std::setprecision(1) << roads.airportAltitudeMeters << "m)"
+                  << "  taxi points: " << roads.taxiPoints << ", paths: " << roads.taxiPaths
+                  << ", non-aircraft roads: " << roads.roads.size()
+                  << ", other paths: " << roads.otherPathCount << '\n';
+    }
+    if (roads.roads.empty()) {
+        std::cout << "No non-aircraft roads (TAXI_PATH TYPE 6/7) were returned.\n";
+        return;
+    }
+    for (const auto &road : roads.roads) {
+        std::cout << "road type=" << road.type
+                  << " width=" << std::fixed << std::setprecision(1) << road.widthMeters
+                  << "m startPt=" << road.startPointIndex << " endPt=" << road.endPointIndex;
+        if (road.startResolved) {
+            std::cout << " start=" << std::setprecision(6) << road.startLatitude << ","
+                      << road.startLongitude;
+        }
+        if (road.endResolved) {
+            std::cout << " end=" << std::setprecision(6) << road.endLatitude << ","
+                      << road.endLongitude;
+        }
+        std::cout << '\n';
+    }
+}
+
 
 GSReqCommand &ConsoleController::NewSetupRequest()
 {

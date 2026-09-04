@@ -46,10 +46,12 @@ int ParkingServicesApp::Run()
     ConsoleController::PrintPrompt();
     while (!m_quit.load()) {
         m_console.Pump([this](AppCommand command) {
-            const bool waitsForGroundResult = command.type == AppCommandType::Ground;
+            const bool waitsForResult = command.type == AppCommandType::Ground ||
+                                        command.type == AppCommandType::Roads;
             HandleCommand(std::move(command));
-            if (!m_quit.load() && !waitsForGroundResult) ConsoleController::PrintPrompt();
+            if (!m_quit.load() && !waitsForResult) ConsoleController::PrintPrompt();
         });
+        m_console.PollRoadsSnapshot();
         m_console.PollGroundDebugSnapshot();
         std::this_thread::sleep_for(10ms);
     }
@@ -98,6 +100,9 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
         break;
     case AppCommandType::Ground:
         m_console.RequestGroundDebugSnapshot();
+        break;
+    case AppCommandType::Roads:
+        m_console.RequestRoads(command.argument);
         break;
     case AppCommandType::Log: {
         const bool enabled = !GSLoggingEnabled();
