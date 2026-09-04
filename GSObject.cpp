@@ -2,6 +2,7 @@
 
 #include "GSCommon.h"
 #include "GSLuggageLoaderFSDT.h"
+#include "GSPowerGround.h"
 #include "GSStaticObj.h"
 #include "GSWalkerFSDT.h"
 
@@ -28,6 +29,9 @@ std::unique_ptr<GSObject> GSObject::Create(const AircraftSnapshot &aircraft,
     case GroundServiceSpecialType::WalkerFSDT:
         return std::make_unique<GSWalkerFSDT>(aircraft, request.object,
                                               request.location);
+    case GroundServiceSpecialType::GroundPowerDefault:
+        return std::make_unique<GSPowerGround>(aircraft, request.object,
+                                               request.location);
     case GroundServiceSpecialType::None:
     default:
         return std::make_unique<GSStaticObj>(aircraft, request.object,

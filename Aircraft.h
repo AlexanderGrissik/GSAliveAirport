@@ -60,6 +60,9 @@ struct AircraftSnapshot
     int transponderState{};
     std::optional<AircraftCargoConnectionPoint> cargoDoorRightFront;
     std::optional<AircraftCargoConnectionPoint> cargoDoorRightBack;
+    // Ground Power cable receptacle (interactive point type 4); set only when
+    // this airframe can accept a Ground Power Unit.
+    std::optional<AircraftCargoConnectionPoint> groundPower;
     double distanceFromUserMeters{};
     TrackerClock::time_point firstSeen{};
     std::optional<TrackerClock::time_point> parkedSince;

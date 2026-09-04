@@ -13,6 +13,7 @@
     <ClCompile Include="GSStaticObj.cpp" />
     <ClCompile Include="GSWalkerFSDT.cpp" />
     <ClCompile Include="GSLuggageLoaderFSDT.cpp" />
+    <ClCompile Include="GSPowerGround.cpp" />
     <ClCompile Include="GSRequests\GSReqAircraftScan.cpp" />
     <ClCompile Include="GSRequests\GSReqBaggageGeometry.cpp" />
     <ClCompile Include="GSRequests\GSReqBase.cpp" />
@@ -40,6 +41,7 @@
     <ClInclude Include="GSStaticObj.h" />
     <ClInclude Include="GSWalkerFSDT.h" />
     <ClInclude Include="GSLuggageLoaderFSDT.h" />
+    <ClInclude Include="GSPowerGround.h" />
     <ClInclude Include="GSRequests\GSReqAircraftScan.h" />
     <ClInclude Include="GSRequests\GSReqBaggageGeometry.h" />
     <ClInclude Include="GSRequests\GSReqBase.h" />

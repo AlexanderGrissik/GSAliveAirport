@@ -155,6 +155,9 @@ GroundServiceSpecialType ReadSpecialType(const Json &value, std::string_view own
     if (EqualIgnoreCase(name, "WalkerFSDT")) {
         return GroundServiceSpecialType::WalkerFSDT;
     }
+    if (EqualIgnoreCase(name, "GroundPowerDefault")) {
+        return GroundServiceSpecialType::GroundPowerDefault;
+    }
     throw std::runtime_error("unknown SpecialType '" + name + "' for '" +
                              std::string(owner) + "'");
 }
