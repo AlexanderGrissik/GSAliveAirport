@@ -6,7 +6,6 @@
 #include "GSObject.h"
 #include "GSRequests/GSReqCommand.h"
 #include "GSRequests/GSReqCreateObject.h"
-#include "GSRequests/GSReqObjectPose.h"
 #include "ISimConnectHandler.h"
 #include "ISimConnectStatus.h"
 
@@ -59,9 +58,6 @@ class GroundServicesThread final : public ISimConnectStatus
     void Stop();
     void Reset();
     void ReloadConfiguration();
-    void RepositionStaticObject(AircraftId objectId, double x, double y,
-                                double z, double headingDegrees);
-    void FindClosestRootObject(std::string family);
     [[nodiscard]] GroundServicesStatus Status() const;
 
     void OnSimConnected() override;
@@ -80,7 +76,6 @@ class GroundServicesThread final : public ISimConnectStatus
     GSReqCommand &NewCommandRequest();
     void CollectFinishedCommandRequests();
     void CollectRetiredObjects();
-    void PollFindOperation();
     void MaintainObjects(std::chrono::steady_clock::time_point now);
     void EvaluateTrackedAircraft();
     static GroundServicesDecision Decide(const AircraftSnapshot &aircraft);
@@ -103,9 +98,6 @@ class GroundServicesThread final : public ISimConnectStatus
     void RemoveObject(AircraftId objectId, bool requestSimulatorRemoval);
     void RemoveObjectState(GSObject &object, bool requestSimulatorRemoval);
     void HandleObjectRemoved(AircraftId objectId);
-    void HandleRepositionStaticObject(AircraftId objectId, double x, double y,
-                                      double z, double headingDegrees);
-    void HandleFindClosestRootObject(const std::string &family);
     void HandleConnect();
     void HandleDisconnect();
     void RemoveAllServicesInternal();
@@ -120,27 +112,6 @@ class GroundServicesThread final : public ISimConnectStatus
         // teardown clears this pointer before releasing that tree.
         GSObject *object{};
         std::unique_ptr<GSReqCreateObject> request;
-    };
-
-    struct FindRow
-    {
-        AircraftId objectId{};
-        std::string family;
-        double relativeX{};
-        double relativeY{};
-        double relativeZ{};
-        double relativeHeading{};
-        double storedWorldHeading{};
-        std::size_t depth{};
-        bool root{};
-        std::unique_ptr<GSReqObjectPose> request;
-    };
-
-    struct FindOperation
-    {
-        std::string family;
-        double distanceMeters{};
-        std::vector<FindRow> rows;
     };
 
     ISimConnectHandler &m_simConnect;
@@ -158,7 +129,6 @@ class GroundServicesThread final : public ISimConnectStatus
     std::map<std::uint64_t, std::unique_ptr<GSObject>> m_rootObjects;
     std::map<std::uint64_t, CreateOperation> m_createRequests;
     std::vector<std::unique_ptr<GSReqCommand>> m_commandRequests;
-    std::unique_ptr<FindOperation> m_findOperation;
     std::vector<std::unique_ptr<GSObject>> m_retiredObjects;
     std::set<AircraftId> m_createdObjects;
     std::set<AircraftId> m_configuredAircraft;
@@ -176,7 +146,6 @@ class GroundServicesThread final : public ISimConnectStatus
     std::vector<GroundServiceRequest> m_serviceRequestBuffer;
     DWORD m_nextObjectDataDefinition = 10'000;
     DWORD m_nextObjectClientEvent = 10'000;
-    SIMCONNECT_DATA_DEFINITION_ID m_findPoseDefinition{};
     std::mt19937 m_random{std::random_device{}()};
 
     mutable std::mutex m_statusMutex;

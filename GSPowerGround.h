@@ -18,17 +18,12 @@ class GSPowerGround final : public GSObject
 
     bool PreparePlacement(GSObjectServices &services) override;
     void ConfigureSimConnect(GSObjectServices &services) override;
-    bool RepositionRelative(GSObjectServices &services, double x, double y,
-                            double z, double headingDegrees) override;
 
   protected:
     void Activate(GSObjectServices &services, AircraftId objectId) override;
-    void OnParentRepositioned(GSObjectServices &services,
-                              const GSObjectPos &parentPose) override;
 
   private:
     [[nodiscard]] bool HasAircraftGroundPower() const;
-    void ApplyParentPose(GSObjectServices &services, const GSObjectPos &parentPose);
     void SetPosition(GSObjectServices &services);
     void SetHoseDeployed(GSObjectServices &services, AircraftId objectId,
                          bool deployed);

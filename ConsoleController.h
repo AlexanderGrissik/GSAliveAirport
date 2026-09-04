@@ -21,18 +21,12 @@ namespace parking_services
 enum class AppCommandType
 {
     None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground,
-    Reposition, Find, Log, Reset, Reload, Unknown,
+    Log, Reset, Reload, Unknown,
 };
 
 struct AppCommand
 {
     AppCommandType type{AppCommandType::None};
-    AircraftId objectId{};
-    double relativeX{};
-    double relativeY{};
-    double relativeZ{};
-    double relativeHeadingDegrees{};
-    std::string family;
 };
 
 struct ConsoleStatus

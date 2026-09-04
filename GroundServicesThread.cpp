@@ -6,11 +6,7 @@
 #include "SimObjectPositioning.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
-#include <iomanip>
-#include <limits>
-#include <sstream>
 #include <utility>
 
 namespace parking_services
@@ -21,18 +17,6 @@ namespace
 {
 constexpr double kSpawnSpeedKnots = 1.0;
 constexpr double kRemovalSpeedKnots = 2.0;
-
-bool EqualIgnoreCase(std::string_view left, std::string_view right)
-{
-    if (left.size() != right.size()) return false;
-    for (std::size_t index = 0; index < left.size(); ++index) {
-        if (std::tolower(static_cast<unsigned char>(left[index])) !=
-            std::tolower(static_cast<unsigned char>(right[index]))) {
-            return false;
-        }
-    }
-    return true;
-}
 
 } // namespace
 
@@ -100,22 +84,6 @@ void GroundServicesThread::ReloadConfiguration()
     });
 }
 
-void GroundServicesThread::RepositionStaticObject(
-    AircraftId objectId, double x, double y, double z,
-    double headingDegrees)
-{
-    Post([this, objectId, x, y, z, headingDegrees] {
-        HandleRepositionStaticObject(objectId, x, y, z, headingDegrees);
-    });
-}
-
-void GroundServicesThread::FindClosestRootObject(std::string family)
-{
-    Post([this, family = std::move(family)] {
-        HandleFindClosestRootObject(family);
-    });
-}
-
 GroundServicesStatus GroundServicesThread::Status() const
 {
     std::scoped_lock lock(m_statusMutex);
@@ -176,24 +144,12 @@ void GroundServicesThread::InitializeSimConnect()
     CollectFinishedCommandRequests();
     m_nextObjectDataDefinition = 10'000;
     m_nextObjectClientEvent = 10'000;
-    m_findPoseDefinition = static_cast<SIMCONNECT_DATA_DEFINITION_ID>(
-        m_nextObjectDataDefinition++);
-    m_simConnect.AddDatum(m_findPoseDefinition, "PLANE LATITUDE", "degrees",
-                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
-    m_simConnect.AddDatum(m_findPoseDefinition, "PLANE LONGITUDE", "degrees",
-                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
-    m_simConnect.AddDatum(m_findPoseDefinition, "PLANE ALTITUDE", "feet",
-                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
-    m_simConnect.AddDatum(m_findPoseDefinition,
-                          "PLANE HEADING DEGREES TRUE", "degrees",
-                          SIMCONNECT_DATATYPE_FLOAT64, NewCommandRequest());
 }
 
 void GroundServicesThread::PollRequests()
 {
     CollectFinishedCommandRequests();
     CollectRetiredObjects();
-    PollFindOperation();
 
     std::vector<std::uint64_t> completedCreates;
     for (const auto &[token, operation] : m_createRequests) {
@@ -218,47 +174,6 @@ void GroundServicesThread::PollRequests()
         DecrementPendingCreations(aircraftId);
     }
     TryFinalizeDeferredRemovals();
-}
-
-void GroundServicesThread::PollFindOperation()
-{
-    if (!m_findOperation) return;
-    if (!std::ranges::all_of(m_findOperation->rows, [](const FindRow &row) {
-            return !row.request || row.request->IsFinished();
-        })) {
-        return;
-    }
-
-    std::ostringstream output;
-    output << std::fixed << std::setprecision(3)
-           << "Closest " << m_findOperation->family << " root is "
-           << m_findOperation->distanceMeters << " m from the user aircraft:";
-    for (const FindRow &row : m_findOperation->rows) {
-        output << '\n' << std::string(row.depth * 2, ' ')
-               << "ID=" << row.objectId << " family=" << row.family;
-        if (row.root) {
-            output << " location=root heading=" << row.storedWorldHeading
-                   << " (stored world)";
-        } else {
-            output << " location=[" << row.relativeX << ','
-                   << row.relativeY << ',' << row.relativeZ
-                   << "] heading=" << row.relativeHeading;
-        }
-
-        const GSObjectPoseResult pose = row.request
-                                            ? row.request->Result()
-                                            : GSObjectPoseResult{};
-        if (!pose.succeeded) {
-            output << " real=unavailable";
-            continue;
-        }
-        output << " real=[lat=" << std::setprecision(8) << pose.latitude
-               << ",lon=" << pose.longitude << std::setprecision(3)
-               << ",alt-ft=" << pose.altitudeFeet
-               << "] real-heading=" << pose.headingDegrees;
-    }
-    GSPrint(output.str());
-    m_findOperation.reset();
 }
 
 GSReqCommand &GroundServicesThread::NewCommandRequest()
@@ -664,106 +579,6 @@ void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
               "; its pending work will finish before the object subtree is retired.");
     }
     PublishStatus();
-}
-
-void GroundServicesThread::HandleRepositionStaticObject(
-    AircraftId objectId, double x, double y, double z,
-    double headingDegrees)
-{
-    GSObject *object = nullptr;
-    for (const auto &[token, root] : m_rootObjects) {
-        static_cast<void>(token);
-        if (GSObject *found = root->FindByObjectId(objectId)) {
-            object = found;
-            break;
-        }
-    }
-
-    if (!object) {
-        GSPrint("Cannot reposition ObjectID " + std::to_string(objectId) +
-                ": it is not a managed ground-service object.");
-        return;
-    }
-    if (!object->RepositionRelative(m_services, x, y, z,
-                                    headingDegrees)) {
-        GSPrint("Cannot reposition ObjectID " + std::to_string(objectId) +
-                ": it is not a static object.");
-        return;
-    }
-
-    GSPrint("Requested reposition of static ObjectID " +
-            std::to_string(objectId) + " to parent-relative XYZH [" +
-            std::to_string(x) + ", " + std::to_string(y) + ", " +
-            std::to_string(z) + ", " + std::to_string(headingDegrees) +
-            "].");
-}
-
-void GroundServicesThread::HandleFindClosestRootObject(
-    const std::string &family)
-{
-    if (m_findOperation) {
-        GSPrint("A find request is already in progress.");
-        return;
-    }
-
-    ApproximateUserPosition userPosition{};
-    if (!m_aircraftTracker.TryGetApproximateUserPosition(userPosition)) {
-        GSPrint("Cannot find family " + family +
-                ": the user-aircraft position is not available.");
-        return;
-    }
-
-    const GSObject *closest = nullptr;
-    double closestDistance = std::numeric_limits<double>::max();
-    for (const auto &[token, root] : m_rootObjects) {
-        static_cast<void>(token);
-        if (root->ObjectId() == 0 ||
-            !EqualIgnoreCase(root->Object().family, family)) {
-            continue;
-        }
-        const double distance = DistanceMeters(
-            userPosition.latitude, userPosition.longitude,
-            root->Pose().latitude, root->Pose().longitude);
-        if (distance < closestDistance) {
-            closest = root.get();
-            closestDistance = distance;
-        }
-    }
-
-    if (!closest) {
-        GSPrint("No managed root object belongs to family " + family + ".");
-        return;
-    }
-
-    auto operation = std::make_unique<FindOperation>();
-    operation->family = closest->Object().family;
-    operation->distanceMeters = closestDistance;
-
-    std::function<void(const GSObject &, std::size_t, bool)> appendRows;
-    appendRows = [&](const GSObject &object, std::size_t depth, bool root) {
-        FindRow row{};
-        row.objectId = object.ObjectId();
-        row.family = object.Object().family;
-        row.relativeX = object.Object().parentX;
-        row.relativeY = object.Object().parentY;
-        row.relativeZ = object.Object().parentZ;
-        row.relativeHeading = object.Object().parentHeadingDegrees;
-        row.storedWorldHeading = object.Pose().headingDegrees;
-        row.depth = depth;
-        row.root = root;
-        if (row.objectId != 0) {
-            row.request = std::make_unique<GSReqObjectPose>();
-            m_simConnect.RequestObjectData(
-                m_findPoseDefinition, row.objectId, SIMCONNECT_PERIOD_ONCE, 0,
-                *row.request);
-        }
-        operation->rows.push_back(std::move(row));
-        for (const auto &child : object.Children()) {
-            appendRows(*child, depth + 1, false);
-        }
-    };
-    appendRows(*closest, 0, true);
-    m_findOperation = std::move(operation);
 }
 
 void GroundServicesThread::OnSimStarted()

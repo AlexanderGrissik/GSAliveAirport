@@ -14,17 +14,11 @@ class GSStaticObj : public GSObject
 
     bool PreparePlacement(GSObjectServices &services) override;
     void ConfigureSimConnect(GSObjectServices &services) override;
-    bool RepositionRelative(GSObjectServices &services, double x, double y,
-                            double z, double headingDegrees) override;
 
   protected:
     void Activate(GSObjectServices &services, AircraftId objectId) override;
-    void OnParentRepositioned(GSObjectServices &services,
-                              const GSObjectPos &parentPose) override;
 
   private:
-    void ApplyParentPose(GSObjectServices &services,
-                         const GSObjectPos &parentPose);
     void SetPosition(GSObjectServices &services);
 
     SIMCONNECT_DATA_DEFINITION_ID m_positionDefinition{};

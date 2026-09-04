@@ -165,36 +165,10 @@ void GSObject::OnRemoved(GSObjectServices &services)
     static_cast<void>(services);
 }
 
-bool GSObject::RepositionRelative(GSObjectServices &services, double x,
-                                  double y, double z,
-                                  double headingDegrees)
-{
-    static_cast<void>(services);
-    static_cast<void>(x);
-    static_cast<void>(y);
-    static_cast<void>(z);
-    static_cast<void>(headingDegrees);
-    return false;
-}
-
 void GSObject::Activate(GSObjectServices &services, AircraftId objectId)
 {
     static_cast<void>(objectId);
     Finish(services, m_pose);
-}
-
-void GSObject::OnParentRepositioned(GSObjectServices &services,
-                                    const GSObjectPos &parentPose)
-{
-    static_cast<void>(services);
-    static_cast<void>(parentPose);
-}
-
-void GSObject::RepositionChildren(GSObjectServices &services)
-{
-    for (const auto &child : m_children) {
-        child->OnParentRepositioned(services, m_pose);
-    }
 }
 
 void GSObject::Finish(GSObjectServices &services, const GSObject::GSObjectPos &actualPose)

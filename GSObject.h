@@ -154,9 +154,6 @@ class GSObject
     virtual void Maintain(GSObjectServices &services,
                           std::chrono::steady_clock::time_point now);
     virtual void OnRemoved(GSObjectServices &services);
-    virtual bool RepositionRelative(GSObjectServices &services, double x,
-                                    double y, double z,
-                                    double headingDegrees);
 
     // Shared world-coordinate pose math.
     [[nodiscard]] static GSObjectPos RelativeToAircraft(
@@ -171,9 +168,6 @@ class GSObject
     // Post-creation hook. The base finalizes immediately; subclasses override to
     // run type-specific work (e.g. cargo-door ramp alignment) before finishing.
     virtual void Activate(GSObjectServices &services, AircraftId objectId);
-    virtual void OnParentRepositioned(GSObjectServices &services,
-                                      const GSObjectPos &parentPose);
-    void RepositionChildren(GSObjectServices &services);
     // Shared completion: record the final pose, add animation + attachments, and
     // mark the object done.
     void Finish(GSObjectServices &services, const GSObjectPos &actualPose);

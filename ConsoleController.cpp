@@ -4,10 +4,8 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 #include <sstream>
 #include <utility>
 
@@ -135,46 +133,6 @@ AppCommand ConsoleController::Parse(std::string_view line)
     if (command == "parked") return {AppCommandType::Parked};
     if (command == "ground") return {AppCommandType::Ground};
     if (command == "log") return {AppCommandType::Log};
-    if (command == "repos") {
-        std::uint64_t objectId{};
-        double x{};
-        double y{};
-        double z{};
-        double headingDegrees{};
-        char separator1{};
-        char separator2{};
-        char separator3{};
-        if (!(input >> objectId >> x >> separator1 >> y >> separator2 >> z >>
-              separator3 >> headingDegrees) ||
-            separator1 != ',' || separator2 != ',' || separator3 != ',' ||
-            objectId == 0 ||
-            objectId > std::numeric_limits<AircraftId>::max() ||
-            !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z) ||
-            !std::isfinite(headingDegrees)) {
-            return {AppCommandType::Unknown};
-        }
-        input >> std::ws;
-        if (!input.eof()) return {AppCommandType::Unknown};
-
-        AppCommand result{AppCommandType::Reposition};
-        result.objectId = static_cast<AircraftId>(objectId);
-        result.relativeX = x;
-        result.relativeY = y;
-        result.relativeZ = z;
-        result.relativeHeadingDegrees = headingDegrees;
-        return result;
-    }
-    if (command == "find") {
-        std::string family;
-        input >> family;
-        input >> std::ws;
-        if (family.empty() || !input.eof()) {
-            return {AppCommandType::Unknown};
-        }
-        AppCommand result{AppCommandType::Find};
-        result.family = std::move(family);
-        return result;
-    }
     if (command == "reset") return {AppCommandType::Reset};
     if (command == "reload") return {AppCommandType::Reload};
     return {AppCommandType::Unknown};
@@ -189,8 +147,6 @@ void ConsoleController::PrintHelp()
               << "  aircraft5           Aircraft currently within 5 km\n"
               << "  parked              Detailed list excluding STATE_SIMPLE_TAXI\n"
               << "  ground              Request one 5 km ground-object debug list\n"
-              << "  repos ID X,Y,Z,H    Reposition a static object relative to its parent\n"
-              << "  find FAMILY         Print nearest root tree and live MSFS poses\n"
               << "  log                 Toggle background event/periodic logging\n"
               << "  reset               Clear tracking and created objects\n"
               << "  reload              Reread the JSON config and rebuild services\n"

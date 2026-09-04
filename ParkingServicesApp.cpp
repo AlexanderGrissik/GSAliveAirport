@@ -99,14 +99,6 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
     case AppCommandType::Ground:
         m_console.RequestGroundDebugSnapshot();
         break;
-    case AppCommandType::Reposition:
-        m_groundServices.RepositionStaticObject(
-            command.objectId, command.relativeX, command.relativeY,
-            command.relativeZ, command.relativeHeadingDegrees);
-        break;
-    case AppCommandType::Find:
-        m_groundServices.FindClosestRootObject(std::move(command.family));
-        break;
     case AppCommandType::Log: {
         const bool enabled = !GSLoggingEnabled();
         GSSetLoggingEnabled(enabled);
