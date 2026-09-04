@@ -57,6 +57,7 @@ struct GroundServiceLocation
     double relY1{};
     double relX2{};
     double relY2{};
+    bool wingRelative{};
 };
 
 struct GroundServiceRequest
@@ -159,7 +160,7 @@ class GSObject
     // Shared world-coordinate pose math.
     [[nodiscard]] static GSObjectPos RelativeToAircraft(
         const AircraftSnapshot &aircraft, double relX, double relY, bool faceAircraft,
-        bool faceAircraftReverse = false);
+        bool faceAircraftReverse = false, bool wingRelative = false);
     [[nodiscard]] static GSObjectPos RelativeToParent(const GSObjectPos &parent,
                                                       const GroundServiceObject &child);
     [[nodiscard]] static SIMCONNECT_DATA_INITPOSITION ToInitialPosition(

@@ -502,7 +502,8 @@ GroundServiceLocation GroundServicesConfig::SelectLocation(
             source.faceAircraft,
             source.faceAircraftReverse,
             source.relX1 + randomX, source.relY1 + randomY,
-            source.relX2 + randomX, source.relY2 + randomY};
+            source.relX2 + randomX, source.relY2 + randomY,
+            source.wingRelative};
 }
 
 void GroundServicesConfig::Load(const std::filesystem::path &path)
@@ -643,6 +644,13 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                     throw std::runtime_error("location '" + location.name +
                                              "' has unsupported Dir; expected 'Aircraft' or 'AircraftRev'");
                 }
+            }
+            if (const auto wing = value.find("WingRelSize"); wing != value.end()) {
+                if (!wing->is_boolean()) {
+                    throw std::runtime_error("location '" + location.name +
+                                             "' has invalid WingRelSize; expected a boolean");
+                }
+                location.wingRelative = wing->get<bool>();
             }
             const bool hasStatic = value.contains("RelX") || value.contains("RelY");
             const bool hasRoute = value.contains("RelX1") || value.contains("RelY1") ||

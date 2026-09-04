@@ -146,9 +146,6 @@
     <ClInclude Include="SimObjectPositioning.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="category-json-template.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

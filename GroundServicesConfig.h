@@ -93,6 +93,7 @@ class GroundServicesConfig final
         double relY1{};
         double relX2{};
         double relY2{};
+        bool wingRelative{};
     };
 
     struct Element

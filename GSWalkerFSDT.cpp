@@ -22,10 +22,12 @@ bool GSWalkerFSDT::PreparePlacement(GSObjectServices &)
     }
 
     m_pose = RelativeToAircraft(m_aircraft, m_location.relX1,
-                                m_location.relY1, false);
+                                m_location.relY1, false, false,
+                                m_location.wingRelative);
     const GSObjectPos endpoint =
         RelativeToAircraft(m_aircraft, m_location.relX2,
-                           m_location.relY2, false);
+                           m_location.relY2, false, false,
+                           m_location.wingRelative);
     m_movementCoordinates = {
         {m_pose.latitude, m_pose.longitude, m_pose.altitudeFeet,
          m_pose.headingDegrees},

@@ -202,8 +202,15 @@ void GSObject::Finish(GSObjectServices &services, const GSObject::GSObjectPos &a
 
 GSObject::GSObjectPos GSObject::RelativeToAircraft(const AircraftSnapshot &aircraft, double relX,
                                          double relY, bool faceAircraft,
-                                         bool faceAircraftReverse)
+                                         bool faceAircraftReverse, bool wingRelative)
 {
+    // When the location is authored in wingspans, scale every offset (base and jitter)
+    // by the aircraft's reported wingspan before converting to world coordinates.
+    if (wingRelative && aircraft.wingSpanMeters > 0.0)
+    {
+        relX *= aircraft.wingSpanMeters;
+        relY *= aircraft.wingSpanMeters;
+    }
     const auto position = RelativePosition(aircraft.headingDegrees, aircraft.longitude,
                                            aircraft.latitude, aircraft.groundAltitudeFeet,
                                            relY, relX);

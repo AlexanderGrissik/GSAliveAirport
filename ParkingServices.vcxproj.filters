@@ -58,7 +58,6 @@
     <ClInclude Include="SimObjectPositioning.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="category-json-template.json" />
     <None Include="README.md" />
   </ItemGroup>
 </Project>

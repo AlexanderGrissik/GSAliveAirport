@@ -23,7 +23,8 @@ bool GSStaticObj::PreparePlacement(GSObjectServices &)
     }
     m_pose = RelativeToAircraft(m_aircraft, m_location.relX1, m_location.relY1,
                                 m_location.faceAircraft,
-                                m_location.faceAircraftReverse);
+                                m_location.faceAircraftReverse,
+                                m_location.wingRelative);
     return true;
 }
 
