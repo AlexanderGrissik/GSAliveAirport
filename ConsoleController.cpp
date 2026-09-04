@@ -67,21 +67,54 @@ void ConsoleController::Pump(const std::function<void(AppCommand)> &handler)
     while (_kbhit()) {
         const int key = _getch();
         if (key == 0 || key == 224) {
-            if (_kbhit()) static_cast<void>(_getch());
+            const int extendedKey = _getch();
+            if (extendedKey == 72 && !m_lastCommand.empty()) {
+                for (std::size_t index = 0; index < m_cursor; ++index) {
+                    std::cout << '\b';
+                }
+                std::cout << std::string(m_line.size(), ' ');
+                for (std::size_t index = 0; index < m_line.size(); ++index) {
+                    std::cout << '\b';
+                }
+                m_line = m_lastCommand;
+                m_cursor = m_line.size();
+                std::cout << m_line << std::flush;
+            } else if (extendedKey == 75 && m_cursor != 0) {
+                --m_cursor;
+                std::cout << '\b' << std::flush;
+            } else if (extendedKey == 77 && m_cursor < m_line.size()) {
+                std::cout << m_line[m_cursor++] << std::flush;
+            }
             continue;
         }
         if (key == '\r') {
-            std::cout << '\n';
+            std::cout << m_line.substr(m_cursor) << '\n';
             const std::string line = std::exchange(m_line, {});
+            m_cursor = 0;
+            if (!line.empty()) m_lastCommand = line;
             handler(Parse(line));
         } else if (key == '\b') {
-            if (!m_line.empty()) {
-                m_line.pop_back();
-                std::cout << "\b \b" << std::flush;
+            if (m_cursor != 0) {
+                m_line.erase(--m_cursor, 1);
+                const std::string_view suffix(m_line.data() + m_cursor,
+                                              m_line.size() - m_cursor);
+                std::cout << '\b' << suffix << ' ';
+                for (std::size_t index = 0; index <= suffix.size(); ++index) {
+                    std::cout << '\b';
+                }
+                std::cout << std::flush;
             }
         } else if (key >= 32 && key <= 126) {
-            m_line.push_back(static_cast<char>(key));
-            std::cout << static_cast<char>(key) << std::flush;
+            const char character = static_cast<char>(key);
+            m_line.insert(m_cursor, 1, character);
+            const std::string_view suffix(m_line.data() + m_cursor,
+                                          m_line.size() - m_cursor);
+            ++m_cursor;
+            std::cout << suffix;
+            for (std::size_t index = 1; index < suffix.size(); ++index) {
+                std::cout << '\b';
+            }
+            std::cout << std::flush;
         }
     }
 }
@@ -101,6 +134,47 @@ AppCommand ConsoleController::Parse(std::string_view line)
     if (command == "aircraft5" || command == "radius5") return {AppCommandType::Aircraft5};
     if (command == "parked") return {AppCommandType::Parked};
     if (command == "ground") return {AppCommandType::Ground};
+    if (command == "log") return {AppCommandType::Log};
+    if (command == "repos") {
+        std::uint64_t objectId{};
+        double x{};
+        double y{};
+        double z{};
+        double headingDegrees{};
+        char separator1{};
+        char separator2{};
+        char separator3{};
+        if (!(input >> objectId >> x >> separator1 >> y >> separator2 >> z >>
+              separator3 >> headingDegrees) ||
+            separator1 != ',' || separator2 != ',' || separator3 != ',' ||
+            objectId == 0 ||
+            objectId > std::numeric_limits<AircraftId>::max() ||
+            !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z) ||
+            !std::isfinite(headingDegrees)) {
+            return {AppCommandType::Unknown};
+        }
+        input >> std::ws;
+        if (!input.eof()) return {AppCommandType::Unknown};
+
+        AppCommand result{AppCommandType::Reposition};
+        result.objectId = static_cast<AircraftId>(objectId);
+        result.relativeX = x;
+        result.relativeY = y;
+        result.relativeZ = z;
+        result.relativeHeadingDegrees = headingDegrees;
+        return result;
+    }
+    if (command == "find") {
+        std::string family;
+        input >> family;
+        input >> std::ws;
+        if (family.empty() || !input.eof()) {
+            return {AppCommandType::Unknown};
+        }
+        AppCommand result{AppCommandType::Find};
+        result.family = std::move(family);
+        return result;
+    }
     if (command == "reset") return {AppCommandType::Reset};
     return {AppCommandType::Unknown};
 }
@@ -114,6 +188,9 @@ void ConsoleController::PrintHelp()
               << "  aircraft5           Aircraft currently within 5 km\n"
               << "  parked              Detailed list excluding STATE_SIMPLE_TAXI\n"
               << "  ground              Request one 5 km ground-object debug list\n"
+              << "  repos ID X,Y,Z,H    Reposition a static object relative to its parent\n"
+              << "  find FAMILY         Print nearest root tree and live MSFS poses\n"
+              << "  log                 Toggle background event/periodic logging\n"
               << "  reset               Clear tracking and created objects\n"
               << "  help | quit\n";
 }
@@ -130,7 +207,8 @@ void ConsoleController::PrintSnapshots(const std::vector<AircraftSnapshot> &airc
     for (const auto &data : aircraft) {
         std::cout << "ID=" << data.objectId << " distance=" << std::fixed
                   << std::setprecision(0) << data.distanceFromUserMeters << "m speed="
-                  << std::setprecision(1) << data.groundSpeedKnots << "kt title="
+                  << std::setprecision(1) << data.groundSpeedKnots << "kt wingspan="
+                  << data.wingSpanMeters << "m title="
                   << data.title << " state=" << data.trafficState << " nav="
                   << data.lightNav << " on-ground=" << data.onGround;
         PrintCargoPoint(std::cout, "cargo-front", data.cargoDoorRightFront);
@@ -156,7 +234,8 @@ void ConsoleController::PrintParked(const std::vector<AircraftSnapshot> &aircraf
         else if (data.parkedSince) std::cout << " [parked " << parkedSeconds << "s]";
         std::cout << " phase=" << Phase(data) << " distance=" << std::fixed
                   << std::setprecision(0) << data.distanceFromUserMeters << "m speed="
-                  << std::setprecision(1) << data.groundSpeedKnots << "kt\n"
+                  << std::setprecision(1) << data.groundSpeedKnots << "kt wingspan="
+                  << data.wingSpanMeters << "m\n"
                   << "  title: " << data.title << '\n'
                   << "  identity: " << data.atcAirline << ' ' << data.atcFlightNumber
                   << " / " << data.atcId << '\n'

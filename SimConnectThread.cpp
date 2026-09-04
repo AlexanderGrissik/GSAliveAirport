@@ -15,8 +15,7 @@ using namespace std::chrono_literals;
 
 namespace
 {
-constexpr SIMCONNECT_CLIENT_EVENT_ID kEventSimStart = 1;
-constexpr SIMCONNECT_CLIENT_EVENT_ID kEventSimStop = 2;
+constexpr SIMCONNECT_CLIENT_EVENT_ID kEventSimState = 1;
 constexpr SIMCONNECT_CLIENT_EVENT_ID kEventObjectRemoved = 3;
 }
 
@@ -255,8 +254,7 @@ void SimConnectThread::Disconnect()
 
 bool SimConnectThread::SubscribeLifecycleEvents()
 {
-    return SubscribeSystemEvent(kEventSimStart, "SimStart") &&
-           SubscribeSystemEvent(kEventSimStop, "SimStop") &&
+    return SubscribeSystemEvent(kEventSimState, "Sim") &&
            SubscribeSystemEvent(kEventObjectRemoved, "ObjectRemoved");
 }
 
@@ -546,12 +544,10 @@ void SimConnectThread::OnSimConnectMessage(SIMCONNECT_RECV *message,
         break;
     case SIMCONNECT_RECV_ID_EVENT: {
         const auto &event = *reinterpret_cast<SIMCONNECT_RECV_EVENT *>(message);
-        if (event.uEventID == kEventSimStart) {
-            GSLog("Simulation started.");
-            NotifySimulation(true);
-        } else if (event.uEventID == kEventSimStop) {
-            GSLog("Simulation stopped.");
-            NotifySimulation(false);
+        if (event.uEventID == kEventSimState) {
+            const bool running = event.dwData != 0;
+            GSLog(running ? "Simulation started." : "Simulation stopped.");
+            NotifySimulation(running);
         }
         break;
     }

@@ -1,7 +1,6 @@
 #include "Aircraft.h"
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <cmath>
 
@@ -9,18 +8,8 @@ namespace parking_services
 {
 namespace
 {
-constexpr std::array<double, 10> kMetersPerDegree{{
-    111'000.0, //  0-10 degrees latitude
-    109'000.0, // 10-20 degrees latitude
-    106'000.0, // 20-30 degrees latitude
-    100'000.0, // 30-40 degrees latitude
-     95'000.0, // 40-50 degrees latitude
-     87'500.0, // 50-60 degrees latitude
-     79'000.0, // 60-70 degrees latitude
-     70'000.0, // 70-80 degrees latitude
-     60'000.0, // 80-90 degrees latitude
-     56'000.0, // 90 degrees latitude
-}};
+constexpr double kMetersPerLatitudeDegree = 111'320.0;
+constexpr double kDegreesToRadians = 3.14159265358979323846 / 180.0;
 }
 
 std::string NormalizeTrafficState(std::string state)
@@ -59,21 +48,25 @@ std::string_view AircraftSizeCategoryName(AircraftSizeCategory category)
     return "Unknown";
 }
 
-double MetersPerDegree(double latitude)
+double MetersPerDegreeLat()
 {
-    const auto latitudeBand = (std::min)(
-        static_cast<std::size_t>(std::abs(latitude) / 10.0),
-        kMetersPerDegree.size() - 1);
-    return kMetersPerDegree[latitudeBand];
+    return kMetersPerLatitudeDegree;
+}
+
+double MetersPerDegreeLong(double latitude)
+{
+    return kMetersPerLatitudeDegree *
+           std::cos(latitude * kDegreesToRadians);
 }
 
 double DistanceMeters(double latitudeA, double longitudeA,
                       double latitudeB, double longitudeB)
 {
-    const double latitudeDelta = latitudeB - latitudeA;
-    const double longitudeDelta = longitudeB - longitudeA;
-    const double distanceDegrees = std::sqrt(
-        latitudeDelta * latitudeDelta + longitudeDelta * longitudeDelta);
-    return distanceDegrees * MetersPerDegree(latitudeA);
+    const double latitudeMeters =
+        (latitudeB - latitudeA) * MetersPerDegreeLat();
+    const double averageLatitude = (latitudeA + latitudeB) / 2.0;
+    const double longitudeMeters =
+        (longitudeB - longitudeA) * MetersPerDegreeLong(averageLatitude);
+    return std::hypot(latitudeMeters, longitudeMeters);
 }
 } // namespace parking_services

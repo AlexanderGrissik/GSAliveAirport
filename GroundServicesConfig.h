@@ -86,8 +86,9 @@ class GroundServicesConfig final
         std::string name;
         double randomOffsetX{};
         double randomOffsetY{};
-        bool walking{};
+        bool route{};
         bool faceAircraft{};
+        bool faceAircraftReverse{};
         double relX1{};
         double relY1{};
         double relX2{};

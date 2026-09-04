@@ -10,7 +10,8 @@
     <ClCompile Include="GroundServicesConfig.cpp" />
     <ClCompile Include="GSCommon.cpp" />
     <ClCompile Include="GSObject.cpp" />
-    <ClCompile Include="GSWalker.cpp" />
+    <ClCompile Include="GSStaticObj.cpp" />
+    <ClCompile Include="GSWalkerFSDT.cpp" />
     <ClCompile Include="GSLuggageLoaderFSDT.cpp" />
     <ClCompile Include="GSRequests\GSReqAircraftScan.cpp" />
     <ClCompile Include="GSRequests\GSReqBaggageGeometry.cpp" />
@@ -19,6 +20,7 @@
     <ClCompile Include="GSRequests\GSReqCommand.cpp" />
     <ClCompile Include="GSRequests\GSReqCreateObject.cpp" />
     <ClCompile Include="GSRequests\GSReqGroundScan.cpp" />
+    <ClCompile Include="GSRequests\GSReqObjectPose.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ParkingServicesApp.cpp" />
     <ClCompile Include="SimConnectThread.cpp" />
@@ -35,7 +37,8 @@
     <ClInclude Include="GroundServicesThread.h" />
     <ClInclude Include="GroundServicesConfig.h" />
     <ClInclude Include="GSObject.h" />
-    <ClInclude Include="GSWalker.h" />
+    <ClInclude Include="GSStaticObj.h" />
+    <ClInclude Include="GSWalkerFSDT.h" />
     <ClInclude Include="GSLuggageLoaderFSDT.h" />
     <ClInclude Include="GSRequests\GSReqAircraftScan.h" />
     <ClInclude Include="GSRequests\GSReqBaggageGeometry.h" />
@@ -44,6 +47,7 @@
     <ClInclude Include="GSRequests\GSReqCommand.h" />
     <ClInclude Include="GSRequests\GSReqCreateObject.h" />
     <ClInclude Include="GSRequests\GSReqGroundScan.h" />
+    <ClInclude Include="GSRequests\GSReqObjectPose.h" />
     <ClInclude Include="ISimConnectHandler.h" />
     <ClInclude Include="ISimConnectRequest.h" />
     <ClInclude Include="ISimConnectStatus.h" />

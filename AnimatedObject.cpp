@@ -13,7 +13,6 @@ namespace parking_services
 {
 namespace
 {
-constexpr double kMovementSpeedMetersPerSecond = 2.5 * 0.514444;
 constexpr double kDegreesPerRadian = 180.0 / 3.14159265358979323846;
 constexpr std::string_view kVelocityBodyYCarrier = "VELOCITY BODY Y";
 
@@ -41,9 +40,11 @@ double Heading(const AnimationCoordinate &from, const AnimationCoordinate &to)
 
 AnimatedObject::AnimatedObject(
     AircraftId objectId, AnimationConfiguration animation,
-    std::vector<AnimationCoordinate> movementCoordinates)
+    std::vector<AnimationCoordinate> movementCoordinates,
+    double movementSpeedMetersPerSecond)
     : m_objectId(objectId), m_animation(std::move(animation)),
-      m_movementCoordinates(std::move(movementCoordinates))
+      m_movementCoordinates(std::move(movementCoordinates)),
+      m_movementSpeedMetersPerSecond(movementSpeedMetersPerSecond)
 {
     if (m_movementCoordinates.empty()) return;
     m_currentCoordinate = m_movementCoordinates.front();
@@ -62,7 +63,9 @@ bool AnimatedObject::IsValid() const
 {
     return m_objectId != 0 && !m_animation.carriers.empty() &&
            !m_movementCoordinates.empty() &&
-           (m_movementCoordinates.size() == 1 || m_oneWayLengthMeters > 0.0);
+           (m_movementCoordinates.size() == 1 ||
+            (m_oneWayLengthMeters > 0.0 &&
+             m_movementSpeedMetersPerSecond > 0.0));
 }
 
 std::optional<AnimationCoordinate> AnimatedObject::ProximityTarget() const
@@ -149,7 +152,8 @@ void AnimatedObject::AdvanceMovement(double movementSeconds)
 {
     const double fullLength = m_oneWayLengthMeters * 2.0;
     m_routeDistanceMeters = std::fmod(
-        m_routeDistanceMeters + movementSeconds * kMovementSpeedMetersPerSecond,
+        m_routeDistanceMeters +
+            movementSeconds * m_movementSpeedMetersPerSecond,
         fullLength);
     const bool forward = m_routeDistanceMeters <= m_oneWayLengthMeters;
     const double oneWayDistance = forward

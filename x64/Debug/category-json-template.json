@@ -18,7 +18,7 @@
         },
         {
             "Family": "SmallPushTug",
-            "PreferedObj" : [ "FSDT_Pushback_M1A", "ASO_Aircraft_Caddy" ]
+            "PreferedObj" : [ "FSDT_Pushback_M1A*", "FSDT_Pushback_03*", "ASO_Aircraft_Caddy" ]
         },
         {
             "Family": "SmallPaxVan",
@@ -30,15 +30,15 @@
             "AttachObjects": [
                 {
                     "Family": "LuggageWorkerPax",
-                    "XYZH": [[0,0,0,180.0]]
+                    "XYZH": [[-5,0,0,0]]
                 },
                 {
                     "Family": "LuggageTractorFSDT",
-                    "XYZH": [[3,-5.5,0,93]]
+                    "XYZH": [[-7,3.5,0,90]]
                 },
                 {
                     "Family": "LuggageWagonFSDT",
-                    "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]]
+                    "XYZH": [[-7,0,0,90],[-7,-3.5,0,90],[-7,-7,0,90]]
                 }
             ]
         },
@@ -65,23 +65,25 @@
             "AttachObjects": [
                 {
                     "Family": "LuggageWorkerPax",
-                    "XYZH": [[0,0,0,180.0]]
+                    "XYZH": [[0,0,0,0]]
                 },
                 {
                     "Family": "LuggageTractorFSDT",
-                    "XYZH": [[3,-5.5,0,93]]
+                    "XYZH": [[-5,-4.1,0,110]]
                 },
                 {
                     "Family": "LuggageWagonFSDT",
-                    "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]],
+                    "XYZH": [[-4.5,0,0,90],[-4.5,4.0,0,90],[-5,8.0,0,70]],
                     "AttachObjects": [
                         {
                             "Family": "LuggageSmallFSDT",
-                            "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]]
+                            "XYZH": [[0.9,-0.35,0.76,0],[0.3,-0.35,0.76,0],[-0.3,-0.35,0.76,0],[-0.9,-0.35,0.76,0],
+                                     [1.2,0.35,0.76,0],[0.6,0.35,0.76,0],[0,0.35,0.76,0],[-0.6,0.35,0.76,0],[-1.2,0.35,0.76,0]]
                         },
                         {
                             "Family": "LuggageLargeFSDT",
-                            "XYZH": [[0,-5,0,90],[-3,-4.5,0,87],[-6,-4,0,83]]
+                            "XYZH": [[0.9,0.25,0.76,0],[0.3,0.25,0.76,0],[-0.3,0.25,0.76,0],[-0.9,0.25,0.76,0],
+                                     [1.2,-0.25,0.76,0],[0.6,-0.25,0.76,0],[0,-0.25,0.76,0],[-0.6,-0.25,0.76,0],[-1.2,-0.25,0.76,0]]
                         }
                     ]
                 }
@@ -140,6 +142,46 @@
         {
             "Family": "LuggageLargeFSDT",
             "PreferedObj" : [ "FSDT_GSX_Luggage_Large*" ]
+        },
+        {
+            "Family": "GroundPower",
+            "PreferedObj" : [ "Car Ground Power Unit", "FSDT_GPU_Hobart_4400", "FSDT_GPU_TLD_406" ]
+        },
+        {
+            "Family": "PushbackDefault",
+            "PreferedObj" : [ "ASO_Pushback_*" ]
+        },
+        {
+            "Family": "MediumPushbackFSDT",
+            "PreferedObj" : [ "FSDT_Pushback_TMX_150" ],
+            "AlternateFamily": "PushbackDefault"
+        },
+        {
+            "Family": "LargePushbackFSDT",
+            "PreferedObj" : [ "FSDT_Pushback_Trepel_280", "ASO_Pushback_*" ]
+        },
+        {
+            "Family": "HeavyPushbackFSDT",
+            "PreferedObj" : [ "FSDT_Pushback_Trepel_700", "ASO_Pushback_*" ]
+        },
+        {
+            "Family": "LavalatoryDefault",
+            "PreferedObj" : [ "Microsoft_Truck_Lavatory", "Microsoft_Van_NA_Lavatory*", "Van Lavatory NorthAm" ],
+            "AlternateFamily": "PushbackDefault"
+        },
+        {
+            "Family": "LavalatoryFSDT",
+            "PreferedObj" : [ "FSDT_Lavatory_Truck" ],
+            "AlternateFamily": "LavalatoryDefault",
+            "Animation": {
+                "FPS": 30,
+                "Carriers": [
+                    {
+                    "Carrier": "WAGON FRONT LINK ORIENTATION",
+                    "Frames": [0, 1755]
+                    }
+                ]
+            }
         }
     ],
     "Locations": [
@@ -182,7 +224,39 @@
             "RelY1": 5,
             "RelX2": -8,
             "RelY2": -5
+        },
+        {
+            "Name": "GroundPowerRightForward",
+            "RandOffsetX": 2,
+            "RandOffsetY": 5,
+            "RelX": 4,
+            "RelY": 20
+        },
+        {
+            "Name": "PushbackForwardMedium",
+            "RandOffsetX": 3,
+            "RandOffsetY": 2,
+            "RelX": 0,
+            "RelY": 15,
+            "Dir": "Aircraft"
+        },
+        {
+            "Name": "PushbackForwardHeavy",
+            "RandOffsetX": 3,
+            "RandOffsetY": 2,
+            "RelX": 0,
+            "RelY": 40,
+            "Dir": "Aircraft"
+        },
+        {
+            "Name": "LavalatoryMedium",
+            "RandOffsetX": 0,
+            "RandOffsetY": 2,
+            "RelX": 0,
+            "RelY": -20,
+            "Dir": "AircraftRev"
         }
+        
     ],
     "Categories": [
         {
@@ -216,6 +290,18 @@
                 {
                     "Family": "LuggageLoaderSystemPaxFSDT",
                     "AnimReversePrb": 50
+                },
+                {
+                    "Family": "GroundPower",
+                    "Location": "GroundPowerRightForward"
+                },
+                {
+                    "Family": "MediumPushbackFSDT",
+                    "Location": "PushbackForwardMedium"
+                },
+                {
+                    "Family": "LavalatoryFSDT",
+                    "Location": "LavalatoryMedium"
                 }
             ]
         },
@@ -225,6 +311,18 @@
                 {
                     "Family": "LuggageLoaderSystemPaxFSDT",
                     "AnimReversePrb": 50
+                },
+                {
+                    "Family": "GroundPower",
+                    "Location": "GroundPowerRightForward"
+                },
+                {
+                    "Family": "LargePushbackFSDT",
+                    "Location": "PushbackForwardMedium"
+                },
+                {
+                    "Family": "LavalatoryFSDT",
+                    "Location": "LavalatoryMedium"
                 }
             ]
         },
@@ -234,6 +332,18 @@
                 {
                     "Family": "LuggageLoaderSystemPaxFSDT",
                     "AnimReversePrb": 50
+                },
+                {
+                    "Family": "GroundPower",
+                    "Location": "GroundPowerRightForward"
+                },
+                {
+                    "Family": "HeavyPushbackFSDT",
+                    "Location": "PushbackForwardHeavy"
+                },
+                {
+                    "Family": "LavalatoryFSDT",
+                    "Location": "LavalatoryMedium"
                 }
             ]
         }

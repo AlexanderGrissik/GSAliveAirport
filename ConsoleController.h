@@ -20,12 +20,19 @@ namespace parking_services
 {
 enum class AppCommandType
 {
-    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground, Reset, Unknown,
+    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground,
+    Reposition, Find, Log, Reset, Unknown,
 };
 
 struct AppCommand
 {
     AppCommandType type{AppCommandType::None};
+    AircraftId objectId{};
+    double relativeX{};
+    double relativeY{};
+    double relativeZ{};
+    double relativeHeadingDegrees{};
+    std::string family;
 };
 
 struct ConsoleStatus
@@ -75,6 +82,8 @@ class ConsoleController final : public ISimConnectStatus
 
     ISimConnectHandler &m_simConnect;
     std::string m_line;
+    std::string m_lastCommand;
+    std::size_t m_cursor{};
     std::unique_ptr<GSReqGroundScan> m_groundRequest;
     std::mutex m_setupRequestMutex;
     std::vector<std::unique_ptr<GSReqCommand>> m_setupRequests;

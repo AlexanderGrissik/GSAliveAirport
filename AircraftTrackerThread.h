@@ -7,6 +7,7 @@
 #include "ISimConnectStatus.h"
 
 #include <condition_variable>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <map>
@@ -56,6 +57,7 @@ class AircraftTrackerThread final : public ISimConnectStatus
         ApproximateUserPosition &destination) const;
     [[nodiscard]] std::size_t TrackedCount() const;
     [[nodiscard]] std::size_t NearbyCount() const;
+    [[nodiscard]] std::uint64_t SnapshotRevision() const;
 
   private:
     static void AircraftTrackerLoop(std::stop_token stopToken,
@@ -87,6 +89,7 @@ class AircraftTrackerThread final : public ISimConnectStatus
     std::map<AircraftId, AircraftSnapshot> m_publishedTracked;
     std::map<AircraftId, AircraftSnapshot> m_publishedNearby;
     std::optional<ApproximateUserPosition> m_publishedUserPosition;
+    std::uint64_t m_snapshotRevision{};
 
     std::mutex m_commandMutex;
     std::condition_variable_any m_wake;

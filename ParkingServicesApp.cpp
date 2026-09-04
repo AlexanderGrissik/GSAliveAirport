@@ -99,11 +99,26 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
     case AppCommandType::Ground:
         m_console.RequestGroundDebugSnapshot();
         break;
+    case AppCommandType::Reposition:
+        m_groundServices.RepositionStaticObject(
+            command.objectId, command.relativeX, command.relativeY,
+            command.relativeZ, command.relativeHeadingDegrees);
+        break;
+    case AppCommandType::Find:
+        m_groundServices.FindClosestRootObject(std::move(command.family));
+        break;
+    case AppCommandType::Log: {
+        const bool enabled = !GSLoggingEnabled();
+        GSSetLoggingEnabled(enabled);
+        std::cout << "Background logging "
+                  << (enabled ? "enabled" : "disabled") << ".\n";
+        break;
+    }
     case AppCommandType::Reset:
         ResetEverything();
         break;
     case AppCommandType::Unknown:
-        std::cout << "Unknown command or invalid ObjectID. Type 'help'.\n";
+        std::cout << "Unknown command or invalid arguments. Type 'help'.\n";
         break;
     }
 }
@@ -113,7 +128,7 @@ void ParkingServicesApp::ResetEverything()
     m_groundServices.Reset();
     m_aircraftTracker.Reset();
     m_console.Reset();
-    GSLog("Reset requested for aircraft tracking and ground services.");
+    GSPrint("Reset requested for aircraft tracking and ground services.");
 }
 } // namespace parking_services
 

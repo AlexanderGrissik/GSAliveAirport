@@ -185,6 +185,12 @@ std::size_t AircraftTrackerThread::NearbyCount() const
     return m_publishedNearby.size();
 }
 
+std::uint64_t AircraftTrackerThread::SnapshotRevision() const
+{
+    std::scoped_lock lock(m_snapshotMutex);
+    return m_snapshotRevision;
+}
+
 void AircraftTrackerThread::AircraftTrackerLoop(std::stop_token stopToken,
                                                  AircraftTrackerThread *self)
 {
@@ -382,5 +388,6 @@ void AircraftTrackerThread::PublishSnapshot()
     m_publishedTracked = m_tracked;
     m_publishedNearby = m_nearby;
     m_publishedUserPosition = m_userPosition;
+    ++m_snapshotRevision;
 }
 } // namespace parking_services

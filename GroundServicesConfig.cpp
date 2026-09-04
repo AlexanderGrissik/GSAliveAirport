@@ -366,9 +366,8 @@ void GroundServicesConfig::FillRequests(
                 : GroundServiceSpecialType::None;
         request.specialType = specialType;
         if (specialType == GroundServiceSpecialType::LuggageLoaderFSDT) {
-            // Attach to a cargo door: prefer the back door, fall back to the front.
-            request.location =
-                GroundServiceLocation{GroundServiceLocationKind::CargoDoorRightAuto};
+            // This object type computes its own placement from aircraft data.
+            request.location = GroundServiceLocation{};
         } else {
             std::uniform_int_distribution<std::size_t> locationIndex(
                 0, element.locations.size() - 1);
@@ -498,9 +497,10 @@ GroundServiceLocation GroundServicesConfig::SelectLocation(
                                                    source.randomOffsetY);
     const double randomX = offsetX(random);
     const double randomY = offsetY(random);
-    return {source.walking ? GroundServiceLocationKind::Route
-                           : GroundServiceLocationKind::Static,
+    return {source.route ? GroundServiceLocationKind::Route
+                         : GroundServiceLocationKind::Static,
             source.faceAircraft,
+            source.faceAircraftReverse,
             source.relX1 + randomX, source.relY1 + randomY,
             source.relX2 + randomX, source.relY2 + randomY};
 }
@@ -628,12 +628,21 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                 }
             }
             if (const auto direction = value.find("Dir"); direction != value.end()) {
-                if (!direction->is_string() ||
-                    Lower(direction->get_ref<const std::string &>()) != "aircraft") {
+                if (!direction->is_string()) {
                     throw std::runtime_error("location '" + location.name +
-                                             "' has unsupported Dir; expected 'Aircraft'");
+                                             "' has unsupported Dir; expected 'Aircraft' or 'AircraftRev'");
                 }
-                location.faceAircraft = true;
+                const std::string directionName =
+                    Lower(direction->get_ref<const std::string &>());
+                if (directionName == "aircraft") {
+                    location.faceAircraft = true;
+                } else if (directionName == "aircraftrev") {
+                    location.faceAircraft = true;
+                    location.faceAircraftReverse = true;
+                } else {
+                    throw std::runtime_error("location '" + location.name +
+                                             "' has unsupported Dir; expected 'Aircraft' or 'AircraftRev'");
+                }
             }
             const bool hasStatic = value.contains("RelX") || value.contains("RelY");
             const bool hasRoute = value.contains("RelX1") || value.contains("RelY1") ||
@@ -642,7 +651,7 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                 throw std::runtime_error(
                     "location must define either RelX/RelY or both route endpoints");
             }
-            location.walking = hasRoute;
+            location.route = hasRoute;
             if (hasRoute) {
                 location.relX1 = ReadNumber(value, "RelX1");
                 location.relY1 = ReadNumber(value, "RelY1");

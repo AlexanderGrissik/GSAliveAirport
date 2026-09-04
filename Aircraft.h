@@ -78,7 +78,8 @@ enum class AircraftSizeCategory
 std::string NormalizeTrafficState(std::string state);
 std::optional<AircraftSizeCategory> ClassifyAircraftSize(double wingSpanMeters);
 std::string_view AircraftSizeCategoryName(AircraftSizeCategory category);
-double MetersPerDegree(double latitude);
+double MetersPerDegreeLat();
+double MetersPerDegreeLong(double latitude);
 double DistanceMeters(double latitudeA, double longitudeA,
                       double latitudeB, double longitudeB);
 } // namespace parking_services

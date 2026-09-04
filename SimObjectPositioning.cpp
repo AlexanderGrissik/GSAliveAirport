@@ -19,11 +19,10 @@ SIMCONNECT_DATA_INITPOSITION RelativePosition(
     const double heading = headingDegrees * degreesToRadians;
     const double northMeters = forwardMeters * std::cos(heading) - rightMeters * std::sin(heading);
     const double eastMeters = forwardMeters * std::sin(heading) + rightMeters * std::cos(heading);
-    const double metersPerDegree = MetersPerDegree(latitude);
 
     SIMCONNECT_DATA_INITPOSITION position{};
-    position.Latitude = latitude + northMeters / metersPerDegree;
-    position.Longitude = longitude + eastMeters / metersPerDegree;
+    position.Latitude = latitude + northMeters / MetersPerDegreeLat();
+    position.Longitude = longitude + eastMeters / MetersPerDegreeLong(latitude);
     position.Altitude = altitudeFeet;
     position.Heading = headingDegrees;
     position.OnGround = 1;

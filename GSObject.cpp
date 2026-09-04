@@ -2,50 +2,133 @@
 
 #include "GSCommon.h"
 #include "GSLuggageLoaderFSDT.h"
-#include "GSWalker.h"
+#include "GSStaticObj.h"
+#include "GSWalkerFSDT.h"
 
+#include <algorithm>
 #include <utility>
 
 namespace parking_services
 {
-GSObject::GSObject(std::uint64_t token, AircraftSnapshot aircraft,
-                   GroundServiceObject object, GroundServiceLocation location,
-                   AircraftId parentObjectId)
-    : m_token(token), m_aircraft(std::move(aircraft)), m_object(std::move(object)),
-      m_location(location), m_parentObjectId(parentObjectId)
+GSObject::GSObject(AircraftSnapshot aircraft, GroundServiceObject object,
+                   GroundServiceLocation location)
+    : m_aircraft(std::move(aircraft)), m_object(std::move(object)),
+      m_location(location)
 {
 }
 
-std::unique_ptr<GSObject> GSObject::Create(std::uint64_t token,
-                                           const AircraftSnapshot &aircraft,
+std::unique_ptr<GSObject> GSObject::Create(const AircraftSnapshot &aircraft,
                                            const GroundServiceRequest &request)
 {
     switch (request.specialType)
     {
     case GroundServiceSpecialType::LuggageLoaderFSDT:
-        return std::make_unique<GSLuggageLoaderFSDT>(token, aircraft, request.object,
+        return std::make_unique<GSLuggageLoaderFSDT>(aircraft, request.object,
                                                       request.location);
     case GroundServiceSpecialType::WalkerFSDT:
-        return std::make_unique<GSWalker>(token, aircraft, request.object, request.location);
+        return std::make_unique<GSWalkerFSDT>(aircraft, request.object,
+                                              request.location);
     case GroundServiceSpecialType::None:
     default:
-        return std::make_unique<GSObject>(token, aircraft, request.object, request.location,
-                                          /*parentObjectId*/ 0);
+        return std::make_unique<GSStaticObj>(aircraft, request.object,
+                                             request.location);
     }
 }
 
-bool GSObject::PreparePlacement(GSObjectServices &)
+std::unique_ptr<GSObject> GSObject::CreateAttachment(
+    const AircraftSnapshot &aircraft, const GroundServiceObject &object)
 {
-    if (m_location.kind != GroundServiceLocationKind::Static)
-    {
-        GSLog("Skipped " + m_object.family + " for aircraft " +
-              std::to_string(m_aircraft.objectId) +
-              ": a plain ground-service object only supports static placement.");
-        return false;
+    return std::make_unique<GSStaticObj>(aircraft, object, GroundServiceLocation{});
+}
+
+bool GSObject::ReadyToDestroy() const
+{
+    return OwnRequestsFinished() &&
+           std::ranges::all_of(m_children, [](const auto &child) {
+               return child->ReadyToDestroy();
+           });
+}
+
+bool GSObject::ReadyForRemoval() const
+{
+    const bool ownLifecycleComplete =
+        m_createResolved && (m_objectId == 0 || m_finalized);
+    return ownLifecycleComplete && OwnRequestsFinished() &&
+           std::ranges::all_of(m_children, [](const auto &child) {
+               return child->ReadyForRemoval();
+           });
+}
+
+GSObject &GSObject::AddChild(std::unique_ptr<GSObject> child)
+{
+    child->m_parent = this;
+    GSObject &reference = *child;
+    m_children.push_back(std::move(child));
+    return reference;
+}
+
+GSObject *GSObject::FindByObjectId(AircraftId objectId)
+{
+    if (m_objectId == objectId) return this;
+    for (const auto &child : m_children) {
+        if (GSObject *found = child->FindByObjectId(objectId)) return found;
     }
-    m_pose = RelativeToAircraft(m_aircraft, m_location.relX1, m_location.relY1,
-                                m_location.faceAircraft);
+    return nullptr;
+}
+
+std::unique_ptr<GSObject> GSObject::ReleaseDescendant(AircraftId objectId)
+{
+    for (auto child = m_children.begin(); child != m_children.end(); ++child) {
+        if ((*child)->ObjectId() == objectId) {
+            std::unique_ptr<GSObject> result = std::move(*child);
+            m_children.erase(child);
+            result->m_parent = nullptr;
+            return result;
+        }
+        if (auto result = (*child)->ReleaseDescendant(objectId)) return result;
+    }
+    return {};
+}
+
+void GSObject::MaintainTree(
+    GSObjectServices &services, std::chrono::steady_clock::time_point now)
+{
+    std::erase_if(m_commandRequests, [](const auto &request) {
+        return request->IsFinished();
+    });
+    if (m_createResolved && m_objectId != 0 && !m_finalized) {
+        Maintain(services, now);
+    }
+    for (const auto &child : m_children) child->MaintainTree(services, now);
+    std::erase_if(m_children, [](const auto &child) {
+        return child->Retired() && child->ReadyToDestroy();
+    });
+}
+
+void GSObject::ConfigureSimConnect(GSObjectServices &services)
+{
+    static_cast<void>(services);
+}
+
+GSReqCommand &GSObject::NewCommandRequest()
+{
+    auto request = std::make_unique<GSReqCommand>();
+    GSReqCommand &reference = *request;
+    m_commandRequests.push_back(std::move(request));
+    return reference;
+}
+
+bool GSObject::SpecialRequestsFinished() const
+{
     return true;
+}
+
+bool GSObject::OwnRequestsFinished() const
+{
+    if (!SpecialRequestsFinished()) return false;
+    return std::ranges::all_of(m_commandRequests, [](const auto &request) {
+        return request->IsFinished();
+    });
 }
 
 void GSObject::PrepareAttachment(const GSObject::GSObjectPos &parentPose)
@@ -63,13 +146,6 @@ void GSObject::OnCreated(GSObjectServices &services, AircraftId objectId)
               std::to_string(m_aircraft.objectId) + ".");
         return;
     }
-    if (m_parentObjectId != 0 && !services.isParentCreated(m_parentObjectId))
-    {
-        // The create completed, but its parent is already gone; tear down this
-        // object rather than keeping an orphan.
-        services.removeSimObject(objectId);
-        return;
-    }
     services.registerObject(this, objectId, m_pose);
     Activate(services, objectId);
 }
@@ -80,21 +156,41 @@ void GSObject::Maintain(GSObjectServices &services, std::chrono::steady_clock::t
     static_cast<void>(now);
 }
 
-void GSObject::OnGeometry(GSObjectServices &services, const BaggageLoaderGeometry &geometry)
-{
-    static_cast<void>(services);
-    static_cast<void>(geometry);
-}
-
 void GSObject::OnRemoved(GSObjectServices &services)
 {
     static_cast<void>(services);
+}
+
+bool GSObject::RepositionRelative(GSObjectServices &services, double x,
+                                  double y, double z,
+                                  double headingDegrees)
+{
+    static_cast<void>(services);
+    static_cast<void>(x);
+    static_cast<void>(y);
+    static_cast<void>(z);
+    static_cast<void>(headingDegrees);
+    return false;
 }
 
 void GSObject::Activate(GSObjectServices &services, AircraftId objectId)
 {
     static_cast<void>(objectId);
     Finish(services, m_pose);
+}
+
+void GSObject::OnParentRepositioned(GSObjectServices &services,
+                                    const GSObjectPos &parentPose)
+{
+    static_cast<void>(services);
+    static_cast<void>(parentPose);
+}
+
+void GSObject::RepositionChildren(GSObjectServices &services)
+{
+    for (const auto &child : m_children) {
+        child->OnParentRepositioned(services, m_pose);
+    }
 }
 
 void GSObject::Finish(GSObjectServices &services, const GSObject::GSObjectPos &actualPose)
@@ -105,7 +201,8 @@ void GSObject::Finish(GSObjectServices &services, const GSObject::GSObjectPos &a
 }
 
 GSObject::GSObjectPos GSObject::RelativeToAircraft(const AircraftSnapshot &aircraft, double relX,
-                                         double relY, bool faceAircraft)
+                                         double relY, bool faceAircraft,
+                                         bool faceAircraftReverse)
 {
     const auto position = RelativePosition(aircraft.headingDegrees, aircraft.longitude,
                                            aircraft.latitude, aircraft.groundAltitudeFeet,
@@ -115,6 +212,7 @@ GSObject::GSObjectPos GSObject::RelativeToAircraft(const AircraftSnapshot &aircr
     if (faceAircraft)
     {
         result.headingDegrees = HeadingTowardRelativeOrigin(aircraft.headingDegrees, relY, relX);
+        if (faceAircraftReverse) result.headingDegrees = NormalizeDegrees(result.headingDegrees + 180.0);
     }
     return result;
 }
@@ -144,4 +242,5 @@ SIMCONNECT_DATA_INITPOSITION GSObject::ToInitialPosition(const GSObject::GSObjec
     result.OnGround = pose.onGround ? 1 : 0;
     return result;
 }
+
 } // namespace parking_services
