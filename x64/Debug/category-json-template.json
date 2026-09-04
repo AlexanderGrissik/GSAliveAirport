@@ -17,6 +17,36 @@
             "Exclude": [ "*_SEATED", "FSDT_Passenger_guidance_trolley", "FSDT_Passenger_safepass_system", "FSDT_Passenger_PILOT_*", "FSDT_Passenger_LOADMASTER_*" ]
         },
         {
+            "Family": "WalkingWorker",
+            "PreferedObj" : [ "FSDT_Wingwalker_*" ],
+            "AlternateObj": [ "Tarmac_*" ],
+            "SpecialType": "WalkerFSDT",
+            "Animation": {
+                "FPS": 30,
+                "Carriers": [
+                    {
+                        "Carrier": "VELOCITY BODY Y",
+                        "Frames": [230,268]
+                    }
+                ]
+            }
+        },
+        {
+            "Family": "WalkingMarshaller",
+            "PreferedObj" : [ "FSDT_Marshaller_*" ],
+            "AlternateObj": [ "Tarmac_*" ],
+            "SpecialType": "WalkerFSDT",
+            "Animation": {
+                "FPS": 30,
+                "Carriers": [
+                    {
+                        "Carrier": "VELOCITY BODY Y",
+                        "Frames": [230,268]
+                    }
+                ]
+            }
+        },
+        {
             "Family": "SmallPushTug",
             "PreferedObj" : [ "FSDT_Pushback_M1A*", "FSDT_Pushback_03*", "ASO_Aircraft_Caddy" ]
         },
@@ -105,21 +135,6 @@
             }
         },
         {
-            "Family": "WalkingWorker",
-            "PreferedObj" : [ "FSDT_Wingwalker_*" ],
-            "AlternateObj": [ "Tarmac_*" ],
-            "SpecialType": "WalkerFSDT",
-            "Animation": {
-                "FPS": 30,
-                "Carriers": [
-                    {
-                        "Carrier": "VELOCITY BODY Y",
-                        "Frames": [230,268]
-                    }
-                ]
-            }
-        },
-        {
             "Family": "LuggageTractorFSDT",
             "PreferedObj" : [ "FSDT_TLD_JET_16*", "FSDT_Tug_Endurance*", "FSDT_Tug_M1A*" ]
         },
@@ -192,6 +207,10 @@
             "Family": "CateringDefault",
             "PreferedObj": [ "ASO_Catering_Truck_01" ],
             "SpecialType": "CateringDefault" 
+        },
+        {
+            "Family": "OrangeCone",
+            "PreferedObj": [ "FSDT_GSX_BypassPin" ]
         }
     ],
     "Locations": [
@@ -261,10 +280,20 @@
         {
             "Name": "LavalatoryMedium",
             "RandOffsetX": 0,
-            "RandOffsetY": 2,
+            "RandOffsetY": 0,
             "RelX": 0,
-            "RelY": -20,
-            "Dir": "AircraftRev"
+            "RelY": -1,
+            "Dir": "AircraftRev",
+            "WingRelSize": true
+        },
+        {
+            "Name": "ConesLarge",
+            "RandOffsetX": 0,
+            "RandOffsetY": 0,
+            "RelX": 1,
+            "RelY": -1,
+            "Dir": "Aircraft",
+            "WingRelSize": true
         }
         
     ],
@@ -333,6 +362,10 @@
                 {
                     "Family": "LavalatoryFSDT",
                     "Location": "LavalatoryMedium"
+                },
+                {
+                    "Family": "OrangeCone",
+                    "Location": "ConesLarge"
                 }
             ]
         },
