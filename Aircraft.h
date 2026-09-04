@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace parking_services
 {
@@ -63,6 +64,9 @@ struct AircraftSnapshot
     // Ground Power cable receptacle (interactive point type 4); set only when
     // this airframe can accept a Ground Power Unit.
     std::optional<AircraftCargoConnectionPoint> groundPower;
+    // Passenger (main exit) doors, interactive point type 0; positioned at the
+    // door sill. The catering truck uses these to find the rear-right pax door.
+    std::vector<AircraftCargoConnectionPoint> mainExits;
     double distanceFromUserMeters{};
     TrackerClock::time_point firstSeen{};
     std::optional<TrackerClock::time_point> parkedSince;

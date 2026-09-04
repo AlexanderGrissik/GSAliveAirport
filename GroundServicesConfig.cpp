@@ -158,6 +158,9 @@ GroundServiceSpecialType ReadSpecialType(const Json &value, std::string_view own
     if (EqualIgnoreCase(name, "GroundPowerDefault")) {
         return GroundServiceSpecialType::GroundPowerDefault;
     }
+    if (EqualIgnoreCase(name, "CateringDefault")) {
+        return GroundServiceSpecialType::CateringDefault;
+    }
     throw std::runtime_error("unknown SpecialType '" + name + "' for '" +
                              std::string(owner) + "'");
 }
@@ -387,7 +390,8 @@ void GroundServicesConfig::FillRequests(
                 ? m_families.at(element.family).specialType
                 : GroundServiceSpecialType::None;
         request.specialType = specialType;
-        if (specialType == GroundServiceSpecialType::LuggageLoaderFSDT) {
+        if (specialType == GroundServiceSpecialType::LuggageLoaderFSDT ||
+            specialType == GroundServiceSpecialType::CateringDefault) {
             // This object type computes its own placement from aircraft data.
             request.location = GroundServiceLocation{};
         } else {
@@ -721,12 +725,15 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                     }
                     const bool hasLocation = entry.contains("Location");
                     const bool hasLocations = entry.contains("Locations");
-                    // A LuggageLoaderFSDT family attaches itself to a cargo door, so the
-                    // category element does not need to provide a Location for it.
+                    // A LuggageLoaderFSDT family attaches itself to a cargo door, and a
+                    // CateringDefault family to the rear passenger door, so neither needs a
+                    // Location in the category element.
                     const bool suppliesOwnPlacement =
                         m_families.contains(element.family) &&
-                        m_families.at(element.family).specialType ==
-                            GroundServiceSpecialType::LuggageLoaderFSDT;
+                        (m_families.at(element.family).specialType ==
+                             GroundServiceSpecialType::LuggageLoaderFSDT ||
+                         m_families.at(element.family).specialType ==
+                             GroundServiceSpecialType::CateringDefault);
                     if (!suppliesOwnPlacement && hasLocation == hasLocations) {
                         throw std::runtime_error(
                             "category element must define exactly one of Location or Locations");

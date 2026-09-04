@@ -1,6 +1,7 @@
 #include "GSObject.h"
 
 #include "GSCommon.h"
+#include "GSCateringDefault.h"
 #include "GSLuggageLoaderFSDT.h"
 #include "GSPowerGround.h"
 #include "GSStaticObj.h"
@@ -32,6 +33,9 @@ std::unique_ptr<GSObject> GSObject::Create(const AircraftSnapshot &aircraft,
     case GroundServiceSpecialType::GroundPowerDefault:
         return std::make_unique<GSPowerGround>(aircraft, request.object,
                                                request.location);
+    case GroundServiceSpecialType::CateringDefault:
+        return std::make_unique<GSCateringDefault>(aircraft, request.object,
+                                                   request.location);
     case GroundServiceSpecialType::None:
     default:
         return std::make_unique<GSStaticObj>(aircraft, request.object,

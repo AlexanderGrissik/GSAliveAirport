@@ -40,7 +40,8 @@ enum class GroundServiceSpecialType
     None,
     LuggageLoaderFSDT,
     WalkerFSDT,
-    GroundPowerDefault
+    GroundPowerDefault,
+    CateringDefault
 };
 
 enum class GroundServiceLocationKind

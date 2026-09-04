@@ -20,7 +20,7 @@ Driven by two Asobo behaviour templates (per the CateringTruck Definition):
 | Behaviour template | Model animation | Target (write) | Read-back | Range / speed |
 |---|---|---|---|---|
 | `ASOBO_CateringTruck_Elevation_Template` | `Elevation` (lift up/down) | `CATERINGTRUCK ELEVATION TARGET` (m) | `CATERINGTRUCK ELEVATION CURRENT` (m) | clamp `[BASE_HEIGHT, MAX_HEIGHT]`, `METERS_PER_SECOND` |
-| `ASOBO_CateringTruck_Overture_Template` | `Deployment` (bridge / door open) | `CATERINGTRUCK OPENING TARGET` (0–100) | `CATERINGTRUCK OPENING CURRENT` (0–100) | clamp `0–100`, `PERCENT_PER_SECOND` |
+| `ASOBO_CateringTruck_Overture_Template` | `Deployment` (bridge / door open) | `CATERINGTRUCK OPENING TARGET` (0/1) | `CATERINGTRUCK OPENING CURRENT` (0/1) | template clamps internally, `PERCENT_PER_SECOND` |
 
 Reference values from the SDK example: `BASE_HEIGHT ≈ 1.241 m`, `MAX_HEIGHT ≈ 5.35 m`, `METERS_PER_SECOND ≈ 0.2`. The overture (bridge) animation plays **only after** the container has reached its target elevation, and reverses again before the container is lowered.
 
@@ -37,7 +37,7 @@ aircraft_door_contact_offset_Z = <meters, required>
 
 1. Spawn the object and capture its `SimObjectID`.
 2. Write `CATERINGTRUCK ELEVATION TARGET` = the aircraft's pax-door sill height (meters AGL).
-3. Write `CATERINGTRUCK OPENING TARGET` = 100 (deploy the bridge once elevation settles).
+3. Write `CATERINGTRUCK OPENING TARGET` = 1 (deploy the bridge once elevation settles). SDK value is 0/1, like `FUELTRUCK HOSE DEPLOYED` and `GROUNDPOWERUNIT HOSE DEPLOYED`.
 4. Read `CATERINGTRUCK ELEVATION CURRENT` / `...OPENING CURRENT` to confirm it has settled.
 5. On removal: `OPENING TARGET` = 0, `ELEVATION TARGET` = low value, then remove the object.
 

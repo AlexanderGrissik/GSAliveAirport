@@ -18,6 +18,7 @@ namespace
 {
 constexpr auto kRequestTimeout = 8s;
 constexpr std::size_t kInteractivePointProbeCount = 32;
+constexpr std::int32_t kMainExitInteractivePointType = 0;
 constexpr std::int32_t kCargoInteractivePointType = 1;
 constexpr std::int32_t kGroundPowerInteractivePointType = 4;
 
@@ -150,6 +151,10 @@ AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
             static_cast<std::uint32_t>(index)};
         if (point.type == kGroundPowerInteractivePointType) {
             if (!aircraft.groundPower) aircraft.groundPower = candidate;
+            continue;
+        }
+        if (point.type == kMainExitInteractivePointType) {
+            aircraft.mainExits.push_back(candidate);
             continue;
         }
         if (point.type != kCargoInteractivePointType) continue;
