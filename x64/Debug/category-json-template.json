@@ -32,16 +32,16 @@
             }
         },
         {
-            "Family": "WalkingMarshaller",
+            "Family": "StandingMarshaller",
             "PreferedObj" : [ "FSDT_Marshaller_*" ],
             "AlternateObj": [ "Tarmac_*" ],
-            "SpecialType": "WalkerFSDT",
+            "SpecialType": "WorkerFSDT",
             "Animation": {
                 "FPS": 30,
                 "Carriers": [
                     {
                         "Carrier": "VELOCITY BODY Y",
-                        "Frames": [230,268]
+                        "Frames": [1354,2179]
                     }
                 ]
             }
@@ -73,11 +73,11 @@
             ]
         },
         {
-            "Family": "LuggageLoaderSystemPaxFSDT",
+            "Family": "LuggageLoaderSystemFrontPaxFSDT",
             "PreferedObj" : [ "FSDT_Tug_660*" ],
             "AlternateFamily": "LuggageLoaderSystemPaxDefault",
             "Exclude": ["FSDT_Tug_660_CARGO*"],
-            "SpecialType": "LuggageLoaderFSDT",
+            "SpecialType": "LuggageLoaderFrontFSDT",
             "Animation": {
                 "FPS": 30,
                 "Reversable": true,
@@ -104,6 +104,53 @@
                 {
                     "Family": "LuggageWagonFSDT",
                     "XYZH": [[-4.5,0,0,90],[-4.5,4.0,0,90],[-5,8.0,0,70]],
+                    "AttachObjects": [
+                        {
+                            "Family": "LuggageSmallFSDT",
+                            "XYZH": [[0.9,-0.35,0.76,0],[0.3,-0.35,0.76,0],[-0.3,-0.35,0.76,0],[-0.9,-0.35,0.76,0],
+                                     [1.2,0.35,0.76,0],[0.6,0.35,0.76,0],[0,0.35,0.76,0],[-0.6,0.35,0.76,0],[-1.2,0.35,0.76,0]]
+                        },
+                        {
+                            "Family": "LuggageLargeFSDT",
+                            "XYZH": [[0.9,0.25,0.76,0],[0.3,0.25,0.76,0],[-0.3,0.25,0.76,0],[-0.9,0.25,0.76,0],
+                                     [1.2,-0.25,0.76,0],[0.6,-0.25,0.76,0],[0,-0.25,0.76,0],[-0.6,-0.25,0.76,0],[-1.2,-0.25,0.76,0]]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "Family": "LuggageLoaderSystemBackPaxFSDT",
+            "PreferedObj" : [ "FSDT_Tug_660*" ],
+            "AlternateFamily": "LuggageLoaderSystemPaxDefault",
+            "Exclude": ["FSDT_Tug_660_CARGO*"],
+            "SpecialType": "LuggageLoaderBackFSDT",
+            "Animation": {
+                "FPS": 30,
+                "Reversable": true,
+                "Carriers": [
+                    {
+                        "Carrier": "WAGON BACK LINK ORIENTATION",
+                        "Frames": [4213, 645]
+                    },
+                    {
+                        "Carrier": "WAGON FRONT LINK ORIENTATION",
+                        "Frames": [650, 0]
+                    }
+                ]
+            },
+            "AttachObjects": [
+                {
+                    "Family": "LuggageWorkerPax",
+                    "XYZH": [[0,0,0,0]]
+                },
+                {
+                    "Family": "LuggageTractorFSDT",
+                    "XYZH": [[-5,-4.1,0,110]]
+                },
+                {
+                    "Family": "LuggageWagonFSDT",
+                    "XYZH": [[-4.5,0,0,90],[-4.5,4.0,0,90]],
                     "AttachObjects": [
                         {
                             "Family": "LuggageSmallFSDT",
@@ -160,7 +207,7 @@
         },
         {
             "Family": "GroundPowerDefault",
-            "PreferedObj" : [ "Car Ground Power Unit", "FSDT_GPU_Hobart_4400", "FSDT_GPU_TLD_406" ],
+            "PreferedObj" : [ "Car Ground Power Unit" ],
             "SpecialType": "GroundPowerDefault"
         },
         {
@@ -186,8 +233,7 @@
         },
         {
             "Family": "LavalatoryDefault",
-            "PreferedObj" : [ "Microsoft_Truck_Lavatory", "Microsoft_Van_NA_Lavatory*", "Van Lavatory NorthAm" ],
-            "AlternateFamily": "PushbackDefault"
+            "PreferedObj" : [ "Microsoft_Truck_Lavatory", "Microsoft_Van_NA_Lavatory*", "Van Lavatory NorthAm" ]
         },
         {
             "Family": "LavalatoryFSDT",
@@ -197,8 +243,12 @@
                 "FPS": 30,
                 "Carriers": [
                     {
-                    "Carrier": "WAGON FRONT LINK ORIENTATION",
-                    "Frames": [0, 1755]
+                        "Carrier": "WAGON FRONT LINK ORIENTATION",
+                        "Frames": [981, 981]
+                    },
+                    {
+                        "Carrier": "WAGON BACK LINK ORIENTATION",
+                        "Frames": [200, 200]
                     }
                 ]
             }
@@ -210,7 +260,7 @@
         },
         {
             "Family": "OrangeCone",
-            "PreferedObj": [ "FSDT_GSX_BypassPin" ]
+            "PreferedObj": [ "FSDT_Pax_barrier_end_BIG_YELLOW" ]
         }
     ],
     "Locations": [
@@ -255,47 +305,90 @@
             "RelY2": -5
         },
         {
-            "Name": "GroundPowerRightForward",
-            "RandOffsetX": 2,
-            "RandOffsetY": 5,
-            "RelX": 4,
-            "RelY": 20
+            "Name": "GroundPowerUnit",
+            "RandOffsetX": 1,
+            "RandOffsetY": 1,
+            "RelX": 1,
+            "RelY": 4,
+            "Dir": "Aircraft",
+            "Relation": "PushbackContact"
         },
         {
-            "Name": "PushbackForwardMedium",
-            "RandOffsetX": 3,
-            "RandOffsetY": 2,
-            "RelX": 0,
-            "RelY": 15,
-            "Dir": "Aircraft"
+            "Name": "GroundPowerCar",
+            "RandOffsetX": 0.5,
+            "RandOffsetY": 0.5,
+            "RelX": -3.5,
+            "RelY": 8,
+            "Dir": "Aircraft",
+            "Relation": "PushbackContact"
         },
         {
-            "Name": "PushbackForwardHeavy",
-            "RandOffsetX": 3,
-            "RandOffsetY": 2,
-            "RelX": 0,
-            "RelY": 40,
-            "Dir": "Aircraft"
+            "Name": "Pushback",
+            "RandOffsetX": 0.5,
+            "RandOffsetY": 0.5,
+            "RelX": 3.5,
+            "RelY": 8,
+            "Dir": "Aircraft",
+            "Relation": "PushbackContact"
         },
         {
-            "Name": "LavalatoryMedium",
-            "RandOffsetX": 0,
-            "RandOffsetY": 0,
-            "RelX": 0,
-            "RelY": -1,
+            "Name": "Lavalatory",
+            "RandOffsetX": 0.5,
+            "RandOffsetY": 0.5,
+            "RelX": -8,
+            "RelY": 2,
             "Dir": "AircraftRev",
-            "WingRelSize": true
+            "Relation": "RearRightDoor"
         },
         {
             "Name": "ConesLarge",
             "RandOffsetX": 0,
             "RandOffsetY": 0,
-            "RelX": 1,
-            "RelY": -1,
+            "RelX": 0.5,
+            "RelY": -0.5,
             "Dir": "Aircraft",
             "WingRelSize": true
+        },
+        {
+            "Name": "Marshaller",
+            
+            "RandOffsetX": 0,
+            "RandOffsetY": 0,
+            "RelX": 0,
+            "RelY": 12,
+            "Dir": "Aircraft",
+            "Relation": "PushbackContact"
+        },
+        {
+            "Name": "BigWorkerWalk1",
+            "RandOffsetX": 0.2,
+            "RandOffsetY": 0.2,
+            "RelX1": -0.5,
+            "RelY1": -0.5,
+            "RelX2": -0.5,
+            "RelY2": 0.5,
+            "WingRelSize": true
+        },
+        {
+            "Name": "BigWorkerWalk2",
+            "RandOffsetX": 0.1,
+            "RandOffsetY": 0.1,
+            "RelX1": 0.7,
+            "RelY1": -0.7,
+            "RelX2": -0.7,
+            "RelY2": -0.6,
+            "WingRelSize": true
+        },
+        {
+            "Name": "BigWorkerWalk3",
+            "RandOffsetX": 0.2,
+            "RandOffsetY": 0.2,
+            "RelX1": 0.5,
+            "RelY1": -0.5,
+            "RelX2": 0.5,
+            "RelY2": 0.5,
+            "WingRelSize": true
         }
-        
     ],
     "Categories": [
         {
@@ -327,20 +420,47 @@
             "Category": "Medium",
             "Elements": [
                 {
-                    "Family": "LuggageLoaderSystemPaxFSDT",
+                    "Family": "LuggageLoaderSystemFrontPaxFSDT",
+                    "AnimReversePrb": 50
+                },
+                {
+                    "Family": "LuggageLoaderSystemBackPaxFSDT",
                     "AnimReversePrb": 50
                 },
                 {
                     "Family": "GroundPowerFSDT",
-                    "Location": "GroundPowerRightForward"
+                    "Location": "GroundPowerUnit"
                 },
                 {
                     "Family": "MediumPushbackFSDT",
-                    "Location": "PushbackForwardMedium"
+                    "Location": "Pushback"
+                },
+                {
+                    "Family": "StandingMarshaller",
+                    "Location": "Marshaller"
                 },
                 {
                     "Family": "LavalatoryFSDT",
-                    "Location": "LavalatoryMedium"
+                    "Location": "Lavalatory"
+                },
+                {
+                    "Family": "OrangeCone",
+                    "Location": "ConesLarge"
+                },
+                {
+                    "Family": "CateringDefault"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk1"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk2"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk3"
                 }
             ]
         },
@@ -348,24 +468,47 @@
             "Category": "Large",
             "Elements": [
                 {
-                    "Family": "LuggageLoaderSystemPaxFSDT",
+                    "Family": "LuggageLoaderSystemFrontPaxFSDT",
+                    "AnimReversePrb": 50
+                },
+                {
+                    "Family": "LuggageLoaderSystemBackPaxFSDT",
                     "AnimReversePrb": 50
                 },
                 {
                     "Family": "GroundPowerDefault",
-                    "Location": "GroundPowerRightForward"
+                    "Location": "GroundPowerCar"
                 },
                 {
                     "Family": "LargePushbackFSDT",
-                    "Location": "PushbackForwardMedium"
+                    "Location": "Pushback"
+                },
+                {
+                    "Family": "StandingMarshaller",
+                    "Location": "Marshaller"
                 },
                 {
                     "Family": "LavalatoryFSDT",
-                    "Location": "LavalatoryMedium"
+                    "Location": "Lavalatory"
                 },
                 {
                     "Family": "OrangeCone",
                     "Location": "ConesLarge"
+                },
+                {
+                    "Family": "CateringDefault"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk1"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk2"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk3"
                 }
             ]
         },
@@ -373,20 +516,47 @@
             "Category": "ExtraLarge",
             "Elements": [
                 {
-                    "Family": "LuggageLoaderSystemPaxFSDT",
+                    "Family": "LuggageLoaderSystemFrontPaxFSDT",
+                    "AnimReversePrb": 50
+                },
+                {
+                    "Family": "LuggageLoaderSystemBackPaxFSDT",
                     "AnimReversePrb": 50
                 },
                 {
                     "Family": "GroundPowerDefault",
-                    "Location": "GroundPowerRightForward"
+                    "Location": "GroundPowerCar"
                 },
                 {
                     "Family": "HeavyPushbackFSDT",
-                    "Location": "PushbackForwardHeavy"
+                    "Location": "Pushback"
+                },
+                {
+                    "Family": "StandingMarshaller",
+                    "Location": "Marshaller"
                 },
                 {
                     "Family": "LavalatoryFSDT",
-                    "Location": "LavalatoryMedium"
+                    "Location": "Lavalatory"
+                },
+                {
+                    "Family": "OrangeCone",
+                    "Location": "ConesLarge"
+                },
+                {
+                    "Family": "CateringDefault"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk1"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk2"
+                },
+                {
+                    "Family": "WalkingWorker",
+                    "Location": "BigWorkerWalk3"
                 }
             ]
         }

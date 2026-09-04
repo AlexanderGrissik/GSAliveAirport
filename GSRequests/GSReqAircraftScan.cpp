@@ -21,6 +21,7 @@ constexpr std::size_t kInteractivePointProbeCount = 32;
 constexpr std::int32_t kMainExitInteractivePointType = 0;
 constexpr std::int32_t kCargoInteractivePointType = 1;
 constexpr std::int32_t kGroundPowerInteractivePointType = 4;
+constexpr double kMinimumCargoDoorLongitudinalSeparationMeters = 0.5;
 
 template <std::size_t Size> std::string FixedString(const std::array<char, Size> &value)
 {
@@ -89,6 +90,8 @@ struct AircraftWireData
     std::int32_t lightTaxi{};
     std::int32_t lightStrobe{};
     std::int32_t parkingBrake{};
+    double pushbackContactXMeters{};
+    double pushbackContactZMeters{};
     std::int32_t pushbackAttached{};
     std::int32_t pushbackWait{};
     std::int32_t transponderState{};
@@ -97,7 +100,7 @@ struct AircraftWireData
 #pragma pack(pop)
 
 static_assert(sizeof(InteractivePointWireData) == 36);
-static_assert(sizeof(AircraftWireData) == 3888);
+static_assert(sizeof(AircraftWireData) == 3904);
 
 AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
 {
@@ -136,6 +139,8 @@ AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
     aircraft.lightTaxi = data.lightTaxi != 0;
     aircraft.lightStrobe = data.lightStrobe != 0;
     aircraft.parkingBrake = data.parkingBrake != 0;
+    aircraft.pushbackContactXMeters = data.pushbackContactXMeters;
+    aircraft.pushbackContactZMeters = data.pushbackContactZMeters;
     aircraft.pushbackAttached = data.pushbackAttached != 0;
     aircraft.pushbackWait = data.pushbackWait != 0;
     aircraft.transponderState = data.transponderState;
@@ -145,10 +150,20 @@ AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
             !std::isfinite(point.posZFeet) || !std::isfinite(point.headingDegrees)) {
             continue;
         }
+        // EX1 returns default values for an invalid index. A real main exit
+        // cannot be located at the aircraft datum with a zero orientation, so
+        // discard this all-default record rather than reporting unused probes
+        // as passenger doors.
+        if (point.type == kMainExitInteractivePointType && point.posXFeet == 0.0 &&
+            point.posYFeet == 0.0 && point.posZFeet == 0.0 &&
+            point.headingDegrees == 0.0) {
+            continue;
+        }
         const AircraftCargoConnectionPoint candidate{
             point.posZFeet * kFeetToMeters, point.posXFeet * kFeetToMeters,
             point.posYFeet * kFeetToMeters, point.headingDegrees,
-            static_cast<std::uint32_t>(index)};
+            static_cast<std::uint32_t>(index), point.type};
+        aircraft.interactivePoints.push_back(candidate);
         if (point.type == kGroundPowerInteractivePointType) {
             if (!aircraft.groundPower) aircraft.groundPower = candidate;
             continue;
@@ -166,6 +181,30 @@ AircraftSnapshot ToAircraft(DWORD objectId, const AircraftWireData &data)
         if (!aircraft.cargoDoorRightBack ||
             candidate.forwardMeters < aircraft.cargoDoorRightBack->forwardMeters) {
             aircraft.cargoDoorRightBack = candidate;
+        }
+    }
+
+    // Use the same rear-right passenger-door rule as catering: right side and
+    // the smallest longitudinal coordinate (furthest toward the tail).
+    for (const auto &exit : aircraft.mainExits) {
+        if (exit.rightMeters <= 0.0) continue;
+        if (!aircraft.rearRightDoor ||
+            exit.forwardMeters < aircraft.rearRightDoor->forwardMeters) {
+            aircraft.rearRightDoor = exit;
+        }
+    }
+
+    // A single right cargo interactive point becomes both the minimum and the
+    // maximum above. Some aircraft also expose two indices at effectively the
+    // same position. In either case there is no distinct rear door, and placing
+    // both loaders would stack them at the forward door.
+    if (aircraft.cargoDoorRightFront && aircraft.cargoDoorRightBack) {
+        const double longitudinalSeparation =
+            aircraft.cargoDoorRightFront->forwardMeters -
+            aircraft.cargoDoorRightBack->forwardMeters;
+        if (longitudinalSeparation <
+            kMinimumCargoDoorLongitudinalSeparationMeters) {
+            aircraft.cargoDoorRightBack.reset();
         }
     }
     return aircraft;

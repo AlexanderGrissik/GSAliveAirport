@@ -44,7 +44,8 @@ class AnimatedObject final
   public:
     AnimatedObject(AircraftId objectId, AnimationConfiguration animation,
                    std::vector<AnimationCoordinate> movementCoordinates,
-                   double movementSpeedMetersPerSecond);
+                   double movementSpeedMetersPerSecond,
+                   bool positionedVelocityAnimation = false);
 
     [[nodiscard]] AircraftId ObjectId() const { return m_objectId; }
     [[nodiscard]] bool IsValid() const;
@@ -69,6 +70,7 @@ class AnimatedObject final
     double m_oneWayLengthMeters{};
     double m_routeDistanceMeters{};
     double m_movementSpeedMetersPerSecond{};
+    bool m_positionedVelocityAnimation{};
     AnimationCoordinate m_currentCoordinate;
     bool m_active{};
     std::chrono::steady_clock::time_point m_animationStarted{};

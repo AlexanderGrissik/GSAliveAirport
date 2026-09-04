@@ -20,14 +20,17 @@ bool GSWalkerFSDT::PreparePlacement(GSObjectServices &)
               ": an FSDT walker requires a route location.");
         return false;
     }
+    if (!LocationRelationAvailable()) return false;
 
     m_pose = RelativeToAircraft(m_aircraft, m_location.relX1,
                                 m_location.relY1, false, false,
-                                m_location.wingRelative);
+                                m_location.wingRelative,
+                                m_location.relation);
     const GSObjectPos endpoint =
         RelativeToAircraft(m_aircraft, m_location.relX2,
                            m_location.relY2, false, false,
-                           m_location.wingRelative);
+                           m_location.wingRelative,
+                           m_location.relation);
     m_movementCoordinates = {
         {m_pose.latitude, m_pose.longitude, m_pose.altitudeFeet,
          m_pose.headingDegrees},

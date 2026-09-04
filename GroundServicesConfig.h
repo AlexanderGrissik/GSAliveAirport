@@ -95,6 +95,7 @@ class GroundServicesConfig final
         double relX2{};
         double relY2{};
         bool wingRelative{};
+        GroundServiceLocationRelation relation{GroundServiceLocationRelation::Aircraft};
     };
 
     struct Element

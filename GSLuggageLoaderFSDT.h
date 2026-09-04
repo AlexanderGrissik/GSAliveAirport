@@ -14,8 +14,10 @@ namespace parking_services
 class GSLuggageLoaderFSDT final : public GSObject
 {
   public:
+    enum class Door { Front, Back };
+
     GSLuggageLoaderFSDT(AircraftSnapshot aircraft, GroundServiceObject object,
-                        GroundServiceLocation location);
+                        GroundServiceLocation location, Door door);
 
     bool PreparePlacement(GSObjectServices &services) override;
     void ConfigureSimConnect(GSObjectServices &services) override;
@@ -57,6 +59,7 @@ class GSLuggageLoaderFSDT final : public GSObject
     void SetCargoDoor(GSObjectServices &services, bool open);
 
     std::optional<CargoDoor> m_cargoDoor;
+    Door m_selectedDoor;
     std::unique_ptr<GSReqBaggageGeometry> m_geometryRequest;
     SIMCONNECT_DATA_DEFINITION_ID m_rampTargetDefinition{};
     SIMCONNECT_DATA_DEFINITION_ID m_geometryDefinition{};

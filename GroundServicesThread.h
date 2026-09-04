@@ -81,6 +81,8 @@ class GroundServicesThread final : public ISimConnectStatus
     static GroundServicesDecision Decide(const AircraftSnapshot &aircraft);
     void EnsureAutomaticServices(const AircraftSnapshot &aircraft);
     void QueueService(const AircraftSnapshot &aircraft, const GroundServiceRequest &request);
+    void EnqueueCreate(std::uint64_t token, GSObject &object);
+    void PumpCreateQueue();
     void BeginCreate(std::uint64_t token, GSObject &object);
     void RegisterObject(GSObject *object, AircraftId objectId,
                         const GSObject::GSObjectPos &pose);
@@ -100,10 +102,28 @@ class GroundServicesThread final : public ISimConnectStatus
     void HandleObjectRemoved(AircraftId objectId);
     void HandleConnect();
     void HandleDisconnect();
+    void BeginReload();
+    void TryAdvanceReload();
     void RemoveAllServicesInternal();
     void PublishStatus();
     [[nodiscard]] bool HasPendingFor(AircraftId aircraftId) const;
     GSObjectServices MakeServices();
+
+    static constexpr std::size_t MaximumConcurrentCreations = 20;
+
+    struct QueuedCreate
+    {
+        std::uint64_t token{};
+        AircraftId aircraftId{};
+        GSObject *object{};
+    };
+
+    enum class ReloadPhase
+    {
+        None,
+        WaitingForCreations,
+        WaitingForRemovals
+    };
 
     struct CreateOperation
     {
@@ -127,6 +147,7 @@ class GroundServicesThread final : public ISimConnectStatus
     // Root objects under management, keyed by create token. Each root owns its
     // complete runtime attachment tree.
     std::map<std::uint64_t, std::unique_ptr<GSObject>> m_rootObjects;
+    std::deque<QueuedCreate> m_createQueue;
     std::map<std::uint64_t, CreateOperation> m_createRequests;
     std::vector<std::unique_ptr<GSReqCommand>> m_commandRequests;
     std::vector<std::unique_ptr<GSObject>> m_retiredObjects;
@@ -134,7 +155,7 @@ class GroundServicesThread final : public ISimConnectStatus
     std::set<AircraftId> m_configuredAircraft;
     std::map<AircraftId, std::set<AircraftId>> m_objectsByAircraft;
     std::unordered_map<AircraftId, AircraftId> m_aircraftByObject;
-    // In-flight create count per aircraft.
+    // Queued plus in-flight create count per aircraft.
     std::map<AircraftId, std::size_t> m_pendingCreations;
     // Removal intents stay pending until all GSObjects for the aircraft have
     // completed creation and subtype-specific finalization.
@@ -142,6 +163,8 @@ class GroundServicesThread final : public ISimConnectStatus
     // MSFS may report a ground object gone while its object graph is still being
     // finalized. Keep driving that graph and retire its subtree only afterward.
     std::set<AircraftId> m_deferredObjectRemovals;
+    ReloadPhase m_reloadPhase{ReloadPhase::None};
+    std::set<AircraftId> m_reloadRemovalObjectIds;
     std::vector<AircraftSnapshot> m_aircraftSnapshotBuffer;
     std::vector<GroundServiceRequest> m_serviceRequestBuffer;
     DWORD m_nextObjectDataDefinition = 10'000;

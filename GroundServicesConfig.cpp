@@ -149,11 +149,17 @@ GroundServiceSpecialType ReadSpecialType(const Json &value, std::string_view own
                                  "' must be a string");
     }
     const std::string name = value.at("SpecialType").get<std::string>();
-    if (EqualIgnoreCase(name, "LuggageLoaderFSDT")) {
-        return GroundServiceSpecialType::LuggageLoaderFSDT;
+    if (EqualIgnoreCase(name, "LuggageLoaderFrontFSDT")) {
+        return GroundServiceSpecialType::LuggageLoaderFrontFSDT;
+    }
+    if (EqualIgnoreCase(name, "LuggageLoaderBackFSDT")) {
+        return GroundServiceSpecialType::LuggageLoaderBackFSDT;
     }
     if (EqualIgnoreCase(name, "WalkerFSDT")) {
         return GroundServiceSpecialType::WalkerFSDT;
+    }
+    if (EqualIgnoreCase(name, "WorkerFSDT")) {
+        return GroundServiceSpecialType::WorkerFSDT;
     }
     if (EqualIgnoreCase(name, "GroundPowerDefault")) {
         return GroundServiceSpecialType::GroundPowerDefault;
@@ -390,7 +396,8 @@ void GroundServicesConfig::FillRequests(
                 ? m_families.at(element.family).specialType
                 : GroundServiceSpecialType::None;
         request.specialType = specialType;
-        if (specialType == GroundServiceSpecialType::LuggageLoaderFSDT ||
+        if (specialType == GroundServiceSpecialType::LuggageLoaderFrontFSDT ||
+            specialType == GroundServiceSpecialType::LuggageLoaderBackFSDT ||
             specialType == GroundServiceSpecialType::CateringDefault) {
             // This object type computes its own placement from aircraft data.
             request.location = GroundServiceLocation{};
@@ -529,7 +536,7 @@ GroundServiceLocation GroundServicesConfig::SelectLocation(
             source.faceAircraftReverse,
             source.relX1 + randomX, source.relY1 + randomY,
             source.relX2 + randomX, source.relY2 + randomY,
-            source.wingRelative};
+            source.wingRelative, source.relation};
 }
 
 void GroundServicesConfig::Load(const std::filesystem::path &path)
@@ -678,6 +685,28 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                 }
                 location.wingRelative = wing->get<bool>();
             }
+            if (const auto relation = value.find("Relation"); relation != value.end()) {
+                if (!relation->is_string()) {
+                    throw std::runtime_error(
+                        "location '" + location.name +
+                        "' has invalid Relation; expected 'Aircraft', "
+                        "'PushbackContact', or 'RearRightDoor'");
+                }
+                const std::string relationName =
+                    Lower(relation->get_ref<const std::string &>());
+                if (relationName == "aircraft") {
+                    location.relation = GroundServiceLocationRelation::Aircraft;
+                } else if (relationName == "pushbackcontact") {
+                    location.relation = GroundServiceLocationRelation::PushbackContact;
+                } else if (relationName == "rearrightdoor") {
+                    location.relation = GroundServiceLocationRelation::RearRightDoor;
+                } else {
+                    throw std::runtime_error(
+                        "location '" + location.name +
+                        "' has invalid Relation; expected 'Aircraft', "
+                        "'PushbackContact', or 'RearRightDoor'");
+                }
+            }
             const bool hasStatic = value.contains("RelX") || value.contains("RelY");
             const bool hasRoute = value.contains("RelX1") || value.contains("RelY1") ||
                                   value.contains("RelX2") || value.contains("RelY2");
@@ -725,13 +754,15 @@ void GroundServicesConfig::Load(const std::filesystem::path &path)
                     }
                     const bool hasLocation = entry.contains("Location");
                     const bool hasLocations = entry.contains("Locations");
-                    // A LuggageLoaderFSDT family attaches itself to a cargo door, and a
-                    // CateringDefault family to the rear passenger door, so neither needs a
-                    // Location in the category element.
+                    // Luggage-loader families attach themselves to their selected cargo
+                    // door, and a CateringDefault family to the rear passenger door, so
+                    // neither needs a Location in the category element.
                     const bool suppliesOwnPlacement =
                         m_families.contains(element.family) &&
                         (m_families.at(element.family).specialType ==
-                             GroundServiceSpecialType::LuggageLoaderFSDT ||
+                             GroundServiceSpecialType::LuggageLoaderFrontFSDT ||
+                         m_families.at(element.family).specialType ==
+                             GroundServiceSpecialType::LuggageLoaderBackFSDT ||
                          m_families.at(element.family).specialType ==
                              GroundServiceSpecialType::CateringDefault);
                     if (!suppliesOwnPlacement && hasLocation == hasLocations) {

@@ -94,6 +94,10 @@ void ParkingServicesApp::HandleCommand(AppCommand command)
         ConsoleController::PrintSnapshots(aircraftSnapshot,
                                            "aircraft within 5 km");
         break;
+    case AppCommandType::AircraftPnt:
+        m_aircraftTracker.FillTrackedAircraftSnapshot(aircraftSnapshot);
+        ConsoleController::PrintInteractivePoints(aircraftSnapshot);
+        break;
     case AppCommandType::Parked:
         m_aircraftTracker.FillNearbyAircraftSnapshot(aircraftSnapshot);
         ConsoleController::PrintParked(aircraftSnapshot);

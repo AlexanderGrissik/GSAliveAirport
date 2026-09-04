@@ -6,6 +6,7 @@
 #include "GSPowerGround.h"
 #include "GSStaticObj.h"
 #include "GSWalkerFSDT.h"
+#include "GSWorkerFSDT.h"
 
 #include <algorithm>
 #include <utility>
@@ -24,11 +25,19 @@ std::unique_ptr<GSObject> GSObject::Create(const AircraftSnapshot &aircraft,
 {
     switch (request.specialType)
     {
-    case GroundServiceSpecialType::LuggageLoaderFSDT:
+    case GroundServiceSpecialType::LuggageLoaderFrontFSDT:
         return std::make_unique<GSLuggageLoaderFSDT>(aircraft, request.object,
-                                                      request.location);
+                                                      request.location,
+                                                      GSLuggageLoaderFSDT::Door::Front);
+    case GroundServiceSpecialType::LuggageLoaderBackFSDT:
+        return std::make_unique<GSLuggageLoaderFSDT>(aircraft, request.object,
+                                                      request.location,
+                                                      GSLuggageLoaderFSDT::Door::Back);
     case GroundServiceSpecialType::WalkerFSDT:
         return std::make_unique<GSWalkerFSDT>(aircraft, request.object,
+                                              request.location);
+    case GroundServiceSpecialType::WorkerFSDT:
+        return std::make_unique<GSWorkerFSDT>(aircraft, request.object,
                                               request.location);
     case GroundServiceSpecialType::GroundPowerDefault:
         return std::make_unique<GSPowerGround>(aircraft, request.object,
@@ -131,6 +140,19 @@ bool GSObject::SpecialRequestsFinished() const
     return true;
 }
 
+bool GSObject::LocationRelationAvailable() const
+{
+    if (m_location.relation != GroundServiceLocationRelation::RearRightDoor ||
+        m_aircraft.rearRightDoor) {
+        return true;
+    }
+    GSLog("Skipped " + m_object.family + " for aircraft " +
+          std::to_string(m_aircraft.objectId) +
+          ": MSFS reported no rear-right passenger door required by location "
+          "Relation 'RearRightDoor'.");
+    return false;
+}
+
 bool GSObject::OwnRequestsFinished() const
 {
     if (!SpecialRequestsFinished()) return false;
@@ -184,22 +206,39 @@ void GSObject::Finish(GSObjectServices &services, const GSObject::GSObjectPos &a
 
 GSObject::GSObjectPos GSObject::RelativeToAircraft(const AircraftSnapshot &aircraft, double relX,
                                          double relY, bool faceAircraft,
-                                         bool faceAircraftReverse, bool wingRelative)
+                                         bool faceAircraftReverse, bool wingRelative,
+                                         GroundServiceLocationRelation relation)
 {
-    // When the location is authored in wingspans, scale every offset (base and jitter)
-    // by the aircraft's reported wingspan before converting to world coordinates.
+    // Scale only the authored location offset. The selected relation anchor is
+    // already expressed in meters and must never be scaled by wingspan.
     if (wingRelative && aircraft.wingSpanMeters > 0.0)
     {
         relX *= aircraft.wingSpanMeters;
         relY *= aircraft.wingSpanMeters;
     }
+
+    double anchorRightMeters = 0.0;
+    double anchorForwardMeters = 0.0;
+    if (relation == GroundServiceLocationRelation::PushbackContact) {
+        anchorRightMeters = aircraft.pushbackContactXMeters;
+        anchorForwardMeters = aircraft.pushbackContactZMeters;
+    } else if (relation == GroundServiceLocationRelation::RearRightDoor &&
+               aircraft.rearRightDoor) {
+        // Deliberately ignore the door's vertical coordinate and orientation:
+        // locations remain level on the ground and aligned to aircraft axes.
+        anchorRightMeters = aircraft.rearRightDoor->rightMeters;
+        anchorForwardMeters = aircraft.rearRightDoor->forwardMeters;
+    }
     const auto position = RelativePosition(aircraft.headingDegrees, aircraft.longitude,
                                            aircraft.latitude, aircraft.groundAltitudeFeet,
-                                           relY, relX);
+                                           anchorForwardMeters + relY,
+                                           anchorRightMeters + relX);
     GSObject::GSObjectPos result{position.Latitude, position.Longitude, position.Altitude,
                        position.Heading, true};
     if (faceAircraft)
     {
+        // Face the selected relation anchor. For the default Aircraft relation
+        // this retains the original behavior of facing the aircraft datum.
         result.headingDegrees = HeadingTowardRelativeOrigin(aircraft.headingDegrees, relY, relX);
         if (faceAircraftReverse) result.headingDegrees = NormalizeDegrees(result.headingDegrees + 180.0);
     }

@@ -38,8 +38,10 @@ struct GroundServiceObject
 enum class GroundServiceSpecialType
 {
     None,
-    LuggageLoaderFSDT,
+    LuggageLoaderFrontFSDT,
+    LuggageLoaderBackFSDT,
     WalkerFSDT,
+    WorkerFSDT,
     GroundPowerDefault,
     CateringDefault
 };
@@ -48,6 +50,13 @@ enum class GroundServiceLocationKind
 {
     Static,
     Route
+};
+
+enum class GroundServiceLocationRelation
+{
+    Aircraft,
+    PushbackContact,
+    RearRightDoor
 };
 
 struct GroundServiceLocation
@@ -60,6 +69,7 @@ struct GroundServiceLocation
     double relX2{};
     double relY2{};
     bool wingRelative{};
+    GroundServiceLocationRelation relation{GroundServiceLocationRelation::Aircraft};
 };
 
 struct GroundServiceRequest
@@ -67,7 +77,7 @@ struct GroundServiceRequest
     GroundServiceObject object;
     GroundServiceLocation location;
     // Carried through so the ground-service object factory can dispatch to the
-    // right GSObject subclass (WalkerFSDT / LuggageLoaderFSDT / plain).
+    // right GSObject subclass (WalkerFSDT / luggage-loader variants / plain).
     GroundServiceSpecialType specialType{GroundServiceSpecialType::None};
 };
 
@@ -116,6 +126,13 @@ class GSObject
     {
         return m_movementSpeedMetersPerSecond;
     }
+    // FSDT workers use VELOCITY BODY Y as an animation-frame carrier. For a
+    // stationary worker it must be written with the fixed world pose, using
+    // the same direct-position packet as a moving worker.
+    [[nodiscard]] virtual bool UsesPositionedVelocityAnimation() const
+    {
+        return false;
+    }
     [[nodiscard]] const AircraftSnapshot &Aircraft() const { return m_aircraft; }
     // True once the async create has resolved (either produced an object or
     // failed). Until then the object is still in flight and must be retained.
@@ -159,7 +176,8 @@ class GSObject
     // Shared world-coordinate pose math.
     [[nodiscard]] static GSObjectPos RelativeToAircraft(
         const AircraftSnapshot &aircraft, double relX, double relY, bool faceAircraft,
-        bool faceAircraftReverse = false, bool wingRelative = false);
+        bool faceAircraftReverse = false, bool wingRelative = false,
+        GroundServiceLocationRelation relation = GroundServiceLocationRelation::Aircraft);
     [[nodiscard]] static GSObjectPos RelativeToParent(const GSObjectPos &parent,
                                                       const GroundServiceObject &child);
     [[nodiscard]] static SIMCONNECT_DATA_INITPOSITION ToInitialPosition(
@@ -173,6 +191,7 @@ class GSObject
     // mark the object done.
     void Finish(GSObjectServices &services, const GSObjectPos &actualPose);
     GSReqCommand &NewCommandRequest();
+    [[nodiscard]] bool LocationRelationAvailable() const;
     [[nodiscard]] virtual bool SpecialRequestsFinished() const;
     [[nodiscard]] bool OwnRequestsFinished() const;
 

@@ -18,6 +18,20 @@ namespace
 constexpr double kSpawnSpeedKnots = 1.0;
 constexpr double kRemovalSpeedKnots = 2.0;
 
+void ReportConfigurationLoadMessages(const GroundServicesConfig &configuration)
+{
+    const bool loaded = configuration.IsLoaded();
+    for (const std::string &message : configuration.StartupMessages()) {
+        if (loaded) {
+            GSLog(message);
+        } else {
+            // Configuration failures must remain visible even when optional
+            // background logging is disabled.
+            GSPrint(message);
+        }
+    }
+}
+
 } // namespace
 
 GroundServicesThread::GroundServicesThread(ISimConnectHandler &simConnect,
@@ -27,9 +41,7 @@ GroundServicesThread::GroundServicesThread(ISimConnectHandler &simConnect,
     : m_simConnect(simConnect), m_aircraftTracker(aircraftTracker),
       m_animation(animation), m_configuration(std::move(configuration))
 {
-    for (const std::string &message : m_configuration.StartupMessages()) {
-        GSLog(message);
-    }
+    ReportConfigurationLoadMessages(m_configuration);
     m_services = MakeServices();
 }
 
@@ -67,21 +79,7 @@ void GroundServicesThread::Reset()
 
 void GroundServicesThread::ReloadConfiguration()
 {
-    Post([this] {
-        RemoveAllServicesInternal();
-        m_configuration.Reload();
-        for (const std::string &message : m_configuration.StartupMessages()) {
-            GSLog(message);
-        }
-        for (const std::string &message : m_configuration.InitializationMessages()) {
-            GSLog(message);
-        }
-        if (m_connected && m_configuration.IsResolved()) {
-            EvaluateTrackedAircraft();
-        }
-        PublishStatus();
-        GSPrint("Reloaded ground-service configuration and rebuilt services for tracked aircraft.");
-    });
+    Post([this] { BeginReload(); });
 }
 
 GroundServicesStatus GroundServicesThread::Status() const
@@ -174,6 +172,8 @@ void GroundServicesThread::PollRequests()
         DecrementPendingCreations(aircraftId);
     }
     TryFinalizeDeferredRemovals();
+    TryAdvanceReload();
+    PumpCreateQueue();
 }
 
 GSReqCommand &GroundServicesThread::NewCommandRequest()
@@ -222,6 +222,11 @@ void GroundServicesThread::MaintainObjects(std::chrono::steady_clock::time_point
 }
 void GroundServicesThread::EvaluateTrackedAircraft()
 {
+    // Reload owns the lifecycle while either barrier is active. In particular,
+    // do not let normal aircraft evaluation start separate removals while the
+    // reload code is draining submitted creates and building its removal set.
+    if (m_reloadPhase != ReloadPhase::None) return;
+
     m_aircraftTracker.FillTrackedAircraftSnapshot(m_aircraftSnapshotBuffer);
     std::set<AircraftId> present;
     for (const AircraftSnapshot &aircraft : m_aircraftSnapshotBuffer) {
@@ -268,7 +273,8 @@ GroundServicesDecision GroundServicesThread::Decide(const AircraftSnapshot &airc
 
 void GroundServicesThread::EnsureAutomaticServices(const AircraftSnapshot &aircraft)
 {
-    if (!m_connected || !m_configuration.IsResolved() ||
+    if (!m_connected || m_reloadPhase != ReloadPhase::None ||
+        !m_configuration.IsResolved() ||
         m_configuredAircraft.contains(aircraft.objectId) ||
         m_objectsByAircraft.contains(aircraft.objectId) || HasPendingFor(aircraft.objectId)) {
         return;
@@ -289,8 +295,8 @@ void GroundServicesThread::EnsureAutomaticServices(const AircraftSnapshot &aircr
 }
 
 // Builds the GSObject for one request (dispatching on specialType inside the
-// factory), resolves its placement, and starts the create. The concrete
-// subclass encapsulates all specialized placement and setup.
+// factory), resolves its placement, and queues it for the capped create pump.
+// The concrete subclass encapsulates all specialized placement and setup.
 void GroundServicesThread::QueueService(const AircraftSnapshot &aircraft,
                                         const GroundServiceRequest &request)
 {
@@ -302,18 +308,41 @@ void GroundServicesThread::QueueService(const AircraftSnapshot &aircraft,
               std::to_string(aircraft.objectId) + ": no valid placement was found.");
         return;
     }
-    object->ConfigureSimConnect(m_services);
     GSObject &root = *object;
     m_rootObjects.emplace(token, std::move(object));
-    BeginCreate(token, root);
+    EnqueueCreate(token, root);
 }
+
+void GroundServicesThread::EnqueueCreate(std::uint64_t token, GSObject &object)
+{
+    const AircraftId aircraftId = object.AircraftObjectId();
+    m_pendingCreations[aircraftId]++;
+    m_createQueue.push_back({token, aircraftId, &object});
+    PublishStatus();
+    PumpCreateQueue();
+}
+
+void GroundServicesThread::PumpCreateQueue()
+{
+    if (!m_connected || m_reloadPhase != ReloadPhase::None) return;
+    while (!m_createQueue.empty() &&
+           m_createRequests.size() < MaximumConcurrentCreations) {
+        const QueuedCreate queued = m_createQueue.front();
+        m_createQueue.pop_front();
+        if (!queued.object) {
+            DecrementPendingCreations(queued.aircraftId);
+            continue;
+        }
+        queued.object->ConfigureSimConnect(m_services);
+        BeginCreate(queued.token, *queued.object);
+    }
+}
+
 // Starts asynchronous creation for a GSObject that already knows its pose. The
 // result is delivered through the generic OnCreated lifecycle hook.
 void GroundServicesThread::BeginCreate(std::uint64_t token, GSObject &object)
 {
     const AircraftId aircraftId = object.AircraftObjectId();
-    m_pendingCreations[aircraftId]++;
-    PublishStatus();
     auto request = std::make_unique<GSReqCreateObject>();
     GSReqCreateObject &requestReference = *request;
     m_createRequests.emplace(
@@ -343,9 +372,8 @@ void GroundServicesThread::QueueAttachments(GSObject &parent,
         auto object = GSObject::CreateAttachment(parent.Aircraft(), attachment);
         if (!object) continue;
         object->PrepareAttachment(parentPose);
-        object->ConfigureSimConnect(m_services);
         GSObject &child = parent.AddChild(std::move(object));
-        BeginCreate(token, child);
+        EnqueueCreate(token, child);
     }
 }
 
@@ -365,7 +393,8 @@ void GroundServicesThread::FinalizeObject(GSObject *object,
         m_animation.AddObject(std::make_unique<AnimatedObject>(
             object->ObjectId(), *object->Object().animation,
             std::move(coordinates),
-            object->MovementSpeedMetersPerSecond()));
+            object->MovementSpeedMetersPerSecond(),
+            object->UsesPositionedVelocityAnimation()));
     }
     QueueAttachments(*object, actualPose, object->Object().attachments);
 }
@@ -561,6 +590,13 @@ void GroundServicesThread::RemoveObjectState(GSObject &object,
 
 void GroundServicesThread::HandleObjectRemoved(AircraftId objectId)
 {
+    if (m_reloadRemovalObjectIds.erase(objectId) != 0) {
+        GSLog("Reload teardown confirmed removal of ground ObjectID " +
+              std::to_string(objectId) + ".");
+        TryAdvanceReload();
+        return;
+    }
+
     const bool isTrackedAircraft =
         m_configuredAircraft.contains(objectId) || m_objectsByAircraft.contains(objectId) ||
         std::ranges::any_of(m_rootObjects, [objectId](const auto &entry) {
@@ -612,15 +648,93 @@ void GroundServicesThread::HandleConnect()
     }
     m_connected = true;
     PublishStatus();
+    PumpCreateQueue();
 }
 
 void GroundServicesThread::HandleDisconnect()
 {
     m_connected = false;
+    m_reloadPhase = ReloadPhase::None;
+    m_reloadRemovalObjectIds.clear();
     RemoveAllServicesInternal();
     m_animation.Reset();
     m_configuration.ResetInitialization();
     PublishStatus();
+}
+
+void GroundServicesThread::BeginReload()
+{
+    if (m_reloadPhase == ReloadPhase::None) {
+        // PumpCreateQueue observes this phase and stops submitting new creates.
+        // The existing object graph remains alive until every request already
+        // submitted to SimConnect has completed.
+        m_reloadPhase = ReloadPhase::WaitingForCreations;
+    }
+
+    m_configuration.Reload();
+    ReportConfigurationLoadMessages(m_configuration);
+    for (const std::string &message : m_configuration.InitializationMessages()) {
+        GSLog(message);
+    }
+
+    TryAdvanceReload();
+    if (m_reloadPhase == ReloadPhase::WaitingForCreations) {
+        GSPrint("Reload requested; stopped submitting new creations and waiting for " +
+                std::to_string(m_createRequests.size()) +
+                " in-flight creation(s) to finish.");
+    } else if (m_reloadPhase == ReloadPhase::WaitingForRemovals) {
+        GSPrint("Reload teardown; waiting for " +
+                std::to_string(m_reloadRemovalObjectIds.size()) +
+                " old object removal(s).");
+    }
+    PublishStatus();
+}
+
+void GroundServicesThread::TryAdvanceReload()
+{
+    if (m_reloadPhase == ReloadPhase::None) return;
+
+    if (m_reloadPhase == ReloadPhase::WaitingForCreations) {
+        // No new requests are submitted in this phase. Keep all GSObject
+        // instances alive until requests already sent to SimConnect resolve.
+        if (!m_createRequests.empty()) return;
+
+        m_reloadPhase = ReloadPhase::WaitingForRemovals;
+        m_reloadRemovalObjectIds.clear();
+        for (const AircraftId objectId : m_createdObjects) {
+            // MSFS already reported deferred objects as removed, so they need
+            // no second ObjectRemoved acknowledgement for this barrier.
+            if (!m_deferredObjectRemovals.contains(objectId)) {
+                m_reloadRemovalObjectIds.insert(objectId);
+            }
+        }
+
+        const std::size_t removalCount = m_reloadRemovalObjectIds.size();
+        // All submitted creates are resolved now. It is safe to discard local
+        // creates that were never submitted and tear down the old object graph.
+        RemoveAllServicesInternal();
+        GSPrint("Reload creation drain complete; requested removal of " +
+                std::to_string(removalCount) + " old object(s).");
+
+        if (!m_reloadRemovalObjectIds.empty()) return;
+    }
+
+    if (m_reloadPhase != ReloadPhase::WaitingForRemovals ||
+        !m_reloadRemovalObjectIds.empty()) {
+        return;
+    }
+
+    m_reloadPhase = ReloadPhase::None;
+    if (m_connected && m_configuration.IsResolved()) {
+        EvaluateTrackedAircraft();
+    }
+    PublishStatus();
+    if (m_configuration.IsLoaded()) {
+        GSPrint("Reload teardown complete; rebuilding services for tracked aircraft.");
+    } else {
+        GSPrint("Ground-service configuration reload failed; services were not rebuilt.");
+    }
+    PumpCreateQueue();
 }
 
 void GroundServicesThread::RemoveAllServicesInternal()
@@ -631,6 +745,7 @@ void GroundServicesThread::RemoveAllServicesInternal()
         static_cast<void>(token);
         operation.object = nullptr;
     }
+    m_createQueue.clear();
     std::vector<AircraftId> objects;
     objects.assign(m_createdObjects.begin(), m_createdObjects.end());
     for (const AircraftId objectId : objects) {

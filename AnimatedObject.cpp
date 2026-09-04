@@ -41,10 +41,11 @@ double Heading(const AnimationCoordinate &from, const AnimationCoordinate &to)
 AnimatedObject::AnimatedObject(
     AircraftId objectId, AnimationConfiguration animation,
     std::vector<AnimationCoordinate> movementCoordinates,
-    double movementSpeedMetersPerSecond)
+    double movementSpeedMetersPerSecond, bool positionedVelocityAnimation)
     : m_objectId(objectId), m_animation(std::move(animation)),
       m_movementCoordinates(std::move(movementCoordinates)),
-      m_movementSpeedMetersPerSecond(movementSpeedMetersPerSecond)
+      m_movementSpeedMetersPerSecond(movementSpeedMetersPerSecond),
+      m_positionedVelocityAnimation(positionedVelocityAnimation)
 {
     if (m_movementCoordinates.empty()) return;
     m_currentCoordinate = m_movementCoordinates.front();
@@ -113,13 +114,14 @@ void AnimatedObject::Animate(AnimationThread &thread)
 
     for (const AnimationCarrier &carrier : m_animation.carriers) {
         const double value = CarrierValue(carrier, elapsedSeconds);
-        if (IsMoving() && EqualIgnoreCase(carrier.name, kVelocityBodyYCarrier)) {
+        if ((IsMoving() || m_positionedVelocityAnimation) &&
+            EqualIgnoreCase(carrier.name, kVelocityBodyYCarrier)) {
             velocityBodyY = value;
         } else {
             thread.QueueCarrierUpdate(m_objectId, carrier.name, value);
         }
     }
-    if (IsMoving() && velocityBodyY) {
+    if (velocityBodyY) {
         thread.QueueMotionUpdate(m_objectId, m_currentCoordinate, *velocityBodyY);
     } else if (IsMoving()) {
         thread.QueuePositionUpdate(m_objectId, m_currentCoordinate);

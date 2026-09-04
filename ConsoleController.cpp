@@ -28,6 +28,23 @@ bool HasRoute(const AircraftSnapshot &aircraft)
     return !aircraft.fromAirport.empty() && !aircraft.toAirport.empty();
 }
 
+std::string_view InteractivePointTypeName(std::int32_t type)
+{
+    switch (type) {
+    case 0: return "main-exit";
+    case 1: return "cargo-exit/door";
+    case 2: return "emergency-exit";
+    case 3: return "fuel-hose";
+    case 4: return "ground-power-cable";
+    case 5: return "air-start-unit";
+    case 6: return "tailhook";
+    case 7: return "drop-exit";
+    case 8: return "window";
+    case 99: return "unknown";
+    default: return "unrecognized";
+    }
+}
+
 void PrintCargoPoint(std::ostream &output, std::string_view name,
                      const std::optional<AircraftCargoConnectionPoint> &point)
 {
@@ -130,6 +147,7 @@ AppCommand ConsoleController::Parse(std::string_view line)
     if (command == "tracked") return {AppCommandType::Tracked};
     if (command == "aircraft1" || command == "radius1") return {AppCommandType::Aircraft1};
     if (command == "aircraft5" || command == "radius5") return {AppCommandType::Aircraft5};
+    if (command == "aircraftpnt") return {AppCommandType::AircraftPnt};
     if (command == "parked") return {AppCommandType::Parked};
     if (command == "ground") return {AppCommandType::Ground};
     if (command == "roads") {
@@ -157,6 +175,7 @@ void ConsoleController::PrintHelp()
               << "  tracked             Retained aircraft (admitted inside 1 km)\n"
               << "  aircraft1           Aircraft currently within 1 km\n"
               << "  aircraft5           Aircraft currently within 5 km\n"
+              << "  aircraftpnt         Interactive points for all tracked aircraft\n"
               << "  parked              Detailed list excluding STATE_SIMPLE_TAXI\n"
               << "  ground              Request one 5 km ground-object debug list\n"
               << "  roads <ICAO>        List non-aircraft roads (TYPE 6/7) and endpoints\n"
@@ -181,10 +200,39 @@ void ConsoleController::PrintSnapshots(const std::vector<AircraftSnapshot> &airc
                   << std::setprecision(1) << data.groundSpeedKnots << "kt wingspan="
                   << data.wingSpanMeters << "m title="
                   << data.title << " state=" << data.trafficState << " nav="
-                  << data.lightNav << " on-ground=" << data.onGround;
+                  << data.lightNav << " on-ground=" << data.onGround
+                  << " tow-point=(forward=" << data.pushbackContactZMeters
+                  << "m,right=" << data.pushbackContactXMeters << "m)";
         PrintCargoPoint(std::cout, "cargo-front", data.cargoDoorRightFront);
         PrintCargoPoint(std::cout, "cargo-back", data.cargoDoorRightBack);
         std::cout << '\n';
+    }
+}
+
+void ConsoleController::PrintInteractivePoints(
+    const std::vector<AircraftSnapshot> &aircraft)
+{
+    std::cout << aircraft.size() << " tracked aircraft interactive-point sets:\n";
+    for (const auto &data : aircraft) {
+        std::cout << "ID=" << data.objectId << " title=\"" << data.title << '"';
+        if (!data.atcId.empty()) std::cout << " registration=" << data.atcId;
+        if (!data.atcAirline.empty() || !data.atcFlightNumber.empty()) {
+            std::cout << " flight=" << data.atcAirline << data.atcFlightNumber;
+        }
+        std::cout << " points=" << data.interactivePoints.size() << '\n';
+
+        for (const auto &point : data.interactivePoints) {
+            // Print the original MSFS axes. Internally they are stored as
+            // right/vertical/forward respectively after conversion to metres.
+            std::cout << "  index=" << point.interactivePointIndex
+                      << " type=" << point.type << " ("
+                      << InteractivePointTypeName(point.type) << ')'
+                      << " POSX=" << std::fixed << std::setprecision(2)
+                      << point.rightMeters << "m"
+                      << " POSY=" << point.verticalMeters << "m"
+                      << " POSZ=" << point.forwardMeters << "m"
+                      << " heading=" << point.relativeHeadingDegrees << "deg\n";
+        }
     }
 }
 
@@ -222,6 +270,9 @@ void ConsoleController::PrintParked(const std::vector<AircraftSnapshot> &aircraf
                   << ", pushback-attached=" << data.pushbackAttached
                   << ", pushback-wait=" << data.pushbackWait
                   << ", transponder=" << data.transponderState << '\n';
+        std::cout << "  tow-point: forward=" << std::fixed << std::setprecision(1)
+                  << data.pushbackContactZMeters << "m, right="
+                  << data.pushbackContactXMeters << "m\n";
         const auto printDetailedCargo = [](std::string_view name,
                                            const std::optional<AircraftCargoConnectionPoint> &point) {
             std::cout << "  " << name << ": ";

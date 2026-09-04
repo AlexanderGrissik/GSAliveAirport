@@ -12,6 +12,7 @@
     <ClCompile Include="GSObject.cpp" />
     <ClCompile Include="GSStaticObj.cpp" />
     <ClCompile Include="GSWalkerFSDT.cpp" />
+    <ClCompile Include="GSWorkerFSDT.cpp" />
     <ClCompile Include="GSLuggageLoaderFSDT.cpp" />
     <ClCompile Include="GSPowerGround.cpp" />
     <ClCompile Include="GSCateringDefault.cpp" />
@@ -41,6 +42,7 @@
     <ClInclude Include="GSObject.h" />
     <ClInclude Include="GSStaticObj.h" />
     <ClInclude Include="GSWalkerFSDT.h" />
+    <ClInclude Include="GSWorkerFSDT.h" />
     <ClInclude Include="GSLuggageLoaderFSDT.h" />
     <ClInclude Include="GSPowerGround.h" />
     <ClInclude Include="GSCateringDefault.h" />

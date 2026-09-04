@@ -55,6 +55,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -71,6 +72,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -101,6 +103,7 @@
     <ClCompile Include="GSObject.cpp" />
     <ClCompile Include="GSStaticObj.cpp" />
     <ClCompile Include="GSWalkerFSDT.cpp" />
+    <ClCompile Include="GSWorkerFSDT.cpp" />
     <ClCompile Include="GSLuggageLoaderFSDT.cpp" />
     <ClCompile Include="GSPowerGround.cpp" />
     <ClCompile Include="GSCateringDefault.cpp" />
@@ -129,6 +132,7 @@
     <ClInclude Include="GSObject.h" />
     <ClInclude Include="GSStaticObj.h" />
     <ClInclude Include="GSWalkerFSDT.h" />
+    <ClInclude Include="GSWorkerFSDT.h" />
     <ClInclude Include="GSLuggageLoaderFSDT.h" />
     <ClInclude Include="GSPowerGround.h" />
     <ClInclude Include="GSCateringDefault.h" />

@@ -13,23 +13,29 @@ using namespace std::chrono_literals;
 
 GSLuggageLoaderFSDT::GSLuggageLoaderFSDT(
     AircraftSnapshot aircraft, GroundServiceObject object,
-    GroundServiceLocation location)
-    : GSObject(std::move(aircraft), std::move(object), std::move(location))
+    GroundServiceLocation location, Door door)
+    : GSObject(std::move(aircraft), std::move(object), std::move(location)),
+      m_selectedDoor(door)
 {
 }
 
 bool GSLuggageLoaderFSDT::PreparePlacement(GSObjectServices &)
 {
+    const auto &selectedConnection =
+        m_selectedDoor == Door::Front ? m_aircraft.cargoDoorRightFront
+                                      : m_aircraft.cargoDoorRightBack;
     const AircraftCargoConnectionPoint *connection =
-        m_aircraft.cargoDoorRightBack
-            ? &m_aircraft.cargoDoorRightBack.value()
-            : (m_aircraft.cargoDoorRightFront
-                   ? &m_aircraft.cargoDoorRightFront.value()
-                   : nullptr);
+        selectedConnection ? &selectedConnection.value() : nullptr;
     if (!connection) {
+        const std::string missingDoor =
+            m_selectedDoor == Door::Front
+                ? "no right-front cargo door"
+                : "no distinct right-back cargo door";
         GSLog("Skipped " + m_object.family + " for aircraft " +
               std::to_string(m_aircraft.objectId) +
-              ": MSFS reported no matching right cargo door.");
+              ": MSFS reported " + missingDoor + " required by " +
+              (m_selectedDoor == Door::Front ? "LuggageLoaderFrontFSDT."
+                                             : "LuggageLoaderBackFSDT."));
         return false;
     }
 

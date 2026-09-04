@@ -21,8 +21,8 @@ namespace parking_services
 {
 enum class AppCommandType
 {
-    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, Parked, Ground, Roads,
-    Log, Reset, Reload, Unknown,
+    None, Quit, Help, Status, Tracked, Aircraft1, Aircraft5, AircraftPnt, Parked,
+    Ground, Roads, Log, Reset, Reload, Unknown,
 };
 
 struct AppCommand
@@ -57,6 +57,7 @@ class ConsoleController final : public ISimConnectStatus
     static void PrintPrompt();
     static void PrintSnapshots(const std::vector<AircraftSnapshot> &aircraft,
                                std::string_view label);
+    static void PrintInteractivePoints(const std::vector<AircraftSnapshot> &aircraft);
     static void PrintParked(const std::vector<AircraftSnapshot> &aircraft);
     static void PrintGround(const std::vector<GroundSnapshot> &ground);
     void PrintStatus(const ConsoleStatus &status) const;

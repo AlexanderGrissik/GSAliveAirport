@@ -21,10 +21,12 @@ bool GSStaticObj::PreparePlacement(GSObjectServices &)
               ": a static ground-service object requires a static location.");
         return false;
     }
+    if (!LocationRelationAvailable()) return false;
     m_pose = RelativeToAircraft(m_aircraft, m_location.relX1, m_location.relY1,
                                 m_location.faceAircraft,
                                 m_location.faceAircraftReverse,
-                                m_location.wingRelative);
+                                m_location.wingRelative,
+                                m_location.relation);
     return true;
 }
 
