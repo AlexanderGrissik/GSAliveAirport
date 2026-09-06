@@ -22,4 +22,9 @@ SIMCONNECT_DATA_INITPOSITION RelativePosition(
     double forwardMeters, double rightMeters);
 double HeadingTowardRelativeOrigin(double referenceHeadingDegrees,
                                    double forwardMeters, double rightMeters);
+
+double MetersPerDegreeLat();
+double MetersPerDegreeLong(double latitude);
+double DistanceMeters(double latitudeA, double longitudeA,
+                      double latitudeB, double longitudeB);
 } // namespace parking_services

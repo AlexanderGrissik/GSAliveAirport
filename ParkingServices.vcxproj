@@ -144,9 +144,8 @@
     <ClInclude Include="GSRequests\GSReqCreateObject.h" />
     <ClInclude Include="GSRequests\GSReqGroundScan.h" />
     <ClInclude Include="GSRequests\GSReqRoads.h" />
-    <ClInclude Include="ISimConnectHandler.h" />
+    <ClInclude Include="SimConnectHandler.h" />
     <ClInclude Include="ISimConnectRequest.h" />
-    <ClInclude Include="ISimConnectStatus.h" />
     <ClInclude Include="GSCommon.h" />
     <ClInclude Include="ParkingServicesApp.h" />
     <ClInclude Include="SimConnectThread.h" />

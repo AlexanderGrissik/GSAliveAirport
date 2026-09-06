@@ -17,7 +17,7 @@ using namespace std::chrono_literals;
 namespace
 {
 constexpr auto kRequestTimeout = 8s;
-constexpr std::size_t kInteractivePointProbeCount = 32;
+
 constexpr std::int32_t kMainExitInteractivePointType = 0;
 constexpr std::int32_t kCargoInteractivePointType = 1;
 constexpr std::int32_t kGroundPowerInteractivePointType = 4;
@@ -29,75 +29,9 @@ template <std::size_t Size> std::string FixedString(const std::array<char, Size>
     return {value.data(), static_cast<std::size_t>(end - value.begin())};
 }
 
-template <typename Payload>
-std::optional<Payload> ReadPayload(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry,
-                                   DWORD messageSize)
-{
-    const auto *entryBytes = reinterpret_cast<const BYTE *>(&entry);
-    const auto *payloadBytes = reinterpret_cast<const BYTE *>(&entry.dwData);
-    const std::size_t offset = static_cast<std::size_t>(payloadBytes - entryBytes);
-    const std::size_t received = entry.dwSize != 0
-                                     ? (std::min)(static_cast<std::size_t>(entry.dwSize),
-                                                  static_cast<std::size_t>(messageSize))
-                                     : static_cast<std::size_t>(messageSize);
-    if (received < offset + sizeof(Payload)) return std::nullopt;
 
-    Payload payload{};
-    std::memcpy(&payload, payloadBytes, sizeof(payload));
-    return payload;
-}
 
-#pragma pack(push, 1)
-struct InteractivePointWireData
-{
-    std::int32_t type{};
-    double posXFeet{};
-    double posYFeet{};
-    double posZFeet{};
-    double headingDegrees{};
-};
 
-struct AircraftWireData
-{
-    std::array<char, 256> title{};
-    std::array<char, 256> atcId{};
-    std::array<char, 256> atcAirline{};
-    std::array<char, 256> atcFlightNumber{};
-    double latitude{};
-    double longitude{};
-    double altitudeFeet{};
-    double groundAltitudeFeet{};
-    double headingDegrees{};
-    double groundSpeedKnots{};
-    double wingSpanMeters{};
-    std::int32_t onGround{};
-    std::int32_t isUser{};
-    std::array<char, 256> currentAirport{};
-    std::array<char, 256> assignedParking{};
-    std::array<char, 256> assignedRunway{};
-    std::array<char, 256> fromAirport{};
-    std::array<char, 256> toAirport{};
-    std::int32_t etdSeconds{};
-    std::int32_t etaSeconds{};
-    std::array<char, 256> trafficState{};
-    std::int32_t isIfr{};
-    std::int32_t numberOfEngines{};
-    std::array<std::int32_t, 4> engineCombustion{};
-    std::array<std::int32_t, 4> engineStarterActive{};
-    std::array<double, 4> engineN1Percent{};
-    std::int32_t lightBeacon{};
-    std::int32_t lightNav{};
-    std::int32_t lightTaxi{};
-    std::int32_t lightStrobe{};
-    std::int32_t parkingBrake{};
-    double pushbackContactXMeters{};
-    double pushbackContactZMeters{};
-    std::int32_t pushbackAttached{};
-    std::int32_t pushbackWait{};
-    std::int32_t transponderState{};
-    std::array<InteractivePointWireData, kInteractivePointProbeCount> interactivePoints{};
-};
-#pragma pack(pop)
 
 static_assert(sizeof(InteractivePointWireData) == 36);
 static_assert(sizeof(AircraftWireData) == 3904);

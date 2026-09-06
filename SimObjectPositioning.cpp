@@ -6,6 +6,9 @@
 
 namespace parking_services
 {
+constexpr double kMetersPerLatitudeDegree = 111'320.0;
+constexpr double kDegreesToRadians = 3.14159265358979323846 / 180.0;
+
 double NormalizeDegrees(double degrees)
 {
     return std::fmod(degrees + 360.0, 360.0);
@@ -39,4 +42,27 @@ double HeadingTowardRelativeOrigin(double referenceHeadingDegrees,
         std::atan2(-rightMeters, -forwardMeters) * kRadiansToDegrees;
     return NormalizeDegrees(referenceHeadingDegrees + relativeHeading);
 }
+
+double MetersPerDegreeLat()
+{
+    return kMetersPerLatitudeDegree;
+}
+
+double MetersPerDegreeLong(double latitude)
+{
+    return kMetersPerLatitudeDegree *
+           std::cos(latitude * kDegreesToRadians);
+}
+
+double DistanceMeters(double latitudeA, double longitudeA,
+                      double latitudeB, double longitudeB)
+{
+    const double latitudeMeters =
+        (latitudeB - latitudeA) * MetersPerDegreeLat();
+    const double averageLatitude = (latitudeA + latitudeB) / 2.0;
+    const double longitudeMeters =
+        (longitudeB - longitudeA) * MetersPerDegreeLong(averageLatitude);
+    return std::hypot(latitudeMeters, longitudeMeters);
+}
+
 } // namespace parking_services

@@ -2,7 +2,6 @@
 
 #include "Aircraft.h"
 #include "ISimConnectHandler.h"
-#include "ISimConnectStatus.h"
 #include "GSRequests/GSReqCommand.h"
 #include "GSRequests/GSReqGroundScan.h"
 #include "GSRequests/GSReqRoads.h"
@@ -42,7 +41,7 @@ struct ConsoleStatus
     std::size_t maximumMovingObjects{};
 };
 
-class ConsoleController final : public ISimConnectStatus
+class ConsoleController final
 {
   public:
     explicit ConsoleController(ISimConnectHandler &simConnect);

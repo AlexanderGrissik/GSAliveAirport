@@ -7,7 +7,6 @@
 #include "GSRequests/GSReqCommand.h"
 #include "GSRequests/GSReqCreateObject.h"
 #include "ISimConnectHandler.h"
-#include "ISimConnectStatus.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -42,7 +41,7 @@ struct GroundServicesStatus
 // Drives polymorphic GSObject roots on its own thread. Each root owns its
 // runtime attachment tree; concrete behavior stays in the GSObject subclasses.
 // This thread only sequences their generic lifecycle and provides services.
-class GroundServicesThread final : public ISimConnectStatus
+class GroundServicesThread final
 {
   public:
     GroundServicesThread(ISimConnectHandler &simConnect,

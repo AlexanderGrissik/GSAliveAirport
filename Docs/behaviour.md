@@ -82,10 +82,10 @@ Unlike the FSDT carrier path (which drives user-scope carrier SimVars), these As
 
 | Operation | `SimConnectThread` method | SimConnect call |
 |---|---|---|
-| Spawn object | `BeginCreateObject` | `SimConnect_AICreateSimulatedObject_EX1` |
-| Write a service SimVar | `BeginSetObjectData` | `SimConnect_SetDataOnSimObject` |
+| Spawn object | `SimConnect_AICreateSimulatedObject_EX1` |
+| Write a service SimVar | `SimConnect_SetDataOnSimObject` |
 | Read a service SimVar | `BeginRequestObjectData` | `SimConnect_RequestDataOnSimObject` |
-| Remove object | `BeginRemoveObject` | `SimConnect_AIRemoveObject` |
+| Remove object | `SimConnect_AIRemoveObject` |
 
 The spawned `dwObjectID` is already captured in `GSReqCreateObject` from `SIMCONNECT_RECV_ASSIGNED_OBJECT_ID`.
 

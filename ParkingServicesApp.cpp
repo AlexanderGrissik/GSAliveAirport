@@ -18,11 +18,6 @@ ParkingServicesApp::ParkingServicesApp()
                        GroundServicesConfig::LoadDefault()),
       m_console(m_simConnect)
 {
-    // Register every status observer before any thread starts, so the SimConnect dispatch
-    // thread can never observe a half-populated observer list (registration is lock-free).
-    m_simConnect.RegisterStatusObserver(&m_groundServices);
-    m_simConnect.RegisterStatusObserver(&m_aircraftTracker);
-    m_simConnect.RegisterStatusObserver(&m_console);
 }
 
 ParkingServicesApp::~ParkingServicesApp()
