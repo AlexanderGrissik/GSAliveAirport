@@ -1,6 +1,15 @@
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#pragma warning(push)
+#pragma warning(disable : 4245)
+#include <SimConnect.h>
+#pragma warning(pop)
+
 #include <array>
+#include <cstddef>
 #include <chrono>
 #include <cstdint>
 #include <optional>
@@ -8,8 +17,10 @@
 #include <string_view>
 #include <vector>
 
-namespace parking_services
+namespace NS_GSLiveAirportMSFS
 {
+
+class GSSimConnect;
 
 class GSAircraft
 {
@@ -67,20 +78,30 @@ public:
         float pushbackContactXMeters{};
         float pushbackContactZMeters{};
 
-        std::array<InteractivePointWireData, g_InteractivePointProbeCount> interactivePoints{};
+        std::array<InteractivePointWireData, 12> interactivePoints{};
     };
     #pragma pack(pop)
 
-    constexpr std::size_t AIRCRAFT_WIREDATA_DYNSIZE = offsetof(AircraftWireData, title);
+    static constexpr std::size_t AIRCRAFT_WIREDATA_DYNSIZE = offsetof(AircraftWireData, title);
+    static constexpr std::size_t s_MaxInteractivePnts = 12;
 
-    static void InitDatums(SimConnectHandler& handler);
+    static void InitDatums(GSSimConnect& handler);
 
-    void LoadDynamicState(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry);
-    void LoadFullState(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry);
+    static bool IsValidInteractivePointType(std::int32_t type) { return type == 0 || type == 1 || type == 3 || type == 4; }
+    static const char *InteractivePointTypeName(std::int32_t type);
+    static const char *AircraftSizeName(GSAircraft::AircraftSizeCategory category);
+
+    void LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry);
+    void LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry);
     void CopyDynInfo(const GSAircraft& another);
     
-    bool operator==(const GSAircraft& another);
-    bool operator!=(const GSAircraft& another) { return !(*this == another); }
+    bool operator==(const GSAircraft& another) const;
+    bool operator!=(const GSAircraft& another) const { return !(*this == another); }
+
+    bool IsParkedActive() const;
+    double LateralDistanceFrom(const GSAircraft* ac) const;
+
+    void Print() const;
 
     AircraftWireData m_rawData;
     
@@ -98,4 +119,4 @@ public:
     DWORD objectID{};
 };
 
-} // namespace parking_services
+} // namespace NS_GSLiveAirportMSFS

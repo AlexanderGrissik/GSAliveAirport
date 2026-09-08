@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\GSAircraft.cpp" />
+    <ClCompile Include="src\GSAircraftTrackerThread.cpp" />
+    <ClCompile Include="src\GSConsole.cpp" />
+    <ClCompile Include="src\GSGeography.cpp" />
+    <ClCompile Include="src\GSLiveAirportMSFSApp.cpp" />
+    <ClCompile Include="src\GSLogStream.cpp" />
+    <ClCompile Include="src\GSSimConnect.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\GSAircraft.h" />
+    <ClInclude Include="src\GSAircraftTrackerThread.h" />
+    <ClInclude Include="src\GSCommand.h" />
+    <ClInclude Include="src\GSConsole.h" />
+    <ClInclude Include="src\GSDefinitions.h" />
+    <ClInclude Include="src\GSGeography.h" />
+    <ClInclude Include="src\GSLiveAirportMSFSApp.h" />
+    <ClInclude Include="src\GSLogStream.h" />
+    <ClInclude Include="src\GSQuickQueue.h" />
+    <ClInclude Include="src\GSSimConnect.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+  </ItemGroup>
+</Project>

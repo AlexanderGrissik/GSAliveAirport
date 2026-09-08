@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aircraft.h"
+#include "GSAircraft.h"
 #include "GSObject.h"
 #include "SimObjectCatalog.h"
 

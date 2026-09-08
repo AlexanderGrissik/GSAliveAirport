@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aircraft.h"
+#include "GSAircraft.h"
 #include "AnimatedObject.h"
 #include "GSRequests/GSReqCommand.h"
 #include "SimObjectPositioning.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aircraft.h"
+#include "GSAircraft.h"
 #include "AnimationThread.h"
 #include "GroundServicesConfig.h"
 #include "GSObject.h"
