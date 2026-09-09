@@ -1,11 +1,14 @@
 #pragma once
 
-#include "GSQuickQueue.h"
+#include "../GSQuickQueue.h"
 #include <functional>
+
+namespace NS_GSLiveAirportMSFS
+{
 
 class GSCommand;
 
-using GSCmdQueue = GSQuickQueue<std::reference_wrapper<GSCommand>, 1024>;
+using GSCmdQueue = GSQuickQueue<std::unique_ptr<GSCommand>, 1024>;
 
 class GSCommand
 {
@@ -13,18 +16,13 @@ public:
 
     GSCommand(int cmd): m_commandID(cmd) {}
     GSCommand(int cmd, GSCmdQueue& queue): m_commandID(cmd), m_repQueue(&queue) {}
+    virtual ~GSCommand() {}
 
     int GetCmdID() const { return m_commandID; }
 
-    void Finish() {
+    void Finish(std::unique_ptr<GSCommand>& cmd) {
         if (m_repQueue)
-            m_repQueue->Push(*this);
-    }
-
-    GSCommand& WaitPop() {
-        if (m_repQueue)
-            return m_repQueue->Pop();
-        return *this;
+            m_repQueue->Push(cmd);
     }
 
 private:
@@ -32,6 +30,7 @@ private:
     int m_commandID = 0;
     GSCmdQueue* m_repQueue = nullptr;
 };
+} // namespace NS_GSLiveAirportMSFS
 
 
 

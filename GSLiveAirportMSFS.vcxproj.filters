@@ -8,11 +8,13 @@
     <ClCompile Include="src\GSLiveAirportMSFSApp.cpp" />
     <ClCompile Include="src\GSLogStream.cpp" />
     <ClCompile Include="src\GSSimConnect.cpp" />
+    <ClCompile Include="src\GSSpawnerThread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\GSAircraft.h" />
     <ClInclude Include="src\GSAircraftTrackerThread.h" />
-    <ClInclude Include="src\GSCommand.h" />
+    <ClInclude Include="src\cmds\GSCommand.h" />
+    <ClInclude Include="src\cmds\GSCmdAircraftUpdate.h" />
     <ClInclude Include="src\GSConsole.h" />
     <ClInclude Include="src\GSDefinitions.h" />
     <ClInclude Include="src\GSGeography.h" />
@@ -20,6 +22,7 @@
     <ClInclude Include="src\GSLogStream.h" />
     <ClInclude Include="src\GSQuickQueue.h" />
     <ClInclude Include="src\GSSimConnect.h" />
+    <ClInclude Include="src\GSSpawnerThread.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

@@ -12,6 +12,7 @@ using namespace std::chrono_literals;
 int GSLiveAirportMSFSApp::Run()
 {
     m_aircraftTracker.Start();
+    m_spawner.Start();
 
     std::cout << "GSLiveAirportMSFS for MSFS 2024\n"
               << "Automatic aircraft tracking: dynamic at 1 km, discover to 5 km.\n"
@@ -43,13 +44,13 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
     case AT::Status:
         break;
     case AT::Tracked:
-        m_aircraftTracker.PostCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_ALL);
+        PostACTrackCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_ALL);
         break;
     case AT::Aircraft1:
-        m_aircraftTracker.PostCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_1KM);
+        PostACTrackCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_1KM);
         break;
     case AT::Parked:
-        m_aircraftTracker.PostCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_PARKED);
+        PostACTrackCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_PARKED);
         break;
     case AT::Ground:
         break;
@@ -67,6 +68,15 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
         std::cout << "Unknown command or invalid arguments. Type 'help'" << std::endl;
         break;
     }
+}
+
+void GSLiveAirportMSFSApp::PostACTrackCommandAndWait(int cmdId) 
+{
+    GSCmdQueue replyQueue; 
+    std::unique_ptr<GSCommand> cmd = std::make_unique<GSCommand>(cmdId, replyQueue);
+    
+    m_aircraftTracker.PostCommand(cmd);
+    replyQueue.Pop();
 }
 } // namespace NS_GSLiveAirportMSFS
 

@@ -3,6 +3,8 @@
 #include "GSDefinitions.h"
 #include "GSGeography.h"
 #include "GSLogStream.h"
+#include "cmds/GSCmdAircraftUpdate.h"
+#include "GSSpawnerThread.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -76,9 +78,10 @@ void GSAircraftTrackerThread::OnSimStop()
 {
     m_simStarted = false;
 
-   //std::for_each(m_subscribers.begin(), m_subscribers.end(), [m_tracked&](auto* tracker) { 
-   //     std::for_each(m_tracked.begin(), m_tracked.end(), [tracker&](auto& aircraft) { tracker->OnAircraftRemoved(aircraft); }); 
-   // });
+    std::for_each(m_tracked.begin(), m_tracked.end(), [this](auto& aircraft) { 
+        std::unique_ptr<GSCommand> cmd(new GSCmdAircraftUpdate(GSSpawnerThread::CMD_SPAWNER_AIRCRAFT_REMOVED, aircraft.second));
+        m_singleObserver.PostCommand(cmd);        
+    }); 
 
     m_tracked.clear();
 }
@@ -152,14 +155,16 @@ void GSAircraftTrackerThread::HandleExistingAircraft(std::shared_ptr<GSAircraft>
 {
     if (aircraft != exisitng) {
         exisitng->CopyDynInfo(*aircraft);
-        //std::for_each(m_subscribers.begin(), m_subscribers.end(), [exisitng](auto* tracker) { tracker->OnAircraftModified(exisitng); });
+        std::unique_ptr<GSCommand> cmd(new GSCmdAircraftUpdate(GSSpawnerThread::CMD_SPAWNER_AIRCRAFT_MODIFIED, exisitng));
+        m_singleObserver.PostCommand(cmd);
     }
 }
 
 void GSAircraftTrackerThread::HandleNewAircraft(std::shared_ptr<GSAircraft> &aircraft)
 {
     m_tracked.emplace(aircraft->objectID, aircraft);
-    //std::for_each(m_subscribers.begin(), m_subscribers.end(), [aircraft&](auto* tracker) { tracker->OnAircraftAdded(aircraft); });
+    std::unique_ptr<GSCommand> cmd(new GSCmdAircraftUpdate(GSSpawnerThread::CMD_SPAWNER_AIRCRAFT_ADDED, aircraft));
+    m_singleObserver.PostCommand(cmd);
 }
 
 void GSAircraftTrackerThread::HandleRemoved()

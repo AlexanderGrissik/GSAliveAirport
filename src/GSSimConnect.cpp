@@ -119,7 +119,7 @@ void GSSimConnect::RunCommands()
         
         auto opt = m_commands.TryPop();
         if (opt.has_value()) {
-            cont = OnCommand(opt->get());
+            cont = OnCommand(*opt->get());
         }
     } while (cont);
 }

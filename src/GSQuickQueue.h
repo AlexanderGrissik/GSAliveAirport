@@ -57,7 +57,7 @@ public:
         }
     }
 
-    void Push(T val) {
+    void Push(T& val) {
         ProducerGuard grd(m_producerLock);
 
         size_t pushPos = m_push_pos.load(std::memory_order_relaxed);

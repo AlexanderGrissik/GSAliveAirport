@@ -43,14 +43,13 @@ public:
     };*/
 
     ~GSAircraftTrackerThread() override {}
-    GSAircraftTrackerThread() = default;
+    GSAircraftTrackerThread(GSSimConnect& singleObserver): m_singleObserver(singleObserver) {}
     GSAircraftTrackerThread(const GSAircraftTrackerThread &) = delete;
     GSAircraftTrackerThread &operator=(const GSAircraftTrackerThread &) = delete;
 
     void Start();
     void Stop();
-    //void Subscribe(IAircraftTrack* tracker) { m_subscribers.emplace_back(tracker); }
-
+    
     void OnConnect() override;
     void OnDisconnect() override;
     void OnSimStart() override;
@@ -76,6 +75,7 @@ public:
     bool m_simStarted = false;
     bool m_scanInProgress = false;
     bool m_lastLoopMsg = false;
+    GSSimConnect& m_singleObserver;
 
     std::jthread m_thread;
 };

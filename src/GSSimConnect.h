@@ -8,7 +8,7 @@
 #include <SimConnect.h>
 #pragma warning(pop)
 
-#include "GSCommand.h"
+#include "cmds\GSCommand.h"
 #include <condition_variable>
 #include <cstddef>
 #include <mutex>
@@ -53,7 +53,7 @@ public:
 
     static void ReadMsgData(void* dest, size_t dstSize, const SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
 
-    void PostCommandAndWait(int cmdId) { GSCmdQueue replyQueue; GSCommand cmd(cmdId, replyQueue); m_commands.Push(cmd); cmd.WaitPop(); }
+    void PostCommand(std::unique_ptr<GSCommand>& cmd) { m_commands.Push(cmd); }
 
 protected:
     void RunDispatch(std::stop_token stopToken);
@@ -61,8 +61,6 @@ protected:
     void Disconnect();
 
     virtual bool OnCommand(GSCommand& cmd) = 0;
-
-    void PostCommand(GSCommand& cmd) { m_commands.Push(cmd); }
 
     HANDLE GetHandle() const { return m_handle; }
     DWORD NextRequestID() { return m_nextRequestId++; }

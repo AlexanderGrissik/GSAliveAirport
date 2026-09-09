@@ -3,6 +3,7 @@
 #include "GSAircraftTrackerThread.h"
 #include "GSConsole.h"
 #include "GSSimConnect.h"
+#include "GSSpawnerThread.h"
 
 #include <atomic>
 
@@ -11,13 +12,15 @@ namespace NS_GSLiveAirportMSFS
 class GSLiveAirportMSFSApp final
 {
 public:
-    GSLiveAirportMSFSApp() = default;
-    ~GSLiveAirportMSFSApp() { m_aircraftTracker.Stop(); }
+    GSLiveAirportMSFSApp(): m_aircraftTracker(m_spawner) {}
+    ~GSLiveAirportMSFSApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
 
     GSLiveAirportMSFSApp(const GSLiveAirportMSFSApp &) = delete;
     GSLiveAirportMSFSApp &operator=(const GSLiveAirportMSFSApp &) = delete;
 
     int Run();
+
+    void PostACTrackCommandAndWait(int cmdId);
 
 private:
 
@@ -25,6 +28,7 @@ private:
 
     std::atomic_bool m_quit{false};
     GSAircraftTrackerThread m_aircraftTracker;
+    GSSpawnerThread m_spawner;
     GSConsole m_console;
 };
 } // namespace NS_GSLiveAirportMSFS
