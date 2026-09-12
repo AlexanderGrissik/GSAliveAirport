@@ -21,6 +21,7 @@ public:
     };
 
     GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn): m_aircraft(aircraft), m_simConnect(simConn) {}
+    virtual ~GSAircraftGround() = default;
 
     void Spawn();
     void Despawn();

@@ -5,10 +5,10 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSAircraftGroundLarge : public GSAircraftGround
+class GSAircraftGroundXL : public GSAircraftGround
 {
 public:
-    GSAircraftGroundLarge(const GSAircraft& aircraft, GSSimConnect& simConn)
+    GSAircraftGroundXL(const GSAircraft& aircraft, GSSimConnect& simConn)
         : GSAircraftGround(aircraft, simConn) {}
 };
 

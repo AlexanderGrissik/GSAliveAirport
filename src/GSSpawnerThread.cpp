@@ -1,5 +1,9 @@
 #include "GSSpawnerThread.h"
 #include "GSLogStream.h"
+#include "simobj/GSAircraftGroundSmall.h"
+#include "simobj/GSAircraftGroundMedium"
+#include "simobj/GSAircraftGroundLarge"
+#include "simobj/GSAircraftGroundXL.h"
 #include "simobj/GSCateringCartMSFS.h"
 #include "cmds/GSCmdAircraftUpdate.h"
 #include "GSGeography.h"
@@ -77,26 +81,26 @@ void GSSpawnerThread::NewAircraft(const GSAircraft& aircraft)
     GSAircraftGround* grnd = nullptr;
     switch (aircraft.GetCategory()) {
     case GSAircraft::AircraftSizeCategory::Small:
-        //grnd = new GSAircraftGroundSmall(aircraft, *this);
+        grnd = new GSAircraftGroundSmall(aircraft, *this);
         break;
     case GSAircraft::AircraftSizeCategory::Large:
-        //grnd = new GSAircraftGroundLarge(aircraft, *this);
+        grnd = new GSAircraftGroundLarge(aircraft, *this);
         break;
     case GSAircraft::AircraftSizeCategory::ExtraLarge:
-        //grnd = new GSAircraftGroundXL(aircraft, *this);
+        grnd = new GSAircraftGroundXL(aircraft, *this);
         break;
     default:
-        //grnd = new GSAircraftGroundMedium(aircraft, *this);
+        grnd = new GSAircraftGroundMedium(aircraft, *this);
         break;
     }
 
-    /*auto itr = m_groundUnspawned.emplace(aircraft.GetObjID(), grnd);
+    auto itr = m_groundUnspawned.emplace(aircraft.GetObjID(), grnd);
     if (!itr.second) {
         GSLogStream::LogError("GSSpawnerThread - Existing aircraft as new");
         return;
-    }*/
+    }
 
-    //CheckForUnspawned(*itr.first->second, aircraft);
+    CheckForUnspawned(*itr.first->second, aircraft);
 }
 
 void GSSpawnerThread::ModAircraft(const GSAircraft& aircraft)
@@ -109,7 +113,7 @@ void GSSpawnerThread::ModAircraft(const GSAircraft& aircraft)
         if (itrSpw != m_groundSpawned.end()) {
             CheckForSpawned(*(itrSpw->second), aircraft);
         } else {
-            //GSLogStream::LogError("GSSpawnerThread::ModAircraft - Existing aircraft not found");
+            GSLogStream::LogError("GSSpawnerThread::ModAircraft - Existing aircraft not found");
         }
     }
 }
