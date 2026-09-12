@@ -9,6 +9,9 @@
 #pragma warning(pop)
 
 #include <cmath>
+#define EARTH_RADIUS_METERS 6378137.0
+
+#include "GSCoord.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -16,21 +19,20 @@ namespace NS_GSLiveAirportMSFS
 class GSGeography
 {
 public:
-    static constexpr double s_feetToMeters = 0.3048;
-    static constexpr double s_radiansToDegrees = 180.0 / 3.14159265358979323846;
-    static constexpr double s_metersPerLatitudeDegree = 111'320.0;
-    static constexpr double s_degreesToRadians = 3.14159265358979323846 / 180.0;
+    static double PI;
+    static double DegToRad;
+    static double RadToDeg;
+    static double MetersPerLatitudeDegree;
 
     [[nodiscard]] static double NormalizeDegrees(double degrees) { return std::fmod(degrees + 360.0, 360.0); }
-    static double MetersPerDegreeLat() { return s_metersPerLatitudeDegree; }
 
-    static SIMCONNECT_DATA_INITPOSITION RelativePosition(double headingDegrees, double longitude, double latitude, double altitudeFeet, double forwardMeters, double rightMeters);
+    static double DistanceMeters(const GSCoord& coordA, const GSCoord& coordB);
 
-    static double HeadingTowardRelativeOrigin(double referenceHeadingDegrees, double forwardMeters, double rightMeters);
+    static GSCoord RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters);
+
+    static double MetersPerDegreeLat();
 
     static double MetersPerDegreeLong(double latitude);
-
-    static double DistanceMeters(double latitudeA, double longitudeA, double latitudeB, double longitudeB);
 };
 
 } // namespace NS_GSLiveAirportMSFS

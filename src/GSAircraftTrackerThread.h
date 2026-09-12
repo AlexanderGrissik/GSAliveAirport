@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GSAircraft.h"
+#include "simobj/GSAircraft.h"
 #include "GSSimConnect.h"
 
 #include <condition_variable>
@@ -28,20 +28,6 @@ public:
     static constexpr double ActiveRadiusMeters = 1'000.0;
     static constexpr DWORD DiscoveryRadiusMeters = 5000;
 
-    enum {
-        CMD_PRINT_AIRCRAFT_ALL = 0,
-        CMD_PRINT_AIRCRAFT_1KM,
-        CMD_PRINT_AIRCRAFT_PARKED
-    };;
-
-    /*struct IAircraftTrack
-    {
-        virtual void OnAircraftAdded(std::shared_ptr<GSAircraft>& aircraft) = 0;
-        virtual void OnAircraftModified(std::shared_ptr<GSAircraft>& aircraft) = 0;
-        virtual void OnAircraftRemoved(std::shared_ptr<GSAircraft>& aircraft) = 0;
-        virtual void OnAircraftUser(std::shared_ptr<GSAircraft>& aircraft) = 0;
-    };*/
-
     ~GSAircraftTrackerThread() override {}
     GSAircraftTrackerThread(GSSimConnect& singleObserver): m_singleObserver(singleObserver) {}
     GSAircraftTrackerThread(const GSAircraftTrackerThread &) = delete;
@@ -52,31 +38,39 @@ public:
     
     void OnConnect() override;
     void OnDisconnect() override;
-    void OnSimStart() override;
+    void OnSimStart() override {}
     void OnSimStop() override;
-    void OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-    void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    bool OnCommand(GSCommand& cmd) override;
+    void OnCommand(GSCommand& cmd) override;
+
+    void SetInProgress(bool v) { m_scanInProgress = v; }
 
   private:
 
     static void AircraftTrackerLoop(std::stop_token stopToken, GSAircraftTrackerThread *self);
     void RunLoopTracker(std::stop_token stopToken);
 
-    bool RequestScan();
+    void RequestScan();
     void HandleRemoved();
-    void HandleExistingAircraft(std::shared_ptr<GSAircraft> &aircraft, std::shared_ptr<GSAircraft> &existing);
-    void HandleNewAircraft(std::shared_ptr<GSAircraft> &aircraft);
+    bool HandleExistingAircraft(std::shared_ptr<GSAircraft> &aircraft, std::shared_ptr<GSAircraft> &existing);
+    bool HandleNewAircraft(std::shared_ptr<GSAircraft>& aircraft);
+    void HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft);
+    bool HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
     void PrintAircrafts(bool parkedOnly, double distKM) const;
 
     std::unordered_map<DWORD, std::shared_ptr<GSAircraft>> m_tracked;
     std::unordered_set<DWORD> m_lastScanIDs;
-    SendResult m_rc;
-    bool m_simStarted = false;
+    GSDefinitions::SendResult m_rc;
     bool m_scanInProgress = false;
-    bool m_lastLoopMsg = false;
     GSSimConnect& m_singleObserver;
-
+    std::chrono::steady_clock::time_point m_lastScanTime{};
     std::jthread m_thread;
+
+    class GSReqScan : public GSRequest {
+    public:
+        using GSRequest::GSRequest;
+        GSRequest::SendResult Process() override;
+        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
+        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
+    };
 };
 } // namespace NS_GSLiveAirportMSFS

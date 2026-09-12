@@ -8,7 +8,8 @@ namespace NS_GSLiveAirportMSFS
 
 class GSCommand;
 
-using GSCmdQueue = GSQuickQueue<std::unique_ptr<GSCommand>, 1024>;
+using CmdPtr = std::unique_ptr<GSCommand>;
+using GSCmdQueue = GSQuickQueue<CmdPtr, 1024>;
 
 class GSCommand
 {
@@ -20,7 +21,7 @@ public:
 
     int GetCmdID() const { return m_commandID; }
 
-    void Finish(std::unique_ptr<GSCommand>& cmd) {
+    void Finish(CmdPtr& cmd) {
         if (m_repQueue)
             m_repQueue->Push(cmd);
     }

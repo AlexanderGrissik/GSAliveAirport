@@ -1,8 +1,8 @@
 #include "GSAircraft.h"
-#include "GSSimConnect.h"
-#include "GSDefinitions.h"
-#include "GSGeography.h"
-#include "GSLogStream.h"
+#include "../GSSimConnect.h"
+#include "../GSDefinitions.h"
+#include "../GSGeography.h"
+#include "../GSLogStream.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -12,70 +12,57 @@ namespace NS_GSLiveAirportMSFS
 
 
 constexpr std::array GSDatums_Aircraft{
-    DatumSpec{"ATC ID", "", SIMCONNECT_DATATYPE_STRING32},
-    DatumSpec{"ATC AIRLINE", "", SIMCONNECT_DATATYPE_STRING32},
-    DatumSpec{"ATC FLIGHT NUMBER", "", SIMCONNECT_DATATYPE_STRING32},
-    DatumSpec{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
-    DatumSpec{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
-    DatumSpec{"PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"GROUND ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"GROUND VELOCITY", "knots", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"AI TRAFFIC CURRENT AIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
-    DatumSpec{"AI TRAFFIC ASSIGNED RUNWAY", "", SIMCONNECT_DATATYPE_STRING8},
-    DatumSpec{"AI TRAFFIC FROMAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
-    DatumSpec{"AI TRAFFIC TOAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
-    DatumSpec{"AI TRAFFIC ASSIGNED PARKING", "", SIMCONNECT_DATATYPE_STRING32},
-    DatumSpec{"AI TRAFFIC STATE", "", SIMCONNECT_DATATYPE_STRING32},
-    DatumSpec{"AI TRAFFIC ETD", "seconds", SIMCONNECT_DATATYPE_INT32},
-    DatumSpec{"AI TRAFFIC ETA", "seconds", SIMCONNECT_DATATYPE_INT32},
-    DatumSpec{"LIGHT BEACON", "bool", SIMCONNECT_DATATYPE_INT32},
-    DatumSpec{"LIGHT NAV", "bool", SIMCONNECT_DATATYPE_INT8},
-    DatumSpec{"LIGHT TAXI", "bool", SIMCONNECT_DATATYPE_INT8},
-    DatumSpec{"BRAKE PARKING POSITION", "bool", SIMCONNECT_DATATYPE_INT8},
-    DatumSpec{"SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT8},
+    GSDefinitions::DatumSpec{"ATC ID", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDefinitions::DatumSpec{"ATC AIRLINE", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDefinitions::DatumSpec{"ATC FLIGHT NUMBER", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDefinitions::DatumSpec{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDefinitions::DatumSpec{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDefinitions::DatumSpec{"PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"GROUND ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"PLANE ALT ABOVE GROUND MINUS CG", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"GROUND VELOCITY", "knots", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"AI TRAFFIC CURRENT AIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
+    GSDefinitions::DatumSpec{"AI TRAFFIC FROMAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
+    GSDefinitions::DatumSpec{"AI TRAFFIC TOAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
+    GSDefinitions::DatumSpec{"AI TRAFFIC ASSIGNED PARKING", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDefinitions::DatumSpec{"AI TRAFFIC STATE", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDefinitions::DatumSpec{"AI TRAFFIC ETD", "seconds", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"AI TRAFFIC ETA", "seconds", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"LIGHT BEACON", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"LIGHT NAV", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"LIGHT TAXI", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"BRAKE PARKING POSITION", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT32},
 
-    DatumSpec{"TITLE", "", SIMCONNECT_DATATYPE_STRING32},
-    DatumSpec{"IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT8},    
-    DatumSpec{"NUMBER OF ENGINES", "number", SIMCONNECT_DATATYPE_INT8}, 
-    DatumSpec{"PUSHBACK ATTACHED", "bool", SIMCONNECT_DATATYPE_INT8},
-    DatumSpec{"PUSHBACK WAIT", "bool", SIMCONNECT_DATATYPE_INT8},   
-    DatumSpec{"WING SPAN", "meters", SIMCONNECT_DATATYPE_INT32},
-    DatumSpec{"PUSHBACK CONTACTX", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"PUSHBACK CONTACTZ", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    
+    GSDefinitions::DatumSpec{"TITLE", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDefinitions::DatumSpec{"IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"NUMBER OF ENGINES", "number", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"PUSHBACK ATTACHED", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"PUSHBACK WAIT", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"WING SPAN", "meters", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDefinitions::DatumSpec{"PUSHBACK CONTACTX", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"PUSHBACK CONTACTZ", "meters", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_Aircraft_Dynamic{
-    DatumSpec{"INTERACTIVE POINT TYPE EX1", "enum", SIMCONNECT_DATATYPE_INT32},
-    DatumSpec{"INTERACTIVE POINT POSX EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"INTERACTIVE POINT POSY EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"INTERACTIVE POINT POSZ EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    DatumSpec{"INTERACTIVE POINT HEADING EX1", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"INTERACTIVE POINT TYPE EX1", "enum", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSX EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSY EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSZ EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"INTERACTIVE POINT HEADING EX1", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 void GSAircraft::InitDatums(GSSimConnect& handler)
 {
-    bool rc = true;
-    for (const DatumSpec &datum : GSDatums_Aircraft) {
-        rc &= handler.InvokeAddDatum(GSDefinitions::GSDefID_Aircraft, datum.name, datum.units, datum.type);
-    }
-
-    if (!rc) {
-        GSLogStream::LogError("Unable to add definitions for GSAircraft");
-        return;
-    }
+    handler.InvokeAddDatums(GSDatums_Aircraft, GSDefinitions::GSDefID_Aircraft);
 
     for (std::size_t index = 0; index < GSAircraft::s_MaxInteractivePnts; ++index) {
         const std::string suffix = ":" + std::to_string(index);
         for (std::size_t dt = 0; dt < GSDatums_Aircraft_Dynamic.size(); ++dt) {
-            const DatumSpec& datum = GSDatums_Aircraft_Dynamic[dt];
-            rc &= handler.InvokeAddDatum(GSDefinitions::GSDefID_Aircraft, datum.name, datum.units, datum.type);
+            const GSDefinitions::DatumSpec& datum = GSDatums_Aircraft_Dynamic[dt];
+            handler.InvokeAddDatum(GSDefinitions::GSDefID_Aircraft, (datum.name + suffix).c_str(), datum.units, datum.type);
         }
-    }
-
-    if (!rc) {
-        GSLogStream::LogError("Unable to add dynamic definitions for GSAircraft");
     }
 }
 
@@ -87,6 +74,7 @@ void GSAircraft::CopyDynInfo(const GSAircraft& another)
 void GSAircraft::LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry)
 {
     GSSimConnect::ReadMsgData(&m_rawData, AIRCRAFT_WIREDATA_DYNSIZE, entry);
+    objectID = entry.dwObjectID;
 }
 
 void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry)
@@ -146,9 +134,9 @@ bool GSAircraft::IsParkedActive() const
             std::abs(m_rawData.groundSpeedKnots) < 1.0);
 }
 
-double GSAircraft::LateralDistanceFrom(const GSAircraft* ac) const
+double GSAircraft::LateralDistanceMetersFrom(const GSAircraft& ac) const
 {
-    return GSGeography::DistanceMeters(m_rawData.latitude, m_rawData.longitude, ac->m_rawData.latitude, ac->m_rawData.longitude);
+    return GSGeography::DistanceMeters(GetLongLat(), ac.GetLongLat());
 }
 
 const char *GSAircraft::InteractivePointTypeName(std::int32_t type)
@@ -177,28 +165,27 @@ const char *GSAircraft::AircraftSizeName(GSAircraft::AircraftSizeCategory catego
 
 void GSAircraft::Print() const
 {
-    GSLogStream::Log() << "============================================================================" << std::endl;
-    GSLogStream::Log() << "Aircraft #" << objectID << std::endl;
+    GSLogStream::Log() << "============================================================================";
+    GSLogStream::Log() << "Aircraft #" << objectID;
     GSLogStream::Log() << "  atc=" << GSLogStream::CharArrayToString(m_rawData.atcId)
             << "  airline=" << GSLogStream::CharArrayToString(m_rawData.atcAirline)
             << "  flight=" << GSLogStream::CharArrayToString(m_rawData.atcFlightNumber)
-            << "  title=" << GSLogStream::CharArrayToString(m_rawData.title) << std::endl;
+            << "  title=" << GSLogStream::CharArrayToString(m_rawData.title);
     GSLogStream::Log() << "  cat=" << AircraftSizeName(m_category)
             << "  lat=" << m_rawData.latitude << "  lon=" << m_rawData.longitude
             << "  altFt=" << m_rawData.altitudeFeet << "  gndAltFt=" << m_rawData.groundAltitudeFeet
-            << "  hdgDeg=" << m_rawData.headingDegrees << "  gndSpdKt=" << m_rawData.groundSpeedKnots << std::endl;
+            << "  hdgDeg=" << m_rawData.headingDegrees << "  gndSpdKt=" << m_rawData.groundSpeedKnots;
     GSLogStream::Log() << "  from=" << GSLogStream::CharArrayToString(m_rawData.fromAirport)
             << "  to=" << GSLogStream::CharArrayToString(m_rawData.toAirport) 
-            << "  curr=" << GSLogStream::CharArrayToString(m_rawData.currentAirport) << std::endl;
-    GSLogStream::Log() << "  runway=" << GSLogStream::CharArrayToString(m_rawData.assignedRunway)
-            << "  parking=" << GSLogStream::CharArrayToString(m_rawData.assignedParking)
+            << "  curr=" << GSLogStream::CharArrayToString(m_rawData.currentAirport);
+    GSLogStream::Log() << "  parking=" << GSLogStream::CharArrayToString(m_rawData.assignedParking)
             << "  state=" << GSLogStream::CharArrayToString(m_rawData.trafficState)
-            << "  etdSec=" << m_rawData.etdSeconds << "  etaSec=" << m_rawData.etaSeconds << std::endl;
+            << "  etdSec=" << m_rawData.etdSeconds << "  etaSec=" << m_rawData.etaSeconds;
     GSLogStream::Log() << "  lights beacon=" << m_rawData.lightBeacon
             << "  nav=" << static_cast<int>(m_rawData.lightNav)
             << "  taxi=" << static_cast<int>(m_rawData.lightTaxi)
             << "  parkBrake=" << static_cast<int>(m_rawData.parkingBrake)
-            << "  onGround=" << static_cast<int>(m_rawData.onGround) << std::endl;
+            << "  onGround=" << static_cast<int>(m_rawData.onGround);
     GSLogStream::Log() << "  wingSpanM=" << m_rawData.wingSpanMeters
             << "  engines=" << static_cast<int>(m_rawData.numberOfEngines)
             << "  pushbackAttached=" << static_cast<int>(m_rawData.pushbackAttached)

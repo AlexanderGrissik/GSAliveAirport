@@ -5,38 +5,42 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-SIMCONNECT_DATA_INITPOSITION GSGeography::RelativePosition(double headingDegrees, double longitude, double latitude, double altitudeFeet, double forwardMeters, double rightMeters)
-{
-    const double heading = headingDegrees * s_degreesToRadians;
-    const double northMeters = forwardMeters * std::cos(heading) - rightMeters * std::sin(heading);
-    const double eastMeters = forwardMeters * std::sin(heading) + rightMeters * std::cos(heading);
-    SIMCONNECT_DATA_INITPOSITION position{};
-    position.Latitude = latitude + northMeters / MetersPerDegreeLat();
-    position.Longitude = longitude + eastMeters / MetersPerDegreeLong(latitude);
-    position.Altitude = altitudeFeet;
-    position.Heading = headingDegrees;
-    position.OnGround = 1;
-    return position;
-}
+double GSGeography::PI = std::acos(-1.0);
+double GSGeography::DegToRad = GSGeography::PI / 180.0;
+double GSGeography::RadToDeg = 180.0 / GSGeography::PI;
+double GSGeography::MetersPerLatitudeDegree = 111'320.0;
 
-double GSGeography::HeadingTowardRelativeOrigin(double referenceHeadingDegrees, double forwardMeters, double rightMeters)
+double GSGeography::MetersPerDegreeLat()
 {
-    if (std::hypot(forwardMeters, rightMeters) < 0.001) { return NormalizeDegrees(referenceHeadingDegrees); }
-    const double relativeHeading = std::atan2(-rightMeters, -forwardMeters) * s_radiansToDegrees;
-    return NormalizeDegrees(referenceHeadingDegrees + relativeHeading);
+    return MetersPerLatitudeDegree;
 }
 
 double GSGeography::MetersPerDegreeLong(double latitude)
 {
-    return s_metersPerLatitudeDegree * std::cos(latitude * s_degreesToRadians);
+    return MetersPerLatitudeDegree * std::cos(latitude * DegToRad);
 }
 
-double GSGeography::DistanceMeters(double latitudeA, double longitudeA, double latitudeB, double longitudeB)
+double GSGeography::DistanceMeters(const GSCoord& coordA, const GSCoord& coordB)
 {
-    const double latitudeMeters = (latitudeB - latitudeA) * MetersPerDegreeLat();
-    const double averageLatitude = (latitudeA + latitudeB) / 2.0;
-    const double longitudeMeters = (longitudeB - longitudeA) * MetersPerDegreeLong(averageLatitude);
+    const double latitudeMeters = (coordB.Lat() - coordA.Lat()) * MetersPerDegreeLat();
+    const double averageLatitude = (coordA.Lat() + coordB.Lat()) / 2.0;
+    const double longitudeMeters = (coordB.Long() - coordA.Long()) * MetersPerDegreeLong(averageLatitude);
     return std::hypot(latitudeMeters, longitudeMeters);
+}
+
+GSCoord GSGeography::RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters)
+{
+    const double heading = mainHeadingDegrees * DegToRad;
+    const double doorLatitude = coord.Lat() * DegToRad;
+
+    // Move the truck origin opposite to its contact-point offset.
+    const double northOffsetMeters = zOffsetMeters * std::cos(heading);
+    const double eastOffsetMeters = zOffsetMeters * std::sin(heading);
+
+    double newPosLat = coord.Lat() + (northOffsetMeters / EARTH_RADIUS_METERS) * RadToDeg;
+    double newPosLong = coord.Long() + (eastOffsetMeters / (EARTH_RADIUS_METERS * std::cos(doorLatitude))) * RadToDeg;
+
+    return {newPosLong, newPosLat};
 }
 
 } // namespace NS_GSLiveAirportMSFS

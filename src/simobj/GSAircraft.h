@@ -8,6 +8,7 @@
 #include <SimConnect.h>
 #pragma warning(pop)
 
+#include "../GSCoord.h"
 #include <array>
 #include <cstddef>
 #include <chrono>
@@ -26,7 +27,7 @@ class GSAircraft
 {
 public:
 
-    enum class AircraftSizeCategory
+    enum AircraftSizeCategory
     {
         Small,
         Medium,
@@ -54,9 +55,9 @@ public:
         float altitudeFeet{};
         float groundAltitudeFeet{};
         float headingDegrees{};
+        float alt_abv_grnd_minus_cg{};
         float groundSpeedKnots{};
         std::array<char, 8> currentAirport{};
-        std::array<char, 8> assignedRunway{};
         std::array<char, 8> fromAirport{};
         std::array<char, 8> toAirport{};
         std::array<char, 32> assignedParking{};
@@ -64,17 +65,17 @@ public:
         std::int32_t etdSeconds{};
         std::int32_t etaSeconds{};
         std::int32_t lightBeacon{};
-        std::int8_t lightNav{};
-        std::int8_t lightTaxi{};
-        std::int8_t parkingBrake{};
-        std::int8_t onGround{};
+        std::int32_t lightNav{};
+        std::int32_t lightTaxi{};
+        std::int32_t parkingBrake{};
+        std::int32_t onGround{};
 
         std::array<char, 32> title{};
-        std::int8_t isUser{};
-        std::int8_t numberOfEngines{};
-        std::int8_t pushbackAttached{};
-        std::int8_t pushbackWait{};
-        std::int32_t wingSpanMeters{};
+        std::int32_t isUser{};
+        std::int32_t numberOfEngines{};
+        std::int32_t pushbackAttached{};
+        std::int32_t pushbackWait{};
+        double wingSpanMeters{};
         float pushbackContactXMeters{};
         float pushbackContactZMeters{};
 
@@ -99,10 +100,17 @@ public:
     bool operator!=(const GSAircraft& another) const { return !(*this == another); }
 
     bool IsParkedActive() const;
-    double LateralDistanceFrom(const GSAircraft* ac) const;
+    double LateralDistanceMetersFrom(const GSAircraft& ac) const;
 
     void Print() const;
+    const AircraftWireData& GetRawData() const { return m_rawData; }
+    AircraftSizeCategory GetCategory() const { return m_category; }
+    DWORD GetObjID() const { return objectID; }
+    GSCoord GetLongLat() const { return {m_rawData.longitude,m_rawData.latitude}; }
+    bool IsTaxing() const { return false; }
+    bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
 
+private:
     AircraftWireData m_rawData;
     
     using InterPntRef = std::reference_wrapper<const InteractivePointWireData>;

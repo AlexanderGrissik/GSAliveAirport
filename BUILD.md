@@ -8,6 +8,9 @@ Open PowerShell in this directory and run:
 
 & 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSLiveAirportMSFS.vcxproj /t:Build /p:Configuration=Debug /p:Platform=x64 /m /v:minimal
 
+Single file and error:
+$log = & 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSLiveAirportMSFS.vcxproj /t:ClCompile /p:Configuration=Debug /p:Platform=x64 /p:SelectedFiles=src\GSSimConnect.cpp /m /v:minimal 2>&1; $log | Select-String '\berror\b' | Select-Object -First 1
+
 The executable is written to:
 
 ```text

@@ -44,13 +44,13 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
     case AT::Status:
         break;
     case AT::Tracked:
-        PostACTrackCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_ALL);
+        PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_ALL);
         break;
     case AT::Aircraft1:
-        PostACTrackCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_1KM);
+        PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_1KM);
         break;
     case AT::Parked:
-        PostACTrackCommandAndWait(GSAircraftTrackerThread::CMD_PRINT_AIRCRAFT_PARKED);
+        PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_PARKED);
         break;
     case AT::Ground:
         break;
@@ -59,13 +59,13 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
     case AT::Log: {
         const bool enabled = !GSLogStream::LoggingEnabled();
         GSLogStream::SetLoggingEnabled(enabled);
-        std::cout << "Logging " << (enabled ? "enabled" : "disabled") << std::endl;
+        std::cout << "Logging " << (enabled ? "enabled" : "disabled");
         break;
     }
     case AT::Reload:
         break;
     case AT::Unknown:
-        std::cout << "Unknown command or invalid arguments. Type 'help'" << std::endl;
+        std::cout << "Unknown command or invalid arguments. Type 'help'";
         break;
     }
 }
@@ -73,8 +73,7 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
 void GSLiveAirportMSFSApp::PostACTrackCommandAndWait(int cmdId) 
 {
     GSCmdQueue replyQueue; 
-    std::unique_ptr<GSCommand> cmd = std::make_unique<GSCommand>(cmdId, replyQueue);
-    
+    CmdPtr cmd = std::make_unique<GSCommand>(cmdId, replyQueue);
     m_aircraftTracker.PostCommand(cmd);
     replyQueue.Pop();
 }

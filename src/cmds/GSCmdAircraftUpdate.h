@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GSCommand.h"
-#include "../GSAircraft.h"
+#include "../simobj/GSAircraft.h"
 
 namespace NS_GSLiveAirportMSFS
 {

@@ -98,7 +98,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\GSAircraft.cpp" />
     <ClCompile Include="src\GSAircraftTrackerThread.cpp" />
     <ClCompile Include="src\GSConsole.cpp" />
     <ClCompile Include="src\GSGeography.cpp" />
@@ -106,20 +105,31 @@
     <ClCompile Include="src\GSLogStream.cpp" />
     <ClCompile Include="src\GSSimConnect.cpp" />
     <ClCompile Include="src\GSSpawnerThread.cpp" />
+    <ClCompile Include="src\simobj\GSAircraft.cpp" />
+    <ClCompile Include="src\simobj\GSAircraftGround.cpp" />
+    <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp" />
+    <ClCompile Include="src\simobj\GSSimObj.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\GSAircraft.h" />
     <ClInclude Include="src\GSAircraftTrackerThread.h" />
-    <ClInclude Include="src\cmds\GSCommand.h" />
-    <ClInclude Include="src\cmds\GSCmdAircraftUpdate.h" />
     <ClInclude Include="src\GSConsole.h" />
+    <ClInclude Include="src\GSCoord.h" />
     <ClInclude Include="src\GSDefinitions.h" />
     <ClInclude Include="src\GSGeography.h" />
     <ClInclude Include="src\GSLiveAirportMSFSApp.h" />
     <ClInclude Include="src\GSLogStream.h" />
     <ClInclude Include="src\GSQuickQueue.h" />
+    <ClInclude Include="src\GSRequest.h" />
     <ClInclude Include="src\GSSimConnect.h" />
     <ClInclude Include="src\GSSpawnerThread.h" />
+    <ClInclude Include="src\cmds\GSCommand.h" />
+    <ClInclude Include="src\cmds\GSCmdAircraftUpdate.h" />
+    <ClInclude Include="src\cmds\GSCmdReq.h" />
+    <ClInclude Include="src\simobj\GSAircraft.h" />
+    <ClInclude Include="src\simobj\GSAircraftGround.h" />
+    <ClInclude Include="src\simobj\GSAircraftGroundSmall.h" />
+    <ClInclude Include="src\simobj\GSCateringCartMSFS.h" />
+    <ClInclude Include="src\simobj\GSSimObj.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

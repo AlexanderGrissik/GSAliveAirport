@@ -37,3 +37,7 @@ Compiling, building, testing, or diagnosing code is not authorization to modify 
 ## 6. Compile/Build Output
 
 If the user asks to compile or build and there are errors or warnings, report them and stop. Do not fix them. Wait for the user to say what to do next.
+
+## 7. Execute Exactly What Is Requested
+
+Execute exactly what the user specifies, nothing more, nothing less. No assumed next steps, no "while I'm here" extras, no unrequested fixes. Each action only when you explicitly request it.
