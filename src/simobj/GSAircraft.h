@@ -40,7 +40,7 @@ public:
     {
         std::int32_t type{};
         float posXMeter{};
-        float posYMeter{};
+        float posYFeet{};
         float posZMeter{};
         float headingDegrees{};
     };
@@ -55,6 +55,7 @@ public:
         float altitudeFeet{};
         float groundAltitudeFeet{};
         float headingDegrees{};
+        float alt_abv_grnd{};
         float alt_abv_grnd_minus_cg{};
         float groundSpeedKnots{};
         std::array<char, 8> currentAirport{};
@@ -69,9 +70,9 @@ public:
         std::int32_t lightTaxi{};
         std::int32_t parkingBrake{};
         std::int32_t onGround{};
+        std::int32_t isUser{};
 
         std::array<char, 32> title{};
-        std::int32_t isUser{};
         std::int32_t numberOfEngines{};
         std::int32_t pushbackAttached{};
         std::int32_t pushbackWait{};
@@ -82,6 +83,8 @@ public:
         std::array<InteractivePointWireData, 12> interactivePoints{};
     };
     #pragma pack(pop)
+
+    using InterPntRef = std::reference_wrapper<const InteractivePointWireData>;
 
     static constexpr std::size_t AIRCRAFT_WIREDATA_DYNSIZE = offsetof(AircraftWireData, title);
     static constexpr std::size_t s_MaxInteractivePnts = 12;
@@ -107,13 +110,15 @@ public:
     AircraftSizeCategory GetCategory() const { return m_category; }
     DWORD GetObjID() const { return objectID; }
     GSCoord GetLongLat() const { return {m_rawData.longitude,m_rawData.latitude}; }
-    bool IsTaxing() const { return false; }
+    bool IsTaxing() const { return m_trafficState == "STATE_SIMPLE_TAXI"; }
     bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
+
+    std::optional<InterPntRef> GetRearRightDoor() const { return rearRightDoorPnt; }
+    std::optional<InterPntRef> GetFrontRightDoor() const { return frontRightDoorPnt; }
 
 private:
     AircraftWireData m_rawData;
-    
-    using InterPntRef = std::reference_wrapper<const InteractivePointWireData>;
+        
     std::optional<InterPntRef> cargoDoorFrontPnt;
     std::optional<InterPntRef> cargoDoorBackPnt;
     std::optional<InterPntRef> rearLeftDoorPnt;
@@ -124,6 +129,7 @@ private:
     std::optional<InterPntRef> fuelHosePnt;
 
     AircraftSizeCategory m_category;
+    std::string m_trafficState;
     DWORD objectID{};
 };
 

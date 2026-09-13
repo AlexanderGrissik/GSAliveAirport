@@ -1,8 +1,8 @@
 #include "GSSpawnerThread.h"
 #include "GSLogStream.h"
 #include "simobj/GSAircraftGroundSmall.h"
-#include "simobj/GSAircraftGroundMedium"
-#include "simobj/GSAircraftGroundLarge"
+#include "simobj/GSAircraftGroundMedium.h"
+#include "simobj/GSAircraftGroundLarge.h"
 #include "simobj/GSAircraftGroundXL.h"
 #include "simobj/GSCateringCartMSFS.h"
 #include "cmds/GSCmdAircraftUpdate.h"
@@ -56,19 +56,15 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
     switch (cmd.GetCmdID()) {
     case GSDefinitions::CMD_SPAWNER_AIRCRAFT_ADDED:
         NewAircraft(*static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraft());
-        GSLogStream::Log("CMD_SPAWNER_AIRCRAFT_ADDED");
         break;
     case GSDefinitions::CMD_SPAWNER_AIRCRAFT_REMOVED:
         RemoveAircraft(*static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraft());
-        GSLogStream::Log("CMD_SPAWNER_AIRCRAFT_REMOVED");
         break;
     case GSDefinitions::CMD_SPAWNER_AIRCRAFT_MODIFIED:
         ModAircraft(*static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraft());
-        GSLogStream::Log("CMD_SPAWNER_AIRCRAFT_MODIFIED");
         break;
     case GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER:
         UserAircraft(*static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraft());
-        GSLogStream::Log("CMD_SPAWNER_AIRCRAFT_USER");
         break;
     default:
         GSLogStream::LogError("GSSpawnerThread - Unexpected cmd: ") << cmd.GetCmdID();
@@ -120,9 +116,11 @@ void GSSpawnerThread::ModAircraft(const GSAircraft& aircraft)
 
 void GSSpawnerThread::RemoveAircraft(const GSAircraft& aircraft)
 {
-    m_groundPendingUpdate.erase(aircraft.GetObjID());
-    m_groundPendingDelete.insert(m_groundUnspawned.extract(aircraft.GetObjID()));
-    m_groundPendingDelete.insert(m_groundSpawned.extract(aircraft.GetObjID()));
+    auto objID = aircraft.GetObjID();
+    m_groundPendingUpdate.erase(objID);
+    m_groundPendingDelete.insert(m_groundUnspawned.extract(objID));
+    m_groundPendingDelete.insert(m_groundSpawned.extract(objID));
+    GSLogStream::LogError("GSSpawnerThread::RemoveAircraft - AircraftGround Removed: ") << objID;
 }
 
 void GSSpawnerThread::UserAircraft(const GSAircraft& aircraft)
@@ -159,6 +157,7 @@ void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd, const GSAircraft
         grnd.UpdateAircraft(aircraftUpdated);
         if (SpawnCond(aircraftUpdated)) {
             grnd.Spawn();
+            GSLogStream::Log("GSSpawnerThread - New AircraftGround: ") << aircraftUpdated.GetObjID();
             m_groundSpawned.insert(m_groundUnspawned.extract(aircraftUpdated.GetObjID()));
         }
     } else { // DESPAWNING
@@ -189,7 +188,7 @@ void GSSpawnerThread::CheckForPendingUpdate()
     decltype(m_groundPendingUpdate) temp;
     temp.swap(m_groundPendingUpdate);
 
-    for (auto itr : temp) {
+    for (auto& itr : temp) {
         ModAircraft(itr.second);
     }
 }

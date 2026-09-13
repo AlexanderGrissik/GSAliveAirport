@@ -20,7 +20,8 @@ constexpr std::array GSDatums_Aircraft{
     GSDefinitions::DatumSpec{"PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
     GSDefinitions::DatumSpec{"GROUND ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
     GSDefinitions::DatumSpec{"PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"PLANE ALT ABOVE GROUND MINUS CG", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"PLANE ALT ABOVE GROUND", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"PLANE ALT ABOVE GROUND MINUS CG", "feet", SIMCONNECT_DATATYPE_FLOAT32},
     GSDefinitions::DatumSpec{"GROUND VELOCITY", "knots", SIMCONNECT_DATATYPE_FLOAT32},
     GSDefinitions::DatumSpec{"AI TRAFFIC CURRENT AIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
     GSDefinitions::DatumSpec{"AI TRAFFIC FROMAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
@@ -34,9 +35,9 @@ constexpr std::array GSDatums_Aircraft{
     GSDefinitions::DatumSpec{"LIGHT TAXI", "bool", SIMCONNECT_DATATYPE_INT32},
     GSDefinitions::DatumSpec{"BRAKE PARKING POSITION", "bool", SIMCONNECT_DATATYPE_INT32},
     GSDefinitions::DatumSpec{"SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDefinitions::DatumSpec{"IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT32},
 
     GSDefinitions::DatumSpec{"TITLE", "", SIMCONNECT_DATATYPE_STRING32},
-    GSDefinitions::DatumSpec{"IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT32},
     GSDefinitions::DatumSpec{"NUMBER OF ENGINES", "number", SIMCONNECT_DATATYPE_INT32},
     GSDefinitions::DatumSpec{"PUSHBACK ATTACHED", "bool", SIMCONNECT_DATATYPE_INT32},
     GSDefinitions::DatumSpec{"PUSHBACK WAIT", "bool", SIMCONNECT_DATATYPE_INT32},
@@ -47,9 +48,9 @@ constexpr std::array GSDatums_Aircraft{
 
 constexpr std::array GSDatums_Aircraft_Dynamic{
     GSDefinitions::DatumSpec{"INTERACTIVE POINT TYPE EX1", "enum", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSX EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSX EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
     GSDefinitions::DatumSpec{"INTERACTIVE POINT POSY EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSZ EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSZ EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
     GSDefinitions::DatumSpec{"INTERACTIVE POINT HEADING EX1", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
@@ -75,6 +76,7 @@ void GSAircraft::LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &e
 {
     GSSimConnect::ReadMsgData(&m_rawData, AIRCRAFT_WIREDATA_DYNSIZE, entry);
     objectID = entry.dwObjectID;
+    m_trafficState = m_rawData.trafficState.data();
 }
 
 void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry)
@@ -205,7 +207,7 @@ void GSAircraft::Print() const
         ++validPoints;
         std::ostringstream item;
         item << "IP" << ipIndex++ << ": \"" << InteractivePointTypeName(p.type)
-             << "\", " << p.posXMeter << "," << p.posYMeter << "," << p.posZMeter
+             << "\", " << p.posXMeter << "," << p.posYFeet << "," << p.posZMeter
              << ", " << p.headingDegrees;
         if (onLine > 0) ipLine += "   ";
         ipLine += item.str();

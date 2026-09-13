@@ -8,8 +8,9 @@ namespace NS_GSLiveAirportMSFS
 class GSAircraftGroundXL : public GSAircraftGround
 {
 public:
-    GSAircraftGroundXL(const GSAircraft& aircraft, GSSimConnect& simConn)
-        : GSAircraftGround(aircraft, simConn) {}
+    using GSAircraftGround::GSAircraftGround;
+
+    void BuildObjs() override;
 };
 
 } // namespace NS_GSLiveAirportMSFS

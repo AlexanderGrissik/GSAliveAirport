@@ -24,15 +24,17 @@ public:
     static double RadToDeg;
     static double MetersPerLatitudeDegree;
 
-    [[nodiscard]] static double NormalizeDegrees(double degrees) { return std::fmod(degrees + 360.0, 360.0); }
+    [[nodiscard]] static double NormDeg(double degrees);
 
-    static double DistanceMeters(const GSCoord& coordA, const GSCoord& coordB);
+    [[nodiscard]] static double DistanceMeters(const GSCoord& coordA, const GSCoord& coordB);
 
-    static GSCoord RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters);
+    [[nodiscard]] static GSCoord RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters);
 
-    static double MetersPerDegreeLat();
+    [[nodiscard]] static double MetersPerDegreeLat();
 
-    static double MetersPerDegreeLong(double latitude);
+    [[nodiscard]] static double MetersPerDegreeLong(double latitude);
+
+    [[nodiscard]] static GSCoord RelativePosition(double headingDeg, const GSCoord coordA, double YMeters, double XMeters);
 };
 
 } // namespace NS_GSLiveAirportMSFS

@@ -1,55 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{3BCE1B95-ED4A-4DDB-B9BD-5A65C4F6AEE1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\simobj">
-      <UniqueIdentifier>{8B267A4A-3EF5-4BC5-88A1-1D83E09D5C07}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{0FA665F3-0879-4C65-9B59-A7BF77A6BA7A}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\cmds">
+    <Filter Include="cmds">
       <UniqueIdentifier>{A83A264E-3C64-4D45-9D3F-B3F6D39C4E6D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\simobj">
+    <Filter Include="simobj">
       <UniqueIdentifier>{5DD2C2D3-D1F0-4737-87EA-CC7F2448D855}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\GSAircraftTrackerThread.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="src\GSConsole.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="src\GSGeography.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="src\GSLiveAirportMSFSApp.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="src\GSLogStream.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="src\GSSimConnect.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="src\GSSpawnerThread.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="src\simobj\GSAircraft.cpp"><Filter>Source Files\simobj</Filter></ClCompile>
-    <ClCompile Include="src\simobj\GSAircraftGround.cpp"><Filter>Source Files\simobj</Filter></ClCompile>
-    <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp"><Filter>Source Files\simobj</Filter></ClCompile>
-    <ClCompile Include="src\simobj\GSSimObj.cpp"><Filter>Source Files\simobj</Filter></ClCompile>
+    <ClCompile Include="src\GSSpawnerThread.cpp" />
+    <ClCompile Include="src\GSAircraftTrackerThread.cpp" />
+    <ClCompile Include="src\GSConsole.cpp" />
+    <ClCompile Include="src\GSGeography.cpp" />
+    <ClCompile Include="src\GSLiveAirportMSFSApp.cpp" />
+    <ClCompile Include="src\GSLogStream.cpp" />
+    <ClCompile Include="src\GSSimConnect.cpp" />
+    <ClCompile Include="src\simobj\GSAircraft.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSAircraftGround.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSSimObj.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSAircraftGroundLarge.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSAircraftGroundMedium.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSAircraftGroundSmall.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSAircraftGroundXL.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\GSAircraftTrackerThread.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSConsole.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSCoord.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSDefinitions.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSGeography.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSLiveAirportMSFSApp.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSLogStream.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSQuickQueue.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSRequest.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSSimConnect.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\GSSpawnerThread.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="src\cmds\GSCommand.h"><Filter>Header Files\cmds</Filter></ClInclude>
-    <ClInclude Include="src\cmds\GSCmdAircraftUpdate.h"><Filter>Header Files\cmds</Filter></ClInclude>
-    <ClInclude Include="src\cmds\GSCmdReq.h"><Filter>Header Files\cmds</Filter></ClInclude>
-    <ClInclude Include="src\simobj\GSAircraft.h"><Filter>Header Files\simobj</Filter></ClInclude>
-    <ClInclude Include="src\simobj\GSAircraftGround.h"><Filter>Header Files\simobj</Filter></ClInclude>
-    <ClInclude Include="src\simobj\GSAircraftGroundSmall.h"><Filter>Header Files\simobj</Filter></ClInclude>
-    <ClInclude Include="src\simobj\GSCateringCartMSFS.h"><Filter>Header Files\simobj</Filter></ClInclude>
-    <ClInclude Include="src\simobj\GSSimObj.h"><Filter>Header Files\simobj</Filter></ClInclude>
+    <ClInclude Include="src\cmds\GSCommand.h">
+      <Filter>cmds</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cmds\GSCmdAircraftUpdate.h">
+      <Filter>cmds</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cmds\GSCmdReq.h">
+      <Filter>cmds</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSAircraft.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSAircraftGround.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSAircraftGroundSmall.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSCateringCartMSFS.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSSimObj.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GSAircraftTrackerThread.h" />
+    <ClInclude Include="src\GSConsole.h" />
+    <ClInclude Include="src\GSCoord.h" />
+    <ClInclude Include="src\GSDefinitions.h" />
+    <ClInclude Include="src\GSGeography.h" />
+    <ClInclude Include="src\GSLiveAirportMSFSApp.h" />
+    <ClInclude Include="src\GSLogStream.h" />
+    <ClInclude Include="src\GSQuickQueue.h" />
+    <ClInclude Include="src\GSRequest.h" />
+    <ClInclude Include="src\GSSimConnect.h" />
+    <ClInclude Include="src\GSSpawnerThread.h" />
+    <ClInclude Include="src\simobj\GSAircraftGroundXL.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSAircraftGroundLarge.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSAircraftGroundMedium.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

@@ -15,6 +15,11 @@ class GSSimObj
 {
 public:
 
+    struct IObjUpdate {
+        virtual void OnSpawned(bool ok, GSSimObj& obj) = 0;
+        virtual void OnDespawned(bool ok, GSSimObj& obj) = 0;
+    };
+
     class GSSimObjReq : public GSRequest {
     public:
         GSSimObjReq(GSSimConnect& simHandle, GSSimObj& simObj): GSRequest(simHandle), m_simObj(simObj) {}
@@ -22,33 +27,33 @@ public:
         GSSimObj& m_simObj;
     };
 
-    GSSimObj(GSSimConnect& simHandle, GSAircraft& aircraft): m_simHandle(simHandle), m_aircraft(aircraft) {}
-    virtual ~GSSimObj();
+    GSSimObj(GSSimConnect& simHandle, GSAircraft& aircraft, IObjUpdate& iUpdate): m_simHandle(simHandle), m_aircraft(aircraft), m_iUpdate(iUpdate) {}
+    virtual ~GSSimObj() {}
 
     static void InitDatums(GSSimConnect& handler);
     void Spawn();
     void Despawn();
     void SpawnAttached();
+    virtual bool PreSpawn() = 0;
 
     const std::string& GetTitle() const { return m_title; }
     const SIMCONNECT_DATA_INITPOSITION& GetInitPos() const { return m_initPos; }
     SIMCONNECT_OBJECT_ID GetSimObjectID() const { return m_simObjectID; }
-    bool IsInProgress() const { return m_isInProgress; }
 
     void SetSimObjectID(DWORD id) { m_simObjectID = static_cast<SIMCONNECT_OBJECT_ID>(id); }
-    void SetInProgress(bool v) { m_isInProgress = v; }
+    void OnSpawned(bool ok) { m_iUpdate.OnSpawned(ok, *this); }
+    void OnDespawned(bool ok) { m_iUpdate.OnDespawned(ok, *this); }
 
 protected:
 
     virtual void OnCreated() = 0;
-    virtual void PreSpawn() = 0;
 
     GSSimConnect& m_simHandle;
     GSAircraft& m_aircraft;
     SIMCONNECT_OBJECT_ID m_simObjectID = 0;
-    bool m_isInProgress = false;
+    IObjUpdate& m_iUpdate;
     std::string m_title;
-    SIMCONNECT_DATA_INITPOSITION m_initPos;
+    SIMCONNECT_DATA_INITPOSITION m_initPos{};
     std::vector<std::unique_ptr<GSSimObj>> m_attached; 
 
     class GSReqCreate : public GSSimObjReq {

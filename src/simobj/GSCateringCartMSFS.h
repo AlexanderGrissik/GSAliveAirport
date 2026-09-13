@@ -25,7 +25,7 @@ public:
     };
     #pragma pack(pop)
 
-    GSCateringCartMSFS(GSSimConnect& simHandle, GSAircraft& aircraft): GSSimObj(simHandle, aircraft) {}
+    using GSSimObj::GSSimObj;
 
     static void InitDatums(GSSimConnect& handler);
     void SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
@@ -33,9 +33,9 @@ public:
 private:
 
     void OnCreated() override;
-    void PreSpawn() override;
+    bool PreSpawn() override;
 
-    float m_doorPosElev;
+    float m_doorPosElev = 0.0f;
 
     class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {
     public:
@@ -47,14 +47,14 @@ private:
             if (message->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
                 static_cast<GSCateringCartMSFS&>(m_simObj).SetFinalPositionAndState(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message));
             } else {
-                m_simObj.SetInProgress(false);
                 GSLogStream::LogError("GSCateringCartMSFS::GSReqGetDataSimObj::OnMessage Unexpected Message: ") << message->dwID;
             }
+            m_simObj.OnSpawned(true);
             return true;
         }
 
         void OnException(SIMCONNECT_RECV_EXCEPTION *message) override {
-            m_simObj.SetInProgress(false);
+            m_simObj.OnSpawned(true);
             GSLogStream::LogError("GSCateringCartMSFS::GSReqGetDataSimObj::OnException: ") << message->dwException << ", " << message->dwIndex;
         }
     };

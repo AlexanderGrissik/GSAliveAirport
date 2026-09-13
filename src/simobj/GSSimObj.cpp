@@ -14,7 +14,6 @@ void GSSimObj::InitDatums(GSSimConnect& handler)
 
 void GSSimObj::Spawn()
 {
-    PreSpawn();
     m_simHandle.PostReqCommand(new GSReqCreate(m_simHandle, *this));
 }
 
@@ -41,9 +40,8 @@ GSRequest::SendResult GSSimObj::GSReqCreate::Process()
     if (!rc.m_simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqCreate::Process Failed call: ") << rc.m_simRC.rc;
         rc.m_keep = false;
-    } else {
-        m_simObj.SetInProgress(true);
-    }
+        m_simObj.OnSpawned(false);
+    } 
 
     return rc;
 }
@@ -55,7 +53,7 @@ bool GSSimObj::GSReqCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSiz
         m_simObj.SetSimObjectID(msg->dwObjectID);
         m_simObj.OnCreated();
     } else {
-        m_simObj.SetInProgress(false);
+        m_simObj.OnSpawned(false);
         GSLogStream::LogError("GSSimObjReq::GSReqCreate::OnMessage Unexpected Message: ") << message->dwID;
     }
     (void)messageSize;
@@ -64,7 +62,7 @@ bool GSSimObj::GSReqCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSiz
 
 void GSSimObj::GSReqCreate::OnException(SIMCONNECT_RECV_EXCEPTION *message)
 {
-    m_simObj.SetInProgress(false);
+    m_simObj.OnSpawned(false);
     GSLogStream::LogError("GSSimObjReq::GSReqCreate::OnException: ") << message->dwException << ", " << message->dwIndex;
 }
 
@@ -75,6 +73,7 @@ GSRequest::SendResult GSSimObj::GSReqDelete::Process()
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqDelete::Process Failed call: ") << simRC.rc;
     } else {
+        m_simObj.OnDespawned(true);
         //m_simObj.SetInProgress(true); // Unclear if SimConnect_AIRemoveObject fires OnMessage.
     }
     return {simRC, true};
@@ -102,8 +101,7 @@ GSRequest::SendResult GSSimObj::GSReqGetDataSimObj::Process()
     if (!rc.m_simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqGetDataSimObj::Process Failed call: ") << rc.m_simRC.rc;
         rc.m_keep = false;
-    } else {
-        m_simObj.SetInProgress(true);
+        m_simObj.OnSpawned(false);
     }
 
     return rc;
