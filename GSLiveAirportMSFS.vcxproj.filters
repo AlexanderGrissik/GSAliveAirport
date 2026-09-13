@@ -40,6 +40,10 @@
     <ClCompile Include="src\simobj\GSAircraftGroundXL.cpp">
       <Filter>simobj</Filter>
     </ClCompile>
+    <ClCompile Include="src\simobj\GSGroundPowerMSFS.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GSCatalog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cmds\GSCommand.h">
@@ -86,6 +90,10 @@
     <ClInclude Include="src\simobj\GSAircraftGroundMedium.h">
       <Filter>simobj</Filter>
     </ClInclude>
+    <ClInclude Include="src\simobj\GSGroundPowerMSFS.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GSCatalog.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

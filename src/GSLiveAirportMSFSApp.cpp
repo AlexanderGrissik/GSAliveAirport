@@ -1,5 +1,6 @@
 #include "GSLiveAirportMSFSApp.h"
 #include "GSLogStream.h"
+#include "GSCatalog.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -11,6 +12,8 @@ using namespace std::chrono_literals;
 
 int GSLiveAirportMSFSApp::Run()
 {
+    GSCatalog::GetInstance().LoadCatalog();
+
     m_aircraftTracker.Start();
     m_spawner.Start();
 

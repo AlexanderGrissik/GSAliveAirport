@@ -90,7 +90,7 @@ void GSSimConnect::RunDispatch(std::stop_token stopToken)
     m_lastLoopMsg = false;
     while (!stopToken.stop_requested() && m_lastDispatch) {
         if (!m_handle) {
-            Connect(stopToken);
+            Connect();
         }
 
         if (m_handle) {
@@ -113,9 +113,9 @@ void GSSimConnect::RunDispatch(std::stop_token stopToken)
     }
 }
 
-void GSSimConnect::Connect(std::stop_token stopToken)
+void GSSimConnect::Connect()
 {
-    if (!stopToken.stop_requested() && !m_handle) {
+    if (!m_handle) {
         if (FAILED(SimConnect_Open(&m_handle, "GSLiveAirportMSFS", nullptr, 0, nullptr, 0))) {
             m_handle = nullptr;
         }

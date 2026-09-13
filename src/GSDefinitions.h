@@ -24,6 +24,7 @@ public:
         GSDefID_Aircraft = 1,
         GSDefID_CateringTruckStateGet,
         GSDefID_CateringTruckStateSet,
+        GSDefID_GroundPowerStateSet,
     };
 
     enum ECommands
@@ -52,7 +53,7 @@ public:
 
     struct SendResult : public SendResultIDs{
         HRESULT rc;
-        bool isOK() { return SUCCEEDED(rc); }
+        bool isOK() const { return SUCCEEDED(rc); }
     };
 };
 

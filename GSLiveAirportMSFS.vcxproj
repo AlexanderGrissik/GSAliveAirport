@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\GSAircraftTrackerThread.cpp" />
+    <ClCompile Include="src\GSCatalog.cpp" />
     <ClCompile Include="src\GSConsole.cpp" />
     <ClCompile Include="src\GSGeography.cpp" />
     <ClCompile Include="src\GSLiveAirportMSFSApp.cpp" />
@@ -112,10 +113,12 @@
     <ClCompile Include="src\simobj\GSAircraftGroundSmall.cpp" />
     <ClCompile Include="src\simobj\GSAircraftGroundXL.cpp" />
     <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp" />
+    <ClCompile Include="src\simobj\GSGroundPowerMSFS.cpp" />
     <ClCompile Include="src\simobj\GSSimObj.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\GSAircraftTrackerThread.h" />
+    <ClInclude Include="src\GSCatalog.h" />
     <ClInclude Include="src\GSConsole.h" />
     <ClInclude Include="src\GSCoord.h" />
     <ClInclude Include="src\GSDefinitions.h" />
@@ -136,6 +139,7 @@
     <ClInclude Include="src\simobj\GSAircraftGroundSmall.h" />
     <ClInclude Include="src\simobj\GSAircraftGroundXL.h" />
     <ClInclude Include="src\simobj\GSCateringCartMSFS.h" />
+    <ClInclude Include="src\simobj\GSGroundPowerMSFS.h" />
     <ClInclude Include="src\simobj\GSSimObj.h" />
   </ItemGroup>
   <ItemGroup>

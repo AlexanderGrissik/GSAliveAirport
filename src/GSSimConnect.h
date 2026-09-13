@@ -62,9 +62,10 @@ protected:
     HANDLE GetHandle() const { return m_handle; }
     bool IsLastLoopMessage() const { return m_lastLoopMsg; }
     bool IsSimStarted() const { return m_simStarted; }
-
+    void Connect();
+    
 private:
-    void Connect(std::stop_token stopToken);
+    
     void OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSize);
     void HandleCmdReqProcess(GSCmdReq& cmd);
     

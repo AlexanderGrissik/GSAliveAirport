@@ -115,6 +115,9 @@ public:
 
     std::optional<InterPntRef> GetRearRightDoor() const { return rearRightDoorPnt; }
     std::optional<InterPntRef> GetFrontRightDoor() const { return frontRightDoorPnt; }
+    std::optional<InterPntRef> GetRearLeftDoor() const { return rearLeftDoorPnt; }
+    std::optional<InterPntRef> GetFrontLeftDoor() const { return frontLeftDoorPnt; }
+    std::optional<InterPntRef> GetGroundPowerDoor() const { return groundPowerPnt; }
 
 private:
     AircraftWireData m_rawData;
