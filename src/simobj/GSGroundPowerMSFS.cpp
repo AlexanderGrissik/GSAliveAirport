@@ -90,6 +90,7 @@ bool GSGroundPowerMSFS::PreSpawn()
         ptrDriver->SetHeading(m_initPos.Heading);
         ptrDriver->GetInitPos().Altitude = 1.0961 + m_initPos.Altitude;
         ptrDriver->GetInitPos().OnGround = 0;
+        ptrDriver->PreSpawn();
         m_attached.emplace_back(ptrDriver);
     }
 

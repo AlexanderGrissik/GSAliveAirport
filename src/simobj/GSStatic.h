@@ -19,12 +19,12 @@ public:
 
     void SetFinalPositionAndState();
     void SetPosRel(PosRelation rel) { m_posRel = rel; }
+    bool PreSpawn() override;
 
 private:
 
     void OnCreated() override;
-    bool PreSpawn() override;
-
+    
     PosRelation m_posRel = REL_AIRCRAFT;
 };
 }
