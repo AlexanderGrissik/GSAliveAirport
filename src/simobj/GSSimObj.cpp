@@ -5,8 +5,14 @@
 namespace NS_GSLiveAirportMSFS
 {
 
+constexpr std::array GSDatums_Position{
+    GSDefinitions::DatumSpec{"Initial Position", nullptr, SIMCONNECT_DATATYPE_INITPOSITION},
+};
+
 void GSSimObj::InitDatums(GSSimConnect& handler)
 {
+    handler.InvokeAddDatums(GSDatums_Position, GSDefinitions::GSDefID::GSDefID_Position);
+
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_LongLat, "FREEZE_LATITUDE_LONGITUDE_SET");
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_Altitude, "FREEZE_ALTITUDE_SET");
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_Attitude, "FREEZE_ATTITUDE_SET");
@@ -19,16 +25,37 @@ void GSSimObj::Spawn()
 
 void GSSimObj::Despawn()
 {
-    m_simHandle.PostReqCommand(new GSReqDelete(m_simHandle, *this));
-
-    for (auto& obj : m_attached)
-        obj->Despawn();
+    if (m_attached.size() > 0) {
+        DespawnAttached();
+    } else {
+        m_simHandle.PostReqCommand(new GSReqDelete(m_simHandle, *this));
+    }
 }
 
 void GSSimObj::SpawnAttached()
 {
     for (auto& obj : m_attached)
         obj->Spawn();
+}
+
+void GSSimObj::DespawnAttached()
+{
+    for (auto& obj : m_attached)
+        obj->Despawn();
+}
+
+void GSSimObj::Freeze()
+{
+    auto reqID = m_simHandle.NextRequestID();
+    m_simHandle.Invoke(SimConnect_AIReleaseControl, m_simObjectID, reqID);
+
+    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_LongLat, 1));
+    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_Altitude, 1));
+    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_Attitude, 1));
+
+    std::array updatePos{ m_initPos };
+    m_simHandle.PostReqCommand(new GSReqSetPos(
+        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_Position, std::move(updatePos)));
 }
 
 GSRequest::SendResult GSSimObj::GSReqCreate::Process()
@@ -40,7 +67,7 @@ GSRequest::SendResult GSSimObj::GSReqCreate::Process()
     if (!rc.m_simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqCreate::Process Failed call: ") << rc.m_simRC.rc;
         rc.m_keep = false;
-        m_simObj.OnSpawned(false);
+        m_simObj.OnObjSpawned(false);
     } 
 
     return rc;
@@ -53,7 +80,7 @@ bool GSSimObj::GSReqCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSiz
         m_simObj.SetSimObjectID(msg->dwObjectID);
         m_simObj.OnCreated();
     } else {
-        m_simObj.OnSpawned(false);
+        m_simObj.OnObjSpawned(false);
         GSLogStream::LogError("GSSimObjReq::GSReqCreate::OnMessage Unexpected Message: ") << message->dwID;
     }
     (void)messageSize;
@@ -62,7 +89,7 @@ bool GSSimObj::GSReqCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSiz
 
 void GSSimObj::GSReqCreate::OnException(SIMCONNECT_RECV_EXCEPTION *message)
 {
-    m_simObj.OnSpawned(false);
+    m_simObj.OnObjSpawned(false);
     GSLogStream::LogError("GSSimObjReq::GSReqCreate::OnException: ") << message->dwException << ", " << message->dwIndex;
 }
 
@@ -73,7 +100,7 @@ GSRequest::SendResult GSSimObj::GSReqDelete::Process()
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqDelete::Process Failed call: ") << simRC.rc;
     } else {
-        m_simObj.OnDespawned(true);
+        m_simObj.OnObjDespawned(true);
         //m_simObj.SetInProgress(true); // Unclear if SimConnect_AIRemoveObject fires OnMessage.
     }
     return {simRC, true};
@@ -101,7 +128,7 @@ GSRequest::SendResult GSSimObj::GSReqGetDataSimObj::Process()
     if (!rc.m_simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqGetDataSimObj::Process Failed call: ") << rc.m_simRC.rc;
         rc.m_keep = false;
-        m_simObj.OnSpawned(false);
+        m_simObj.OnObjSpawned(false);
     }
 
     return rc;

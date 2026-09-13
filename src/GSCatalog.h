@@ -21,6 +21,8 @@ public:
     void OnCommand(GSCommand& cmd) override { (void)cmd; }
     void Done();
 
+    bool Exists(const char* str) const;
+
 private:
     GSCatalog() = default;
     ~GSCatalog() override {}

@@ -34,15 +34,21 @@ public:
     void Spawn();
     void Despawn();
     void SpawnAttached();
+    void DespawnAttached();
+    void Freeze();
     virtual bool PreSpawn() = 0;
 
     const std::string& GetTitle() const { return m_title; }
     const SIMCONNECT_DATA_INITPOSITION& GetInitPos() const { return m_initPos; }
+    SIMCONNECT_DATA_INITPOSITION& GetInitPos() { return m_initPos; }
     SIMCONNECT_OBJECT_ID GetSimObjectID() const { return m_simObjectID; }
 
     void SetSimObjectID(DWORD id) { m_simObjectID = static_cast<SIMCONNECT_OBJECT_ID>(id); }
-    void OnSpawned(bool ok) { m_iUpdate.OnSpawned(ok, *this); }
-    void OnDespawned(bool ok) { m_iUpdate.OnDespawned(ok, *this); }
+    void OnObjSpawned(bool ok) { m_iUpdate.OnSpawned(ok, *this); }
+    void OnObjDespawned(bool ok) { m_iUpdate.OnDespawned(ok, *this); }
+    void SetTitle(const std::string& title) { m_title = title; }
+    void SetHeading(double heading) { m_initPos.Heading = heading; }
+    void SetPosition(const GSCoord& pos) { m_initPos.Longitude = pos.Long(); m_initPos.Latitude = pos.Lat(); }
 
 protected:
 
@@ -112,6 +118,16 @@ protected:
     private:
         SIMCONNECT_CLIENT_EVENT_ID m_eventID;
         DWORD m_data;
+    };
+
+    class GSReqSetPos : public GSReqSetDataSimObj<SIMCONNECT_DATA_INITPOSITION, 1> {
+    public:
+        GSReqSetPos(
+            GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID,
+            std::array<SIMCONNECT_DATA_INITPOSITION, 1>&& data) :
+            GSSimObj::GSReqSetDataSimObj<SIMCONNECT_DATA_INITPOSITION, 1>(
+                simHandle, simObj, definitionID, std::forward<std::array<SIMCONNECT_DATA_INITPOSITION, 1>>(data)) {
+        }
     };
 
     friend GSReqCreate;

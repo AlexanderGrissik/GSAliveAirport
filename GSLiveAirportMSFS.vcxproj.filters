@@ -44,6 +44,9 @@
       <Filter>simobj</Filter>
     </ClCompile>
     <ClCompile Include="src\GSCatalog.cpp" />
+    <ClCompile Include="src\simobj\GSStatic.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cmds\GSCommand.h">
@@ -94,6 +97,9 @@
       <Filter>simobj</Filter>
     </ClInclude>
     <ClInclude Include="src\GSCatalog.h" />
+    <ClInclude Include="src\simobj\GSStatic.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

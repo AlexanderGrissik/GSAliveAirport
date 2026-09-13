@@ -187,7 +187,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
             m_sendIDToPtr.erase(itr);
             m_reqIDToPtr.erase(id);
         } else {
-            GSLogStream::Log("GSSimConnect - Unexpected exception: ") << msg.dwSendID;
+            GSLogStream::Log("GSSimConnect - Unexpected exception: ") << msg.dwException << ", sendID: " << msg.dwSendID;
         }
         break;
     }

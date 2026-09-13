@@ -7,9 +7,15 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSGroundPowerMSFS : public GSSimObj
+class GSGroundPowerMSFS : public GSSimObj, public GSSimObj::IObjUpdate
 {
 public:
+
+    enum GPUType {
+        GPU_DEFAULT,
+        GPU_MEDIUM,
+        GPU_LARGE
+    };
 
     #pragma pack(push, 1)
     struct StateWireDataSet
@@ -21,19 +27,27 @@ public:
     using GSSimObj::GSSimObj;
 
     static void InitDatums(GSSimConnect& handler);
+
+    void OnSpawned(bool ok, GSSimObj& obj) override;
+    void OnDespawned(bool ok, GSSimObj& obj) override;
+
     void SetFinalPositionAndState();
+    void SetGPUType(GPUType tp) { m_gpuType = tp; }
 
 private:
 
     void OnCreated() override;
     bool PreSpawn() override;
 
+    GPUType m_gpuType;
+
     class GSReqSetDataSimObj : public GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1> {
     public:
-        GSReqSetDataSimObj(GSSimConnect& simHandle, GSSimObj& simObj, std::array<StateWireDataSet, 1>&& data): 
+        GSReqSetDataSimObj(
+            GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID, 
+            std::array<StateWireDataSet, 1>&& data): 
             GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1>(
-                simHandle, simObj, GSDefinitions::GSDefID::GSDefID_GroundPowerStateSet,
-                std::forward<std::array<StateWireDataSet, 1>>(data)) {}
+                simHandle, simObj, definitionID, std::forward<std::array<StateWireDataSet, 1>>(data)) {}
     };
 };
 }

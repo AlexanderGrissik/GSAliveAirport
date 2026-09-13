@@ -6,6 +6,9 @@ namespace NS_GSLiveAirportMSFS
 
 void GSCatalog::LoadCatalog()
 {
+    m_entires.clear();
+    m_entires.reserve(1024);
+
     auto stop = m_source.get_token();
     while (!stop.stop_requested()) {
         RunDispatch(stop);
@@ -24,11 +27,22 @@ void GSCatalog::Done()
     m_source.request_stop();
 }
 
+bool GSCatalog::Exists(const char* str) const
+{
+    std::string temp = str;
+    for (const auto& pr : m_entires) {
+        if (pr.first == temp)
+            return true;
+    }
+
+    return false;
+}
+
 GSRequest::SendResult GSCatalog::GSCatalogReq::Process()
 {
     const DWORD requestId = m_simHandle.NextRequestID();
     GSRequest::SendResult rc = {
-        m_simHandle.Invoke(SimConnect_EnumerateSimObjectsAndLiveries, requestId, SIMCONNECT_SIMOBJECT_TYPE_ALL), true };
+        m_simHandle.InvokeRequest(requestId, SimConnect_EnumerateSimObjectsAndLiveries, requestId, SIMCONNECT_SIMOBJECT_TYPE_ALL), true };
     if (!rc.m_simRC.isOK()) {
         GSLogStream::LogError("GSCatalog::GSCatalogReq::Process Failed call: ") << rc.m_simRC.rc;
         rc.m_keep = false;
@@ -48,12 +62,12 @@ bool GSCatalog::GSCatalogReq::OnMessage(SIMCONNECT_RECV* message, DWORD messageS
         return true;
     }
 
+    auto &catalog = static_cast<GSCatalog&>(m_simHandle);
+    for (DWORD index = 0; index < entry.dwArraySize; ++index) {
+        catalog.m_entires.emplace_back(entry.rgData[index].AircraftTitle, entry.rgData[index].LiveryName);
+    }
 
-    //for (std::size_t index = 0; index < count; ++index) {
-    //    m_entires.emplace_back({ list->rgData[index].AircraftTitle, list->rgData[index].LiveryName });
-    // }
-
-    if (entry.dwOutOf == entry.dwEntryNumber) {
+    if (entry.dwOutOf == entry.dwEntryNumber + 1) {
         static_cast<GSCatalog&>(m_simHandle).Done();
         return true;
     }

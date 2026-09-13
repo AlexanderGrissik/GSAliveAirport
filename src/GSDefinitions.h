@@ -22,9 +22,11 @@ public:
 
     enum GSDefID : SIMCONNECT_DATA_DEFINITION_ID {
         GSDefID_Aircraft = 1,
+        GSDefID_Position,
         GSDefID_CateringTruckStateGet,
         GSDefID_CateringTruckStateSet,
         GSDefID_GroundPowerStateSet,
+        GSDefID_GroundPowerExtStateSet,
     };
 
     enum ECommands

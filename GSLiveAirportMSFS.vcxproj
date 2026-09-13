@@ -115,6 +115,7 @@
     <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp" />
     <ClCompile Include="src\simobj\GSGroundPowerMSFS.cpp" />
     <ClCompile Include="src\simobj\GSSimObj.cpp" />
+    <ClCompile Include="src\simobj\GSStatic.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\GSAircraftTrackerThread.h" />
@@ -141,6 +142,7 @@
     <ClInclude Include="src\simobj\GSCateringCartMSFS.h" />
     <ClInclude Include="src\simobj\GSGroundPowerMSFS.h" />
     <ClInclude Include="src\simobj\GSSimObj.h" />
+    <ClInclude Include="src\simobj\GSStatic.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

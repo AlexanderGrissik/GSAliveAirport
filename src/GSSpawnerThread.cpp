@@ -7,6 +7,7 @@
 #include "simobj/GSCateringCartMSFS.h"
 #include "simobj/GSGroundPowerMSFS.h"
 #include "cmds/GSCmdAircraftUpdate.h"
+#include "GSCatalog.h"
 #include "GSGeography.h"
 #include <chrono>
 #include <array>
@@ -50,7 +51,8 @@ void GSSpawnerThread::OnConnect()
 {
     GSSimObj::InitDatums(*this);
     GSCateringCartMSFS::InitDatums(*this); 
-    GSGroundPowerMSFS::InitDatums(*this); 
+    GSGroundPowerMSFS::InitDatums(*this);
+    GSCatalog::GetInstance().LoadCatalog();
 }
 
 void GSSpawnerThread::OnCommand(GSCommand& cmd)

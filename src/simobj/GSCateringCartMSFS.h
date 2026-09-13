@@ -49,12 +49,12 @@ private:
             } else {
                 GSLogStream::LogError("GSCateringCartMSFS::GSReqGetDataSimObj::OnMessage Unexpected Message: ") << message->dwID;
             }
-            m_simObj.OnSpawned(true);
+            m_simObj.OnObjSpawned(true);
             return true;
         }
 
         void OnException(SIMCONNECT_RECV_EXCEPTION *message) override {
-            m_simObj.OnSpawned(true);
+            m_simObj.OnObjSpawned(true);
             GSLogStream::LogError("GSCateringCartMSFS::GSReqGetDataSimObj::OnException: ") << message->dwException << ", " << message->dwIndex;
         }
     };
