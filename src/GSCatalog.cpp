@@ -9,6 +9,8 @@ void GSCatalog::LoadCatalog()
 {
     m_entires.clear();
     m_entires.reserve(1024);
+    m_entiresBuggageLoaderExt.clear();
+    m_entiresBuggageLoaderExt.reserve(64);
     
     auto stop = m_source.get_token();
     while (!stop.stop_requested()) {
@@ -18,6 +20,8 @@ void GSCatalog::LoadCatalog()
     std::string strGPULargeExt = "FSDT_GPU_Hobart_4400_LW";
     std::string strGPUMediumExt = "FSDT_GPU_TLD_406_LW";
     std::string strLavatoryExt = "FSDT_Lavatory_Truck";
+    std::string strBuggageLoaderExt = "FSDT_Tug_660";
+    std::string strBuggageCargo = "CARGO";
     for (const auto& pr : m_entires) {
         if (pr.first.starts_with(strGPULargeExt))
             m_extGPULarge = strGPULargeExt;
@@ -25,6 +29,8 @@ void GSCatalog::LoadCatalog()
             m_extGPUMedium = strGPUMediumExt;
         else if (pr.first.starts_with(strLavatoryExt))
             m_extLavatory = strLavatoryExt;
+        else if (pr.first.starts_with(strBuggageLoaderExt) && (pr.first.find(strBuggageCargo) == std::string::npos))
+            m_entiresBuggageLoaderExt.push_back(&pr);
     }
 
     Disconnect();
@@ -49,6 +55,13 @@ bool GSCatalog::Exists(const char* str) const
     }
 
     return false;
+}
+
+const std::string& GSCatalog::GetBuggageLoaderExt()
+{
+    std::uniform_int_distribution<size_t> dist(0, m_entiresBuggageLoaderExt.size() - 1);
+
+    return m_entiresBuggageLoaderExt[dist(m_rng)]->first;
 }
 
 GSRequest::SendResult GSCatalog::GSCatalogReq::Process()

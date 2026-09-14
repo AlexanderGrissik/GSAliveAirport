@@ -41,16 +41,26 @@ void GSGroundPowerMSFS::OnDespawned(bool ok, GSSimObj& obj)
 
 bool GSGroundPowerMSFS::PreSpawn()
 {
+    double YMeters = 0.0, XMeters = 0.0;
     const auto& airData = m_aircraft.GetRawData();
     auto groundPowerDoor = m_aircraft.GetGroundPowerDoor();
     auto frontLeftDoor = m_aircraft.GetFrontLeftDoor();
+    if (groundPowerDoor.has_value()) {
+        YMeters += groundPowerDoor->get().posZMeter;
+        XMeters += groundPowerDoor->get().posXMeter;
+    } else if (frontLeftDoor.has_value()) {
+        YMeters += frontLeftDoor->get().posZMeter + 7;
+        XMeters += frontLeftDoor->get().posXMeter - 4;
+    } else {
+        return false;
+    }
+    
     const auto* powerDoor = (groundPowerDoor.has_value() ? &groundPowerDoor->get() : (frontLeftDoor.has_value() ? &frontLeftDoor->get() : nullptr));
     if (!powerDoor) {
         return false;
     }
 
-    double YMeters = powerDoor->posZMeter + 7;
-    double XMeters = powerDoor->posXMeter - 4;
+    
     bool driver = false;
 
     if (m_gpuType == GPU_LARGE && !GSCatalog::GetInstance().GetGPULargeExt().empty()) {

@@ -112,6 +112,7 @@
     <ClCompile Include="src\simobj\GSAircraftGroundMedium.cpp" />
     <ClCompile Include="src\simobj\GSAircraftGroundSmall.cpp" />
     <ClCompile Include="src\simobj\GSAircraftGroundXL.cpp" />
+    <ClCompile Include="src\simobj\GSBuggageLoader.cpp" />
     <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp" />
     <ClCompile Include="src\simobj\GSGroundPowerMSFS.cpp" />
     <ClCompile Include="src\simobj\GSLavatoryTruck.cpp" />
@@ -142,6 +143,7 @@
     <ClInclude Include="src\simobj\GSAircraftGroundMedium.h" />
     <ClInclude Include="src\simobj\GSAircraftGroundSmall.h" />
     <ClInclude Include="src\simobj\GSAircraftGroundXL.h" />
+    <ClInclude Include="src\simobj\GSBuggageLoader.h" />
     <ClInclude Include="src\simobj\GSCateringCartMSFS.h" />
     <ClInclude Include="src\simobj\GSGroundPowerMSFS.h" />
     <ClInclude Include="src\simobj\GSLavatoryTruck.h" />

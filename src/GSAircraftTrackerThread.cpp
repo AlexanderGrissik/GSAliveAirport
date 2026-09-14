@@ -58,6 +58,7 @@ void GSAircraftTrackerThread::RunLoopTracker(std::stop_token stopToken)
 void GSAircraftTrackerThread::OnConnect()
 {
     GSAircraft::InitDatums(*this);
+    GSSimObj::InitDatums(*this);
     m_lastScanTime = std::chrono::steady_clock::now() - 10s;
 }
 
@@ -124,6 +125,12 @@ void GSAircraftTrackerThread::OnCommand(GSCommand& cmd)
         cmd.Finish(ret);
         break;
     }
+    case GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT: {
+        SpawnTestAircrafts();
+        CmdPtr ret(new GSCommand(cmd));
+        cmd.Finish(ret);
+        break;
+    }
     default:
         GSLogStream::LogError("GSAircraftTrackerThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;
@@ -170,6 +177,14 @@ void GSAircraftTrackerThread::PrintAircrafts(bool parkedOnly, double distKM) con
     GSLogStream::Log() << "=== end: printed=" << printed << " skipped=" << skipped << " ===";
 }
 
+void GSAircraftTrackerThread::SpawnTestAircrafts()
+{
+    PostReqCommand(new GSReqSpawnAircraft(*this, 1));
+    PostReqCommand(new GSReqSpawnAircraft(*this, 2));
+    PostReqCommand(new GSReqSpawnAircraft(*this, 3));
+    PostReqCommand(new GSReqSpawnAircraft(*this, 4));
+}
+
 GSRequest::SendResult GSAircraftTrackerThread::GSReqScan::Process()
 {
     auto id = m_simHandle.NextRequestID();
@@ -186,6 +201,7 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqScan::Process()
 
 void GSAircraftTrackerThread::HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft)
 {
+    m_userAircraft = aircraft;
     CmdPtr cmd(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER, aircraft));
     m_singleObserver.PostCommand(cmd);
 }
@@ -254,7 +270,7 @@ bool GSAircraftTrackerThread::GSReqScan::OnMessage(SIMCONNECT_RECV *message, DWO
     GSAircraftTrackerThread &tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
 
     if (!message || message->dwID != SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE) {
-        GSLogStream::LogError("Unexpected message: ") << message->dwID << ", Size: " << messageSize;
+        GSLogStream::LogError("Unexpected message: ") << (message ? message->dwID : -1) << ", Size: " << messageSize;
         return false;
     }
 
@@ -270,6 +286,82 @@ void GSAircraftTrackerThread::GSReqScan::OnException(SIMCONNECT_RECV_EXCEPTION *
     
     tracker.SetInProgress(false);
     tracker.HandleRemoved();
+}
+
+GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
+{
+    const auto userAircraft = static_cast<GSAircraftTrackerThread&>(m_simHandle).GetUserAircraft();
+    if (!userAircraft) {
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqSpawnAircraft::Process No User Aircrat");
+        return { {0,0,-1}, false };
+    }
+    const auto posUser = userAircraft->GetLongLat();
+       
+    m_pos.Altitude = userAircraft->GetRawData().altitudeFeet;
+    m_pos.Heading = 0.0;
+    m_pos.Pitch = 0;
+    m_pos.Bank = 0;
+    m_pos.OnGround = 1;
+    m_pos.Airspeed = 0;
+
+    std::string title = "747-8i";
+    m_pos.Latitude = posUser.Lat() - 0.001;
+    m_pos.Longitude = posUser.Long() - 0.001;
+
+    if (m_type == 2) {
+        title = "737 Max 8 Passengers";
+        m_pos.Latitude = posUser.Lat() - 0.001;
+        m_pos.Longitude = posUser.Long() + 0.001;
+    } else if (m_type == 3) {
+        title = "Cessna C152";
+        m_pos.Latitude = posUser.Lat() + 0.001;
+        m_pos.Longitude = posUser.Long() + 0.001;
+    } else if (m_type == 4) {
+        title = "A330-300 (RR)";
+        m_pos.Latitude = posUser.Lat() + 0.001;
+        m_pos.Longitude = posUser.Long() - 0.001;
+    }
+
+    auto id = m_simHandle.NextRequestID();
+    GSRequest::SendResult rc = {
+        m_simHandle.InvokeRequest(id, SimConnect_AICreateSimulatedObject_EX1, title.c_str(), "", m_pos, id), true};
+
+    if (!rc.m_simRC.isOK()) {
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqSpawnAircraft::Process Failed call: ") << rc.m_simRC.rc;
+        rc.m_keep = false;
+    }
+
+    return rc;
+}
+
+bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
+{
+    if (message->dwID == SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID) {
+        auto* msg = static_cast<SIMCONNECT_RECV_ASSIGNED_OBJECT_ID*>(message);
+        
+        auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_LongLat, 1,
+            SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
+        auto simRC2 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_Altitude, 1,
+            SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
+        auto simRC3 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_Attitude, 1,
+            SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
+        auto simRC = m_simHandle.Invoke(SimConnect_SetDataOnSimObject, GSDefinitions::GSDefID::GSDefID_Position, msg->dwObjectID, 0, 1,
+            static_cast<DWORD>(sizeof(m_pos)), &m_pos);
+        
+        if (!simRC1.isOK() || !simRC2.isOK() || !simRC3.isOK() || !simRC.isOK()) {
+            GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Failed call Freeze: ") << 
+                simRC1.rc << "," << simRC2.rc << "," << simRC3.rc << "," << simRC.rc;
+        }
+    } else {
+        GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Unexpected Message: ") << message->dwID;
+    }
+    (void)messageSize;
+    return true;
+}
+
+void GSAircraftTrackerThread::GSReqSpawnAircraft::OnException(SIMCONNECT_RECV_EXCEPTION* message)
+{
+    GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnException: ") << message->dwException << ", " << message->dwIndex;
 }
 
 } // namespace NS_GSLiveAirportMSFS

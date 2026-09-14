@@ -62,7 +62,8 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
         std::cout << "Logging " << (enabled ? "enabled" : "disabled");
         break;
     }
-    case AT::Reload:
+    case AT::Test:
+        PostACTrackCommandAndWait(GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT);
         break;
     case AT::Unknown:
         std::cout << "Unknown command or invalid arguments. Type 'help'";

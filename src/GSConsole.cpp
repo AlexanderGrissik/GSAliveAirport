@@ -86,7 +86,7 @@ GSConsole::AppCommand GSConsole::Parse(std::string_view line)
     if (command == "ground") return {AppCommandType::Ground};
     if (command == "roads") return GetCommandWithArg(input, AppCommandType::Roads);
     if (command == "log") return {AppCommandType::Log};
-    if (command == "reload") return {AppCommandType::Reload};
+    if (command == "test") return {AppCommandType::Test};
     return {AppCommandType::Unknown};
 }
 
@@ -100,7 +100,7 @@ void GSConsole::PrintHelp()
               "  ground              Request one 5 km ground-object debug list\n"
               "  roads <ICAO>        List non-aircraft roads (TYPE 6/7) and endpoints\n"
               "  log                 Toggle background event/periodic logging\n"
-              "  reload              Reread the JSON config and rebuild services\n"
+              "  test                Spawn all size of parked aircrafts near the user once\n"
               "  help | quit\n");
 }
 
