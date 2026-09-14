@@ -46,8 +46,8 @@ void GSSimObj::DespawnAttached()
 
 void GSSimObj::Freeze()
 {
-    auto reqID = m_simHandle.NextRequestID();
-    m_simHandle.Invoke(SimConnect_AIReleaseControl, m_simObjectID, reqID);
+    //auto reqID = m_simHandle.NextRequestID();
+    //m_simHandle.Invoke(SimConnect_AIReleaseControl, m_simObjectID, reqID);
 
     m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_LongLat, 1));
     m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_Altitude, 1));
