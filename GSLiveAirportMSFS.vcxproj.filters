@@ -53,6 +53,9 @@
     <ClCompile Include="src\simobj\GSPushback.cpp">
       <Filter>simobj</Filter>
     </ClCompile>
+    <ClCompile Include="src\simobj\GSLavatoryTruck.cpp">
+      <Filter>simobj</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cmds\GSCommand.h">
@@ -110,6 +113,9 @@
       <Filter>simobj</Filter>
     </ClInclude>
     <ClInclude Include="src\simobj\GSPushback.h">
+      <Filter>simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSLavatoryTruck.h">
       <Filter>simobj</Filter>
     </ClInclude>
   </ItemGroup>

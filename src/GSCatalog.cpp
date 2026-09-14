@@ -17,11 +17,14 @@ void GSCatalog::LoadCatalog()
 
     std::string strGPULargeExt = "FSDT_GPU_Hobart_4400_LW";
     std::string strGPUMediumExt = "FSDT_GPU_TLD_406_LW";
+    std::string strLavatoryExt = "FSDT_Lavatory_Truck";
     for (const auto& pr : m_entires) {
         if (pr.first.starts_with(strGPULargeExt))
             m_extGPULarge = strGPULargeExt;
         else if (pr.first.starts_with(strGPUMediumExt))
             m_extGPUMedium = strGPUMediumExt;
+        else if (pr.first.starts_with(strLavatoryExt))
+            m_extLavatory = strLavatoryExt;
     }
 
     Disconnect();

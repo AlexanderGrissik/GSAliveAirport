@@ -25,6 +25,7 @@ public:
     bool Exists(const char* str) const;
     const std::string& GetGPULargeExt() const { return m_extGPULarge; }
     const std::string& GetGPUMediumExt() const { return m_extGPUMedium; }
+    const std::string& GetLavatoryExt() const { return m_extLavatory; }
 
 private:
     GSCatalog() = default;
@@ -36,6 +37,7 @@ private:
     std::vector<std::pair<std::string, std::string>> m_entires;
     std::string m_extGPULarge;
     std::string m_extGPUMedium;
+    std::string m_extLavatory;
     std::string m_empty;
     std::mt19937 m_rng{std::random_device{}()};
 
