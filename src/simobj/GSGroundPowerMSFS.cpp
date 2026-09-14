@@ -49,16 +49,16 @@ bool GSGroundPowerMSFS::PreSpawn()
         return false;
     }
 
-    double YMeters = powerDoor->posZMeter + 5;
-    double XMeters = powerDoor->posXMeter - 3;
+    double YMeters = powerDoor->posZMeter + 7;
+    double XMeters = powerDoor->posXMeter - 4;
     bool driver = false;
 
-    if (m_gpuType == GPU_LARGE && GSCatalog::GetInstance().Exists("FSDT_GPU_Hobart_4400_LW")) {
-        m_title = "FSDT_GPU_Hobart_4400_LW";
+    if (m_gpuType == GPU_LARGE && !GSCatalog::GetInstance().GetGPULargeExt().empty()) {
+        m_title = GSCatalog::GetInstance().GetGPULargeExt();
         m_initPos.Heading = airData.headingDegrees;
         driver = true;
-    } else if (m_gpuType == GPU_MEDIUM && GSCatalog::GetInstance().Exists("FSDT_GPU_TLD_406_LW")) {
-        m_title = "FSDT_GPU_TLD_406_LW";
+    } else if (m_gpuType == GPU_MEDIUM && !GSCatalog::GetInstance().GetGPUMediumExt().empty()) {
+        m_title = GSCatalog::GetInstance().GetGPUMediumExt();
         m_initPos.Heading = airData.headingDegrees;
         driver = true;
     } else {

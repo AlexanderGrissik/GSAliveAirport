@@ -235,7 +235,7 @@ void GSSimConnect::InvokeMapClientEvent(SIMCONNECT_CLIENT_EVENT_ID EventID, cons
 
 void GSSimConnect::RunCommands()
 {
-    bool cont = false;
+    bool cont = true;
     do {
         
         auto opt = m_commands.TryPop();
@@ -245,6 +245,8 @@ void GSSimConnect::RunCommands()
                 HandleCmdReqProcess(static_cast<GSCmdReq&>(*opt->get()));
             else
                 OnCommand(*opt->get());
+        } else {
+            cont = false;
         }
     } while (cont);
 }

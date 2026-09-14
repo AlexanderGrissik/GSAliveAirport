@@ -1,5 +1,6 @@
 #include "GSCatalog.h"
 #include "GSLogStream.h"
+#include <regex>
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -8,10 +9,19 @@ void GSCatalog::LoadCatalog()
 {
     m_entires.clear();
     m_entires.reserve(1024);
-
+    
     auto stop = m_source.get_token();
     while (!stop.stop_requested()) {
         RunDispatch(stop);
+    }
+
+    std::string strGPULargeExt = "FSDT_GPU_Hobart_4400_LW";
+    std::string strGPUMediumExt = "FSDT_GPU_TLD_406_LW";
+    for (const auto& pr : m_entires) {
+        if (pr.first.starts_with(strGPULargeExt))
+            m_extGPULarge = strGPULargeExt;
+        else if (pr.first.starts_with(strGPUMediumExt))
+            m_extGPUMedium = strGPUMediumExt;
     }
 
     Disconnect();

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "GSSimConnect.h"
-
+#include <random>
+#include <cstddef>
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -22,6 +23,8 @@ public:
     void Done();
 
     bool Exists(const char* str) const;
+    const std::string& GetGPULargeExt() const { return m_extGPULarge; }
+    const std::string& GetGPUMediumExt() const { return m_extGPUMedium; }
 
 private:
     GSCatalog() = default;
@@ -31,6 +34,10 @@ private:
 
     std::stop_source m_source;
     std::vector<std::pair<std::string, std::string>> m_entires;
+    std::string m_extGPULarge;
+    std::string m_extGPUMedium;
+    std::string m_empty;
+    std::mt19937 m_rng{std::random_device{}()};
 
     class GSCatalogReq : public GSRequest {
         using GSRequest::GSRequest;

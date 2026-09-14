@@ -24,7 +24,9 @@ public:
     };
     #pragma pack(pop)
 
-    using GSSimObj::GSSimObj;
+    GSGroundPowerMSFS(GSSimConnect& simHandle, GSAircraft& aircraft, IObjUpdate& iUpdate, GPUType tp) :
+        GSSimObj(simHandle, aircraft, iUpdate), m_gpuType(tp) {
+    }
 
     static void InitDatums(GSSimConnect& handler);
 
@@ -32,7 +34,6 @@ public:
     void OnDespawned(bool ok, GSSimObj& obj) override;
 
     void SetFinalPositionAndState();
-    void SetGPUType(GPUType tp) { m_gpuType = tp; }
 
 private:
 
