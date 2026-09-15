@@ -293,7 +293,7 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
     const auto userAircraft = static_cast<GSAircraftTrackerThread&>(m_simHandle).GetUserAircraft();
     if (!userAircraft) {
         GSLogStream::LogError("GSAircraftTrackerThread::GSReqSpawnAircraft::Process No User Aircrat");
-        return { {0,0,-1}, false };
+        return { {0,0,E_FAIL}, false };
     }
     const auto posUser = userAircraft->GetLongLat();
        
@@ -339,18 +339,21 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
     if (message->dwID == SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID) {
         auto* msg = static_cast<SIMCONNECT_RECV_ASSIGNED_OBJECT_ID*>(message);
         
+        auto requestId = m_simHandle.NextRequestID();
+        auto aiRC = m_simHandle.InvokeRequest(requestId, SimConnect_AIReleaseControl, msg->dwObjectID, requestId);
+
+        std::this_thread::sleep_for(1s);
+
         auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_LongLat, 1,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
         auto simRC2 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_Altitude, 1,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
-        auto simRC3 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_Attitude, 1,
-            SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
         auto simRC = m_simHandle.Invoke(SimConnect_SetDataOnSimObject, GSDefinitions::GSDefID::GSDefID_Position, msg->dwObjectID, 0, 1,
             static_cast<DWORD>(sizeof(m_pos)), &m_pos);
         
-        if (!simRC1.isOK() || !simRC2.isOK() || !simRC3.isOK() || !simRC.isOK()) {
+        if (!simRC1.isOK() || !simRC2.isOK() || !simRC.isOK() || !aiRC.isOK()) {
             GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Failed call Freeze: ") << 
-                simRC1.rc << "," << simRC2.rc << "," << simRC3.rc << "," << simRC.rc;
+                simRC1.rc << "," << simRC2.rc << "," << simRC.rc;
         }
     } else {
         GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Unexpected Message: ") << message->dwID;
