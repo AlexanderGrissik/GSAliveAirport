@@ -113,23 +113,26 @@ public:
     bool IsTaxing() const { return m_trafficState == "STATE_SIMPLE_TAXI"; }
     bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
 
-    std::optional<InterPntRef> GetRearRightDoor() const { return rearRightDoorPnt; }
-    std::optional<InterPntRef> GetFrontRightDoor() const { return frontRightDoorPnt; }
-    std::optional<InterPntRef> GetRearLeftDoor() const { return rearLeftDoorPnt; }
-    std::optional<InterPntRef> GetFrontLeftDoor() const { return frontLeftDoorPnt; }
-    std::optional<InterPntRef> GetGroundPowerDoor() const { return groundPowerPnt; }
-
+    using DoorRef = std::optional<std::pair<InterPntRef, size_t>>;
+    DoorRef GetRearRightDoor() const { return rearRightDoorPnt; }
+    DoorRef GetFrontRightDoor() const { return frontRightDoorPnt; }
+    DoorRef GetRearLeftDoor() const { return rearLeftDoorPnt; }
+    DoorRef GetFrontLeftDoor() const { return frontLeftDoorPnt; }
+    DoorRef GetGroundPowerDoor() const { return groundPowerPnt; }
+    DoorRef GetRearCargoDoor() const { return cargoDoorBackPnt; }
+    DoorRef GetFrontCargoDoor() const { return cargoDoorFrontPnt; }
+    
 private:
     AircraftWireData m_rawData;
-        
-    std::optional<InterPntRef> cargoDoorFrontPnt;
-    std::optional<InterPntRef> cargoDoorBackPnt;
-    std::optional<InterPntRef> rearLeftDoorPnt;
-    std::optional<InterPntRef> rearRightDoorPnt;
-    std::optional<InterPntRef> frontLeftDoorPnt;
-    std::optional<InterPntRef> frontRightDoorPnt;
-    std::optional<InterPntRef> groundPowerPnt;
-    std::optional<InterPntRef> fuelHosePnt;
+      
+    DoorRef cargoDoorFrontPnt;
+    DoorRef cargoDoorBackPnt;
+    DoorRef rearLeftDoorPnt;
+    DoorRef rearRightDoorPnt;
+    DoorRef frontLeftDoorPnt;
+    DoorRef frontRightDoorPnt;
+    DoorRef groundPowerPnt;
+    DoorRef fuelHosePnt;
 
     AircraftSizeCategory m_category;
     std::string m_trafficState;

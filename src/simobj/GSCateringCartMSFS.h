@@ -33,6 +33,7 @@ public:
 private:
 
     void OnCreated() override;
+    void OnDespawning() override {}
     bool PreSpawn() override;
 
     float m_doorPosElev = 0.0f;

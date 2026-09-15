@@ -38,6 +38,7 @@ public:
 private:
 
     void OnCreated() override;
+    void OnDespawning() override {}
     bool PreSpawn() override;
 
     GPUType m_gpuType;

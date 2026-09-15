@@ -31,7 +31,7 @@ bool GSCateringCartMSFS::PreSpawn()
     const auto& airData = m_aircraft.GetRawData();
     auto rearRightDoor = m_aircraft.GetRearRightDoor();
     auto frontRightDoor = m_aircraft.GetFrontRightDoor();
-    const auto* cateringDoor = (rearRightDoor.has_value() ? &rearRightDoor->get() : (frontRightDoor.has_value() ? &frontRightDoor->get() : nullptr));
+    const auto* cateringDoor = (rearRightDoor.has_value() ? &rearRightDoor->first.get() : (frontRightDoor.has_value() ? &frontRightDoor->first.get() : nullptr));
     if (!cateringDoor) {
         return false;
     }

@@ -6,6 +6,7 @@
 #include "simobj/GSAircraftGroundXL.h"
 #include "simobj/GSCateringCartMSFS.h"
 #include "simobj/GSGroundPowerMSFS.h"
+#include "simobj/GSBuggageLoader.h"
 #include "cmds/GSCmdAircraftUpdate.h"
 #include "GSCatalog.h"
 #include "GSGeography.h"
@@ -52,6 +53,7 @@ void GSSpawnerThread::OnConnect()
     GSSimObj::InitDatums(*this);
     GSCateringCartMSFS::InitDatums(*this); 
     GSGroundPowerMSFS::InitDatums(*this);
+    GSBuggageLoader::InitDatums(*this);
     GSCatalog::GetInstance().LoadCatalog();
 }
 

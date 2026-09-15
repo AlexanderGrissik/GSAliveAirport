@@ -27,6 +27,7 @@ public:
     const std::string& GetGPUMediumExt() const { return m_extGPUMedium; }
     const std::string& GetLavatoryExt() const { return m_extLavatory; }
     const std::string& GetBuggageLoaderExt();
+    const std::string& GetBuggageWorkerExt();
 
 private:
     GSCatalog() = default;
@@ -37,6 +38,7 @@ private:
     std::stop_source m_source;
     std::vector<std::pair<std::string, std::string>> m_entires;
     std::vector<const std::pair<std::string, std::string>*> m_entiresBuggageLoaderExt;
+    std::vector<const std::pair<std::string, std::string>*> m_entiresBuggageWorkerExt;
     std::string m_extGPULarge;
     std::string m_extGPUMedium;
     std::string m_extLavatory;

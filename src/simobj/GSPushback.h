@@ -28,6 +28,7 @@ public:
 private:
 
     void OnCreated() override;
+    void OnDespawning() override {}
     bool PreSpawn() override;
 
     PushType m_pushType;

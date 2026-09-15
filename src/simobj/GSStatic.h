@@ -24,6 +24,7 @@ public:
 private:
 
     void OnCreated() override;
+    void OnDespawning() override {}
     
     PosRelation m_posRel = REL_AIRCRAFT;
 };

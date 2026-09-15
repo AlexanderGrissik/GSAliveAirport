@@ -18,6 +18,8 @@ public:
         GSDefID_Freeze_LongLat,
         GSDefID_Freeze_Altitude,
         GSDefID_Freeze_Attitude,
+        GSDefID_OpenDoors,
+        GSDefID_CloseDoors,
     };
 
     enum GSDefID : SIMCONNECT_DATA_DEFINITION_ID {
@@ -27,6 +29,8 @@ public:
         GSDefID_CateringTruckStateSet,
         GSDefID_GroundPowerStateSet,
         GSDefID_GroundPowerExtStateSet,
+        GSDefID_BuggageLoaderExtStateGet,
+        GSDefID_BuggageLoaderExtStateSet,
     };
 
     enum ECommands

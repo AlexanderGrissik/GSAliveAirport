@@ -46,16 +46,16 @@ bool GSGroundPowerMSFS::PreSpawn()
     auto groundPowerDoor = m_aircraft.GetGroundPowerDoor();
     auto frontLeftDoor = m_aircraft.GetFrontLeftDoor();
     if (groundPowerDoor.has_value()) {
-        YMeters += groundPowerDoor->get().posZMeter;
-        XMeters += groundPowerDoor->get().posXMeter;
+        YMeters += groundPowerDoor->first.get().posZMeter;
+        XMeters += groundPowerDoor->first.get().posXMeter;
     } else if (frontLeftDoor.has_value()) {
-        YMeters += frontLeftDoor->get().posZMeter + 7;
-        XMeters += frontLeftDoor->get().posXMeter - 4;
+        YMeters += frontLeftDoor->first.get().posZMeter + 7;
+        XMeters += frontLeftDoor->first.get().posXMeter - 4;
     } else {
         return false;
     }
     
-    const auto* powerDoor = (groundPowerDoor.has_value() ? &groundPowerDoor->get() : (frontLeftDoor.has_value() ? &frontLeftDoor->get() : nullptr));
+    const auto* powerDoor = (groundPowerDoor.has_value() ? &groundPowerDoor->first.get() : (frontLeftDoor.has_value() ? &frontLeftDoor->first.get() : nullptr));
     if (!powerDoor) {
         return false;
     }

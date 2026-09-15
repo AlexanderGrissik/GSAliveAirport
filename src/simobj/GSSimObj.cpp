@@ -16,6 +16,8 @@ void GSSimObj::InitDatums(GSSimConnect& handler)
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_LongLat, "FREEZE_LATITUDE_LONGITUDE_SET");
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_Altitude, "FREEZE_ALTITUDE_SET");
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_Attitude, "FREEZE_ATTITUDE_SET");
+    handler.InvokeMapClientEvent(GSDefinitions::GSDefID_OpenDoors, "OPEN_AIRCRAFT_DOORS");
+    handler.InvokeMapClientEvent(GSDefinitions::GSDefID_CloseDoors, "CLOSE_AIRCRAFT_DOORS");
 }
 
 void GSSimObj::Spawn()
@@ -25,6 +27,8 @@ void GSSimObj::Spawn()
 
 void GSSimObj::Despawn()
 {
+    OnDespawning();
+
     if (m_attached.size() > 0) {
         DespawnAttached();
     } else {
@@ -141,6 +145,18 @@ GSRequest::SendResult GSSimObj::GSReqTxClientEvent::Process()
         SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqTxClientEvent::Process Failed call: ") << simRC.rc;
+    }
+
+    return {simRC, false};
+}
+
+GSRequest::SendResult GSSimObj::GSReqTxEventEx1::Process()
+{
+    auto simRC = m_simHandle.Invoke(
+        SimConnect_TransmitClientEvent_EX1, m_objID, m_eventID,
+        SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY, m_data0, m_data1, 0, 0, 0);
+    if (!simRC.isOK()) {
+        GSLogStream::LogError("GSSimObjReq::GSReqTxEventEx1::Process Failed call: ") << simRC.rc;
     }
 
     return {simRC, false};

@@ -89,33 +89,41 @@ void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entr
     if (m_rawData.wingSpanMeters > 36.0) m_category = AircraftSizeCategory::Large;
     if (m_rawData.wingSpanMeters > 65.0) m_category = AircraftSizeCategory::ExtraLarge;
 
-    for (const auto& interactivePnt : m_rawData.interactivePoints) {
+    
+    for (size_t idx = 0; idx < m_rawData.interactivePoints.size(); ++idx) {
+        const auto& interactivePnt = m_rawData.interactivePoints[idx];
         if (interactivePnt.type > 4 || interactivePnt.type == 2)
             continue;
 
         switch (interactivePnt.type) {
         case 0: // Main
             if (interactivePnt.posZMeter < 0) {
-                if (interactivePnt.posXMeter < 0)
-                    rearLeftDoorPnt = std::cref(interactivePnt);
-                else
-                    rearRightDoorPnt = std::cref(interactivePnt);
+                if (interactivePnt.posXMeter < 0) {
+                    rearLeftDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                } else {
+                    rearRightDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                }
             } else {
-                if (interactivePnt.posXMeter < 0)
-                    frontLeftDoorPnt = std::cref(interactivePnt);
-                else
-                    frontRightDoorPnt = std::cref(interactivePnt);
+                if (interactivePnt.posXMeter < 0) {
+                    frontLeftDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                } else {
+                    frontRightDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                }
             }
+            break;
         case 1: // Cargo
-            if (interactivePnt.posZMeter < 0)
-                cargoDoorBackPnt = std::cref(interactivePnt);
-            else
-                cargoDoorFrontPnt = std::cref(interactivePnt);
+            if (interactivePnt.posZMeter < 0) {
+                cargoDoorBackPnt = std::make_pair(std::cref(interactivePnt), idx);
+            }
+            else {
+                cargoDoorFrontPnt = std::make_pair(std::cref(interactivePnt), idx);
+            }
+            break;
         case 3: 
-            fuelHosePnt = std::cref(interactivePnt);
+            fuelHosePnt = std::make_pair(std::cref(interactivePnt), idx);
             break;
         case 4: // GroundPower
-            groundPowerPnt = std::cref(interactivePnt);
+            groundPowerPnt = std::make_pair(std::cref(interactivePnt), idx);
             break;
         }
     }   

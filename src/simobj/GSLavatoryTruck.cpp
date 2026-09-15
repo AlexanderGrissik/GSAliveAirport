@@ -16,11 +16,11 @@ bool GSLavatoryTruck::PreSpawn()
     const auto& airData = m_aircraft.GetRawData();
     auto rearLeftDoor = m_aircraft.GetRearLeftDoor();
     auto rearRightDoor = m_aircraft.GetRearRightDoor();
-    const auto* refDoor = (rearLeftDoor.has_value() ? &rearLeftDoor->get() : nullptr);
+    const auto* refDoor = (rearLeftDoor.has_value() ? &rearLeftDoor->first.get() : nullptr);
 
     double YMeters = 0.0, XMeters = 0.0;
     if (!refDoor) {
-        refDoor = (rearRightDoor.has_value() ? &rearRightDoor->get() : nullptr);
+        refDoor = (rearRightDoor.has_value() ? &rearRightDoor->first.get() : nullptr);
         if (!refDoor) {
             return false;
         }
