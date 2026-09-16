@@ -23,6 +23,7 @@ void GSCatalog::LoadCatalog()
     std::string strBuggageLoaderExt = "FSDT_Tug_660";
     std::string strBuggageCargo = "CARGO";
     std::string strBuggageWorkerExt = "FSDT_Baggage_Loader_Man_02";
+    std::string strTugExt = "FSDT_Tug_M1A";
     for (const auto& pr : m_entires) {
         if (pr.first.starts_with(strGPULargeExt))
             m_extGPULarge = strGPULargeExt;
@@ -30,6 +31,8 @@ void GSCatalog::LoadCatalog()
             m_extGPUMedium = strGPUMediumExt;
         else if (pr.first.starts_with(strLavatoryExt))
             m_extLavatory = strLavatoryExt;
+        else if (pr.first.starts_with(strTugExt))
+            m_entiresTugExt.push_back(&pr);
         else if (pr.first.starts_with(strBuggageLoaderExt) && (pr.first.find(strBuggageCargo) == std::string::npos))
             m_entiresBuggageLoaderExt.push_back(&pr);
         else if (pr.first.starts_with(strBuggageWorkerExt) && (pr.first.find(strBuggageCargo) == std::string::npos))
@@ -58,6 +61,13 @@ bool GSCatalog::Exists(const char* str) const
     }
 
     return false;
+}
+
+const std::string& GSCatalog::GetTugExt()
+{
+    std::uniform_int_distribution<size_t> dist(0, m_entiresTugExt.size() - 1);
+
+    return m_entiresTugExt[dist(m_rng)]->first;
 }
 
 const std::string& GSCatalog::GetBuggageLoaderExt()

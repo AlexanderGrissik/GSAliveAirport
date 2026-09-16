@@ -113,6 +113,7 @@
     <ClCompile Include="src\simobj\GSAircraftGroundSmall.cpp" />
     <ClCompile Include="src\simobj\GSAircraftGroundXL.cpp" />
     <ClCompile Include="src\simobj\GSBuggageLoader.cpp" />
+    <ClCompile Include="src\simobj\GSBuggageTrain.cpp" />
     <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp" />
     <ClCompile Include="src\simobj\GSGroundPowerMSFS.cpp" />
     <ClCompile Include="src\simobj\GSLavatoryTruck.cpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="src\simobj\GSAircraftGroundSmall.h" />
     <ClInclude Include="src\simobj\GSAircraftGroundXL.h" />
     <ClInclude Include="src\simobj\GSBuggageLoader.h" />
+    <ClInclude Include="src\simobj\GSBuggageTrain.h" />
     <ClInclude Include="src\simobj\GSCateringCartMSFS.h" />
     <ClInclude Include="src\simobj\GSGroundPowerMSFS.h" />
     <ClInclude Include="src\simobj\GSLavatoryTruck.h" />
@@ -151,9 +153,6 @@
     <ClInclude Include="src\simobj\GSPushback.h" />
     <ClInclude Include="src\simobj\GSSimObj.h" />
     <ClInclude Include="src\simobj\GSStatic.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -60,7 +60,6 @@ bool GSGroundPowerMSFS::PreSpawn()
         return false;
     }
 
-    
     bool driver = false;
 
     if (m_gpuType == GPU_LARGE && !GSCatalog::GetInstance().GetGPULargeExt().empty()) {

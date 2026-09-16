@@ -2,6 +2,7 @@
 #include "../GSGeography.h"
 #include "../GSCatalog.h"
 #include "GSStatic.h"
+#include "GSBuggageTrain.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -110,6 +111,10 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
         ptrWorker->PreSpawn();
         m_attached.emplace_back(ptrWorker);
     }
+
+    auto ptrTrain = new GSBuggageTrain(m_simHandle, m_aircraft, *this, *this);
+    ptrTrain->PreSpawn();
+    m_attached.emplace_back(ptrTrain);
 
     if (m_attached.size())
         SpawnAttached();
