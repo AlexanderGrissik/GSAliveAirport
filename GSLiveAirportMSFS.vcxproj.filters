@@ -81,6 +81,12 @@
     <ClCompile Include="src\simobj\GSBuggageTrain.cpp">
       <Filter>src\simobj</Filter>
     </ClCompile>
+    <ClCompile Include="src\simobj\GSTruckFacility.cpp">
+      <Filter>src\simobj</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simobj\GSSmallCones.cpp">
+      <Filter>src\simobj</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cmds\GSCommand.h">
@@ -171,6 +177,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\simobj\GSBuggageTrain.h">
+      <Filter>src\simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSTruckFacility.h">
+      <Filter>src\simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSSmallCones.h">
       <Filter>src\simobj</Filter>
     </ClInclude>
   </ItemGroup>

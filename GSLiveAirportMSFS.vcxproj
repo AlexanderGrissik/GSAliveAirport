@@ -120,7 +120,9 @@
     <ClCompile Include="src\simobj\GSLinerCones.cpp" />
     <ClCompile Include="src\simobj\GSPushback.cpp" />
     <ClCompile Include="src\simobj\GSSimObj.cpp" />
+    <ClCompile Include="src\simobj\GSSmallCones.cpp" />
     <ClCompile Include="src\simobj\GSStatic.cpp" />
+    <ClCompile Include="src\simobj\GSTruckFacility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\GSAircraftTrackerThread.h" />
@@ -152,7 +154,9 @@
     <ClInclude Include="src\simobj\GSLinerCones.h" />
     <ClInclude Include="src\simobj\GSPushback.h" />
     <ClInclude Include="src\simobj\GSSimObj.h" />
+    <ClInclude Include="src\simobj\GSSmallCones.h" />
     <ClInclude Include="src\simobj\GSStatic.h" />
+    <ClInclude Include="src\simobj\GSTruckFacility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -29,6 +29,7 @@ public:
     const std::string& GetTugExt();
     const std::string& GetBuggageLoaderExt();
     const std::string& GetBuggageWorkerExt();
+    const std::string& GetTruckFacility();
 
 private:
     GSCatalog() = default;
@@ -42,6 +43,7 @@ private:
     EntiresVec m_entiresBuggageLoaderExt;
     EntiresVec m_entiresBuggageWorkerExt;
     EntiresVec m_entiresTugExt;
+    EntiresVec m_entiresTruckFacility;
     std::string m_extGPULarge;
     std::string m_extGPUMedium;
     std::string m_extLavatory;
