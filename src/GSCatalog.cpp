@@ -30,6 +30,9 @@ void GSCatalog::LoadCatalog()
     std::string strSeatedExt = "SEATED";
     std::string strGuidnessExt = "guidness";
     std::string strTarmac = "Tarmac";
+    std::string strMarshallerExt = "FSDT_Marshaller_";
+    std::string strMarshallerMale = "Marshaller_Male";
+    std::string strMarshallerFemale = "Marshaller_Female";
     for (const auto& pr : m_entires) {
         if (pr.first.starts_with(strGPULargeExt))
             m_extGPULarge = strGPULargeExt;
@@ -39,6 +42,10 @@ void GSCatalog::LoadCatalog()
             m_extLavatory = strLavatoryExt;
         else if (pr.first.starts_with(strPilotExt))
             m_entriesPilotExt.push_back(&pr);
+        else if (pr.first.starts_with(strMarshallerExt))
+            m_entriesMarshallerExt.push_back(&pr);
+        else if (pr.first.starts_with(strMarshallerMale) || pr.first.starts_with(strMarshallerFemale))
+            m_entriesMarshaller.push_back(&pr);
         else if (pr.first.starts_with(strPassangerExt) && (pr.first.find(strSeatedExt) == std::string::npos) && (pr.first.find(strGuidnessExt) == std::string::npos) && (pr.first.find(strPilotExt) == std::string::npos))
             m_entriesPassengerExt.push_back(&pr);
         else if (pr.first.starts_with(strTugExt))

@@ -5,6 +5,7 @@
 #include "GSPushback.h"
 #include "GSLavatoryTruck.h"
 #include "GSBuggageLoader.h"
+#include "GSMarshaller.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -18,6 +19,7 @@ void GSAircraftGroundXL::BuildObjs()
     m_objs.emplace_back(new GSLavatoryTruck(m_simConnect, m_aircraft, *this));
 	m_objs.emplace_back(new GSBuggageLoader(m_simConnect, m_aircraft, *this, true));
 	m_objs.emplace_back(new GSBuggageLoader(m_simConnect, m_aircraft, *this, false));
+	m_objs.emplace_back(new GSMarshaller(m_simConnect, m_aircraft, *this));
 }
 
 }

@@ -118,6 +118,7 @@
     <ClCompile Include="src\simobj\GSGroundPowerMSFS.cpp" />
     <ClCompile Include="src\simobj\GSLavatoryTruck.cpp" />
     <ClCompile Include="src\simobj\GSLinerCones.cpp" />
+    <ClCompile Include="src\simobj\GSMarshaller.cpp" />
     <ClCompile Include="src\simobj\GSPushback.cpp" />
     <ClCompile Include="src\simobj\GSSimObj.cpp" />
     <ClCompile Include="src\simobj\GSSmallCones.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="src\simobj\GSGroundPowerMSFS.h" />
     <ClInclude Include="src\simobj\GSLavatoryTruck.h" />
     <ClInclude Include="src\simobj\GSLinerCones.h" />
+    <ClInclude Include="src\simobj\GSMarshaller.h" />
     <ClInclude Include="src\simobj\GSPushback.h" />
     <ClInclude Include="src\simobj\GSSimObj.h" />
     <ClInclude Include="src\simobj\GSSmallCones.h" />
