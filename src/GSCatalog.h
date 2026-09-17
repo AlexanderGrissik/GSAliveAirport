@@ -35,6 +35,7 @@ public:
     const std::string& GetTarmacHuman() { return GetEntry(m_entiresTarmac); }
     const std::string& GetMarshallerExt() { return GetEntry(m_entriesMarshallerExt); }
     const std::string& GetMarshaller() { return GetEntry(m_entriesMarshaller); }
+    const std::string& GetWingwalker() { return GetEntry(m_entriesWingwalkerExt); }
 
 private:
     GSCatalog() = default;
@@ -56,6 +57,7 @@ private:
     EntiresVec m_entriesPassengerExt;
     EntiresVec m_entriesMarshallerExt;
     EntiresVec m_entriesMarshaller;
+    EntiresVec m_entriesWingwalkerExt;
     std::string m_extGPULarge;
     std::string m_extGPUMedium;
     std::string m_extLavatory;

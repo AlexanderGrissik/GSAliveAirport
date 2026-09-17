@@ -93,6 +93,9 @@
     <ClCompile Include="src\simobj\GSMarshaller.cpp">
       <Filter>src\simobj</Filter>
     </ClCompile>
+    <ClCompile Include="src\simobj\GSWingmans.cpp">
+      <Filter>src\simobj</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cmds\GSCommand.h">
@@ -195,6 +198,9 @@
       <Filter>src\simobj</Filter>
     </ClInclude>
     <ClInclude Include="src\simobj\GSMarshaller.h">
+      <Filter>src\simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simobj\GSWingmans.h">
       <Filter>src\simobj</Filter>
     </ClInclude>
   </ItemGroup>

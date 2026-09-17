@@ -125,6 +125,7 @@
     <ClCompile Include="src\simobj\GSStandingHuman.cpp" />
     <ClCompile Include="src\simobj\GSStatic.cpp" />
     <ClCompile Include="src\simobj\GSTruckFacility.cpp" />
+    <ClCompile Include="src\simobj\GSWingmans.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\GSAircraftTrackerThread.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="src\simobj\GSStandingHuman.h" />
     <ClInclude Include="src\simobj\GSStatic.h" />
     <ClInclude Include="src\simobj\GSTruckFacility.h" />
+    <ClInclude Include="src\simobj\GSWingmans.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

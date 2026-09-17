@@ -33,6 +33,7 @@ void GSCatalog::LoadCatalog()
     std::string strMarshallerExt = "FSDT_Marshaller_";
     std::string strMarshallerMale = "Marshaller_Male";
     std::string strMarshallerFemale = "Marshaller_Female";
+    std::string strWingwalkerExt = "FSDT_Wingwalker";
     for (const auto& pr : m_entires) {
         if (pr.first.starts_with(strGPULargeExt))
             m_extGPULarge = strGPULargeExt;
@@ -42,6 +43,8 @@ void GSCatalog::LoadCatalog()
             m_extLavatory = strLavatoryExt;
         else if (pr.first.starts_with(strPilotExt))
             m_entriesPilotExt.push_back(&pr);
+        else if (pr.first.starts_with(strWingwalkerExt))
+            m_entriesWingwalkerExt.push_back(&pr);
         else if (pr.first.starts_with(strMarshallerExt))
             m_entriesMarshallerExt.push_back(&pr);
         else if (pr.first.starts_with(strMarshallerMale) || pr.first.starts_with(strMarshallerFemale))
