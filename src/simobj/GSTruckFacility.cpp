@@ -1,6 +1,7 @@
 #include "GSTruckFacility.h"
 #include "../GSGeography.h"
 #include "../GSCatalog.h"
+#include "GSStandingHuman.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -8,7 +9,26 @@ namespace NS_GSLiveAirportMSFS
 void GSTruckFacility::OnCreated()
 {
     SetFinalPositionAndState();
-    OnObjSpawned(true);
+    if (m_attached.size())
+        SpawnAttached();
+    else
+        OnObjSpawned(true);
+}
+
+void GSTruckFacility::OnSpawned(bool ok, GSSimObj& obj)
+{
+    (void)obj; (void)ok;
+    if (++m_spawned == m_attached.size())
+        OnObjSpawned(true);
+}
+
+void GSTruckFacility::OnDespawned(bool ok, GSSimObj& obj)
+{
+    (void)obj; (void)ok;
+    if (--m_spawned <= 0) {
+        m_attached.clear();
+        Despawn();
+    }
 }
 
 bool GSTruckFacility::PreSpawn()
@@ -25,9 +45,21 @@ bool GSTruckFacility::PreSpawn()
 
     auto halfWing = airData.wingSpanMeters / 2.0;
     const auto conePos = GSGeography::RelativePosition(
-        airData.headingDegrees, m_aircraft.GetLongLat(), 0, halfWing / 2 + 8);
+        airData.headingDegrees, m_aircraft.GetLongLat(), 0, halfWing + 6);
     m_initPos.Longitude = conePos.Long();
     m_initPos.Latitude = conePos.Lat();
+
+    auto ptrH1 = new GSStandingHuman(m_simHandle, m_aircraft, *this, GSStandingHuman::PILOT,
+        { halfWing + 4, 3 });
+    ptrH1->SetPosition({ -halfWing / 4, -halfWing - 6 });
+    ptrH1->PreSpawn();
+    m_attached.emplace_back(ptrH1);
+
+    auto ptrH2 = new GSStandingHuman(m_simHandle, m_aircraft, *this, GSStandingHuman::PASSENGER,
+        { halfWing + 3, 4 });
+    ptrH2->SetPosition({ halfWing / 2, -halfWing - 6 });
+    ptrH2->PreSpawn();
+    m_attached.emplace_back(ptrH2);
 
     return true;
 }

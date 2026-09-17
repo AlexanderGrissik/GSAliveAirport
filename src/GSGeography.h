@@ -29,6 +29,8 @@ public:
 
     [[nodiscard]] static double DistanceMeters(const GSCoord& coordA, const GSCoord& coordB);
 
+    [[nodiscard]] static double Azz(const GSCoord& coordA, const GSCoord& coordB);
+
     [[nodiscard]] static GSCoord RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters);
 
     [[nodiscard]] static double MetersPerDegreeLat();

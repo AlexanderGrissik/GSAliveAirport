@@ -25,6 +25,11 @@ void GSCatalog::LoadCatalog()
     std::string strBuggageWorkerExt = "FSDT_Baggage_Loader_Man_02";
     std::string strTugExt = "FSDT_Tug_M1A";
     std::string strTruckFacility = "ASO_TruckFacility01";
+    std::string strPilotExt = "FSDT_Passenger_PILOT";
+    std::string strPassangerExt = "FSDT_Passenger_";
+    std::string strSeatedExt = "SEATED";
+    std::string strGuidnessExt = "guidness";
+    std::string strTarmac = "Tarmac";
     for (const auto& pr : m_entires) {
         if (pr.first.starts_with(strGPULargeExt))
             m_extGPULarge = strGPULargeExt;
@@ -32,10 +37,16 @@ void GSCatalog::LoadCatalog()
             m_extGPUMedium = strGPUMediumExt;
         else if (pr.first.starts_with(strLavatoryExt))
             m_extLavatory = strLavatoryExt;
+        else if (pr.first.starts_with(strPilotExt))
+            m_entriesPilotExt.push_back(&pr);
+        else if (pr.first.starts_with(strPassangerExt) && (pr.first.find(strSeatedExt) == std::string::npos) && (pr.first.find(strGuidnessExt) == std::string::npos) && (pr.first.find(strPilotExt) == std::string::npos))
+            m_entriesPassengerExt.push_back(&pr);
         else if (pr.first.starts_with(strTugExt))
             m_entiresTugExt.push_back(&pr);
         else if (pr.first.starts_with(strTruckFacility))
             m_entiresTruckFacility.push_back(&pr);
+        else if (pr.first.starts_with(strTarmac))
+            m_entiresTarmac.push_back(&pr);
         else if (pr.first.starts_with(strBuggageLoaderExt) && (pr.first.find(strBuggageCargo) == std::string::npos))
             m_entiresBuggageLoaderExt.push_back(&pr);
         else if (pr.first.starts_with(strBuggageWorkerExt) && (pr.first.find(strBuggageCargo) == std::string::npos))
@@ -66,32 +77,14 @@ bool GSCatalog::Exists(const char* str) const
     return false;
 }
 
-const std::string& GSCatalog::GetTugExt()
+const std::string& GSCatalog::GetEntry(EntiresVec& entires)
 {
-    std::uniform_int_distribution<size_t> dist(0, m_entiresTugExt.size() - 1);
+    if (entires.empty())
+        return m_empty;
 
-    return m_entiresTugExt[dist(m_rng)]->first;
-}
+    std::uniform_int_distribution<size_t> dist(0, entires.size() - 1);
 
-const std::string& GSCatalog::GetBuggageLoaderExt()
-{
-    std::uniform_int_distribution<size_t> dist(0, m_entiresBuggageLoaderExt.size() - 1);
-
-    return m_entiresBuggageLoaderExt[dist(m_rng)]->first;
-}
-
-const std::string& GSCatalog::GetBuggageWorkerExt()
-{
-    std::uniform_int_distribution<size_t> dist(0, m_entiresBuggageWorkerExt.size() - 1);
-
-    return m_entiresBuggageWorkerExt[dist(m_rng)]->first;
-}
-
-const std::string& GSCatalog::GetTruckFacility()
-{
-    std::uniform_int_distribution<size_t> dist(0, m_entiresTruckFacility.size() - 1);
-
-    return m_entiresTruckFacility[dist(m_rng)]->first;
+    return entires[dist(m_rng)]->first;
 }
 
 GSRequest::SendResult GSCatalog::GSCatalogReq::Process()

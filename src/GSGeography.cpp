@@ -36,6 +36,14 @@ double GSGeography::DistanceMeters(const GSCoord& coordA, const GSCoord& coordB)
     return std::hypot(latitudeMeters, longitudeMeters);
 }
 
+double GSGeography::Azz(const GSCoord& coordA, const GSCoord& coordB)
+{
+    const double northMeters = (coordB.Lat() - coordA.Lat()) * MetersPerDegreeLat();
+    const double averageLatitude = (coordA.Lat() + coordB.Lat()) / 2.0;
+    const double eastMeters = (coordB.Long() - coordA.Long()) * MetersPerDegreeLong(averageLatitude);
+    return NormDeg(std::atan2(eastMeters, northMeters) * RadToDeg);
+}
+
 GSCoord GSGeography::RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters)
 {
     const double heading = mainHeadingDegrees * DegToRad;

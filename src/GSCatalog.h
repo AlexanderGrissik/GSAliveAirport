@@ -26,10 +26,13 @@ public:
     const std::string& GetGPULargeExt() const { return m_extGPULarge; }
     const std::string& GetGPUMediumExt() const { return m_extGPUMedium; }
     const std::string& GetLavatoryExt() const { return m_extLavatory; }
-    const std::string& GetTugExt();
-    const std::string& GetBuggageLoaderExt();
-    const std::string& GetBuggageWorkerExt();
-    const std::string& GetTruckFacility();
+    const std::string& GetTugExt() { return GetEntry(m_entiresTarmac); }
+    const std::string& GetBuggageLoaderExt() { return GetEntry(m_entiresBuggageLoaderExt); }
+    const std::string& GetBuggageWorkerExt() { return GetEntry(m_entiresBuggageWorkerExt); }
+    const std::string& GetPilotExt() { return GetEntry(m_entriesPilotExt); }
+    const std::string& GetPassengerExt() { return GetEntry(m_entriesPassengerExt); }
+    const std::string& GetTruckFacility() { return GetEntry(m_entiresTruckFacility); }
+    const std::string& GetTarmacHuman() { return GetEntry(m_entiresTarmac); }
 
 private:
     GSCatalog() = default;
@@ -38,12 +41,17 @@ private:
     GSCatalog &operator=(const GSCatalog &) = delete;
 
     using EntiresVec = std::vector<const std::pair<std::string, std::string>*>;
+    const std::string& GetEntry(EntiresVec& entires);
+
     std::stop_source m_source;
     std::vector<std::pair<std::string, std::string>> m_entires;
     EntiresVec m_entiresBuggageLoaderExt;
     EntiresVec m_entiresBuggageWorkerExt;
     EntiresVec m_entiresTugExt;
     EntiresVec m_entiresTruckFacility;
+    EntiresVec m_entiresTarmac;
+    EntiresVec m_entriesPilotExt;
+    EntiresVec m_entriesPassengerExt;
     std::string m_extGPULarge;
     std::string m_extGPUMedium;
     std::string m_extLavatory;
