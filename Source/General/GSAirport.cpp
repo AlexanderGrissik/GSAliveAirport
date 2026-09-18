@@ -1,4 +1,5 @@
 #include "GSAirport.h"
+#include "GSGeography.h"
 #include "GSLogStream.h"
 #include <algorithm>
 #include <cstddef>
@@ -66,7 +67,13 @@ void GSAirport::MergeNetworks(std::vector<std::vector<TaxiPathExt*>>& networks, 
 
 void GSAirport::OrganizeStructures()
 {
+    for (auto& [index, point] : m_taxiPoints) {
+        point.m_longLat = GSGeography::RelativePosition(0.0, m_location, point.biasZMeters, point.biasXMeters);
+    }
+
     for (auto& [index, parking] : m_parkings) {
+        parking.m_longLat = GSGeography::RelativePosition(0.0, m_location, parking.biasZMeters, parking.biasXMeters);
+
         const auto jetway = m_jetways.find(index);
         if (jetway != m_jetways.end())
             parking.m_jetway = &jetway->second;

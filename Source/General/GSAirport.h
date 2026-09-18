@@ -52,12 +52,14 @@ public:
     struct TaxiPointExt : public TaxiPoint {
         TaxiPointExt(DWORD idx, const TaxiPoint& pnt): TaxiPoint(pnt), m_itemIndex(idx) {}
         DWORD m_itemIndex;
+        GSCoord m_longLat;
         std::vector<TaxiPathExt*> m_conns;
     };
 
     struct ParkingSlotExt : public ParkingSlot {
         ParkingSlotExt(DWORD idx, const ParkingSlot& slot): ParkingSlot(slot), m_itemIndex(idx) {}
         DWORD m_itemIndex;
+        GSCoord m_longLat;
         TaxiPointExt* m_taxiPoint = nullptr;
         Jetway* m_jetway = nullptr;
     };
