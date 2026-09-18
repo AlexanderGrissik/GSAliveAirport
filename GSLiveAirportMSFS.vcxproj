@@ -10,6 +10,84 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Animation\GSAnimationObject.h" />
+    <ClInclude Include="Source\Animation\GSAnimationThread.h" />
+    <ClInclude Include="Source\Animation\GSAnimBFLO.h" />
+    <ClInclude Include="Source\Animation\GSAnimBFLOT.h" />
+    <ClInclude Include="Source\Animation\GSAnimSingle.h" />
+    <ClInclude Include="Source\Commands\GSCmdAircraftUpdate.h" />
+    <ClInclude Include="Source\Commands\GSCmdAnimObj.h" />
+    <ClInclude Include="Source\Commands\GSCmdReq.h" />
+    <ClInclude Include="Source\Commands\GSCommand.h" />
+    <ClInclude Include="Source\General\GSAircraftTrackerThread.h" />
+    <ClInclude Include="Source\General\GSCatalog.h" />
+    <ClInclude Include="Source\General\GSConsole.h" />
+    <ClInclude Include="Source\General\GSCoord.h" />
+    <ClInclude Include="Source\General\GSDefinitions.h" />
+    <ClInclude Include="Source\General\GSGeography.h" />
+    <ClInclude Include="Source\General\GSLiveAirportMSFSApp.h" />
+    <ClInclude Include="Source\General\GSLogStream.h" />
+    <ClInclude Include="Source\General\GSQuickQueue.h" />
+    <ClInclude Include="Source\General\GSRequest.h" />
+    <ClInclude Include="Source\General\GSSimConnect.h" />
+    <ClInclude Include="Source\General\GSSpawnerThread.h" />
+    <ClInclude Include="Source\SimObjects\GSAircraft.h" />
+    <ClInclude Include="Source\SimObjects\GSAircraftGround.h" />
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundLarge.h" />
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundMedium.h" />
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundSmall.h" />
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundXL.h" />
+    <ClInclude Include="Source\SimObjects\GSBuggageLoader.h" />
+    <ClInclude Include="Source\SimObjects\GSBuggageTrain.h" />
+    <ClInclude Include="Source\SimObjects\GSCateringCart.h" />
+    <ClInclude Include="Source\SimObjects\GSGroundPower.h" />
+    <ClInclude Include="Source\SimObjects\GSLavatoryTruck.h" />
+    <ClInclude Include="Source\SimObjects\GSLinerCones.h" />
+    <ClInclude Include="Source\SimObjects\GSMarshaller.h" />
+    <ClInclude Include="Source\SimObjects\GSPushback.h" />
+    <ClInclude Include="Source\SimObjects\GSSimObj.h" />
+    <ClInclude Include="Source\SimObjects\GSSmallCones.h" />
+    <ClInclude Include="Source\SimObjects\GSStandingHuman.h" />
+    <ClInclude Include="Source\SimObjects\GSStatic.h" />
+    <ClInclude Include="Source\SimObjects\GSTruckFacility.h" />
+    <ClInclude Include="Source\SimObjects\GSWingmans.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Animation\GSAnimationObject.cpp" />
+    <ClCompile Include="Source\Animation\GSAnimationThread.cpp" />
+    <ClCompile Include="Source\Animation\GSAnimBFLO.cpp" />
+    <ClCompile Include="Source\Animation\GSAnimBFLOT.cpp" />
+    <ClCompile Include="Source\Animation\GSAnimSingle.cpp" />
+    <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp" />
+    <ClCompile Include="Source\General\GSCatalog.cpp" />
+    <ClCompile Include="Source\General\GSConsole.cpp" />
+    <ClCompile Include="Source\General\GSGeography.cpp" />
+    <ClCompile Include="Source\General\GSLiveAirportMSFSApp.cpp" />
+    <ClCompile Include="Source\General\GSLogStream.cpp" />
+    <ClCompile Include="Source\General\GSSimConnect.cpp" />
+    <ClCompile Include="Source\General\GSSpawnerThread.cpp" />
+    <ClCompile Include="Source\SimObjects\GSAircraft.cpp" />
+    <ClCompile Include="Source\SimObjects\GSAircraftGround.cpp" />
+    <ClCompile Include="Source\SimObjects\GSAircraftGroundLarge.cpp" />
+    <ClCompile Include="Source\SimObjects\GSAircraftGroundMedium.cpp" />
+    <ClCompile Include="Source\SimObjects\GSAircraftGroundSmall.cpp" />
+    <ClCompile Include="Source\SimObjects\GSAircraftGroundXL.cpp" />
+    <ClCompile Include="Source\SimObjects\GSBuggageLoader.cpp" />
+    <ClCompile Include="Source\SimObjects\GSBuggageTrain.cpp" />
+    <ClCompile Include="Source\SimObjects\GSCateringCart.cpp" />
+    <ClCompile Include="Source\SimObjects\GSGroundPower.cpp" />
+    <ClCompile Include="Source\SimObjects\GSLavatoryTruck.cpp" />
+    <ClCompile Include="Source\SimObjects\GSLinerCones.cpp" />
+    <ClCompile Include="Source\SimObjects\GSMarshaller.cpp" />
+    <ClCompile Include="Source\SimObjects\GSPushback.cpp" />
+    <ClCompile Include="Source\SimObjects\GSSimObj.cpp" />
+    <ClCompile Include="Source\SimObjects\GSSmallCones.cpp" />
+    <ClCompile Include="Source\SimObjects\GSStandingHuman.cpp" />
+    <ClCompile Include="Source\SimObjects\GSStatic.cpp" />
+    <ClCompile Include="Source\SimObjects\GSTruckFacility.cpp" />
+    <ClCompile Include="Source\SimObjects\GSWingmans.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{7E81C91B-AFB7-4A49-8BBE-91633E30D5D9}</ProjectGuid>
@@ -97,78 +175,6 @@
       <Command>copy /Y "$(MSFS2024_SDK)\SimConnect SDK\lib\SimConnect.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="src\GSAircraftTrackerThread.cpp" />
-    <ClCompile Include="src\GSAnimationObject.cpp" />
-    <ClCompile Include="src\GSAnimationThread.cpp" />
-    <ClCompile Include="src\GSCatalog.cpp" />
-    <ClCompile Include="src\GSConsole.cpp" />
-    <ClCompile Include="src\GSGeography.cpp" />
-    <ClCompile Include="src\GSLiveAirportMSFSApp.cpp" />
-    <ClCompile Include="src\GSLogStream.cpp" />
-    <ClCompile Include="src\GSSimConnect.cpp" />
-    <ClCompile Include="src\GSSpawnerThread.cpp" />
-    <ClCompile Include="src\simobj\GSAircraft.cpp" />
-    <ClCompile Include="src\simobj\GSAircraftGround.cpp" />
-    <ClCompile Include="src\simobj\GSAircraftGroundLarge.cpp" />
-    <ClCompile Include="src\simobj\GSAircraftGroundMedium.cpp" />
-    <ClCompile Include="src\simobj\GSAircraftGroundSmall.cpp" />
-    <ClCompile Include="src\simobj\GSAircraftGroundXL.cpp" />
-    <ClCompile Include="src\simobj\GSBuggageLoader.cpp" />
-    <ClCompile Include="src\simobj\GSBuggageTrain.cpp" />
-    <ClCompile Include="src\simobj\GSCateringCartMSFS.cpp" />
-    <ClCompile Include="src\simobj\GSGroundPowerMSFS.cpp" />
-    <ClCompile Include="src\simobj\GSLavatoryTruck.cpp" />
-    <ClCompile Include="src\simobj\GSLinerCones.cpp" />
-    <ClCompile Include="src\simobj\GSMarshaller.cpp" />
-    <ClCompile Include="src\simobj\GSPushback.cpp" />
-    <ClCompile Include="src\simobj\GSSimObj.cpp" />
-    <ClCompile Include="src\simobj\GSSmallCones.cpp" />
-    <ClCompile Include="src\simobj\GSStandingHuman.cpp" />
-    <ClCompile Include="src\simobj\GSStatic.cpp" />
-    <ClCompile Include="src\simobj\GSTruckFacility.cpp" />
-    <ClCompile Include="src\simobj\GSWingmans.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\cmds\GSCmdAnimObj.h" />
-    <ClInclude Include="src\GSAircraftTrackerThread.h" />
-    <ClInclude Include="src\GSAnimationObject.h" />
-    <ClInclude Include="src\GSAnimationThread.h" />
-    <ClInclude Include="src\GSCatalog.h" />
-    <ClInclude Include="src\GSConsole.h" />
-    <ClInclude Include="src\GSCoord.h" />
-    <ClInclude Include="src\GSDefinitions.h" />
-    <ClInclude Include="src\GSGeography.h" />
-    <ClInclude Include="src\GSLiveAirportMSFSApp.h" />
-    <ClInclude Include="src\GSLogStream.h" />
-    <ClInclude Include="src\GSQuickQueue.h" />
-    <ClInclude Include="src\GSRequest.h" />
-    <ClInclude Include="src\GSSimConnect.h" />
-    <ClInclude Include="src\GSSpawnerThread.h" />
-    <ClInclude Include="src\cmds\GSCommand.h" />
-    <ClInclude Include="src\cmds\GSCmdAircraftUpdate.h" />
-    <ClInclude Include="src\cmds\GSCmdReq.h" />
-    <ClInclude Include="src\simobj\GSAircraft.h" />
-    <ClInclude Include="src\simobj\GSAircraftGround.h" />
-    <ClInclude Include="src\simobj\GSAircraftGroundLarge.h" />
-    <ClInclude Include="src\simobj\GSAircraftGroundMedium.h" />
-    <ClInclude Include="src\simobj\GSAircraftGroundSmall.h" />
-    <ClInclude Include="src\simobj\GSAircraftGroundXL.h" />
-    <ClInclude Include="src\simobj\GSBuggageLoader.h" />
-    <ClInclude Include="src\simobj\GSBuggageTrain.h" />
-    <ClInclude Include="src\simobj\GSCateringCartMSFS.h" />
-    <ClInclude Include="src\simobj\GSGroundPowerMSFS.h" />
-    <ClInclude Include="src\simobj\GSLavatoryTruck.h" />
-    <ClInclude Include="src\simobj\GSLinerCones.h" />
-    <ClInclude Include="src\simobj\GSMarshaller.h" />
-    <ClInclude Include="src\simobj\GSPushback.h" />
-    <ClInclude Include="src\simobj\GSSimObj.h" />
-    <ClInclude Include="src\simobj\GSSmallCones.h" />
-    <ClInclude Include="src\simobj\GSStandingHuman.h" />
-    <ClInclude Include="src\simobj\GSStatic.h" />
-    <ClInclude Include="src\simobj\GSTruckFacility.h" />
-    <ClInclude Include="src\simobj\GSWingmans.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
