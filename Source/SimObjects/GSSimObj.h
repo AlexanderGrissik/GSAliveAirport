@@ -57,6 +57,9 @@ public:
     void SetHeading(double heading) { m_initPos.Heading = heading; }
     void SetPosition(const GSCoord& pos) { m_initPos.Longitude = pos.Long(); m_initPos.Latitude = pos.Lat(); }
 
+    void AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float percThrot, unsigned flags);
+    void ShootWaypoints();
+
 protected:
 
     virtual void OnCreated() = 0;
@@ -69,6 +72,7 @@ protected:
     std::string m_title;
     SIMCONNECT_DATA_INITPOSITION m_initPos{};
     std::vector<std::unique_ptr<GSSimObj>> m_attached; 
+    std::vector<SIMCONNECT_DATA_WAYPOINT> m_aiWaypoints;
     bool m_hasAnim = false;
 
     class GSReqCreate : public GSSimObjReq {

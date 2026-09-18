@@ -36,6 +36,8 @@ void GSAnimSingle::Animate(GSSimConnect& handler, float elapsedMilli)
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSAnimSingle::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
     }
+
+    Move(handler, elapsedMilli);
 }
 
 }

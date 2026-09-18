@@ -50,6 +50,7 @@ void GSAnimationThread::RunLoopAnimation(std::stop_token stopToken)
 
 void GSAnimationThread::OnConnect()
 {
+    GSAnimationObject::InitDatums(*this);
     GSAnimBFLO::InitDatums(*this);
     GSAnimBFLOT::InitDatums(*this);
     GSAnimSingle::InitDatums(*this);

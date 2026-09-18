@@ -29,9 +29,9 @@ public:
 
 private:
 
-    GSAnimationObject::FrameRange m_BLO;
-    GSAnimationObject::FrameRange m_FLO;
-    GSAnimationObject::FrameRange m_TDW;
+    GSAnimationObject::FrameRange m_BLO{};
+    GSAnimationObject::FrameRange m_FLO{};
+    GSAnimationObject::FrameRange m_TDW{};
 };
 
 }

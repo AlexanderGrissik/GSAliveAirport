@@ -38,7 +38,10 @@ void GSStatic::SetFinalPositionAndState()
 
     if (m_animObj.get()) {
         m_animObj->ResetObjID(m_simObjectID);
+        m_animObj->SetAIWaypoints(&m_aiWaypoints);
         RegisterAnim(m_animObj.release());
     }
+
+    ShootWaypoints();
 }
 }

@@ -10,9 +10,14 @@ constexpr std::array GSDatums_Position{
     GSDefinitions::DatumSpec{"Initial Position", nullptr, SIMCONNECT_DATATYPE_INITPOSITION},
 };
 
+constexpr std::array GSDatums_AIWaypoints{
+    GSDefinitions::DatumSpec{"AI WAYPOINT LIST", "number", SIMCONNECT_DATATYPE_WAYPOINT},
+};
+
 void GSSimObj::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_Position, GSDefinitions::GSDefID::GSDefID_Position);
+    GSAnimationObject::InitDatums(handler);
+    handler.InvokeAddDatums(GSDatums_AIWaypoints, GSDefinitions::GSDefID::GSDefID_AIWaypoints);
 
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_LongLat, "FREEZE_LATITUDE_LONGITUDE_SET");
     handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_Altitude, "FREEZE_ALTITUDE_SET");
@@ -78,6 +83,20 @@ void GSSimObj::UnregisterAnim()
         new GSReqRemAnim(m_simHandle, *this)));
     m_simHandle.PostCommand(cmd);
     m_hasAnim = false;
+}
+
+void GSSimObj::AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float percThrot, unsigned flags)
+{
+    m_aiWaypoints.emplace_back(SIMCONNECT_DATA_WAYPOINT{ pos.Lat(), pos.Long(), alt, flags, ktsSpeed, percThrot });
+}
+
+void GSSimObj::ShootWaypoints()
+{
+    if (m_aiWaypoints.size()) {
+        m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
+            GSDefinitions::GSDefID_AIWaypoints, m_simObjectID, 0, static_cast<DWORD>(m_aiWaypoints.size()),
+            static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), m_aiWaypoints.data());
+    }
 }
 
 GSRequest::SendResult GSSimObj::GSReqCreate::Process()

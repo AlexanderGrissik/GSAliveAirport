@@ -15,6 +15,7 @@ public:
     static double RadToDeg;
     static double MetersPerLatitudeDegree;
     static double FeetPerMeter;
+    static double KnotsToMetersSecond;
 
     [[nodiscard]] static double NormDeg(double degrees);
 

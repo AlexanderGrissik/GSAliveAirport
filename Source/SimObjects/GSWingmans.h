@@ -29,6 +29,8 @@ private:
     void OnDespawning() override {}
     bool PreSpawn() override;
 
+    static void BuildWalkPath(const GSCoord& wp1, const GSCoord& wp2, GSSimObj& simObj);
+
     CountType m_countTP;
     size_t m_spawned = 0;
 };

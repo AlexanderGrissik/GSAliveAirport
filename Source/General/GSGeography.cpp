@@ -10,6 +10,7 @@ double GSGeography::DegToRad = GSGeography::PI / 180.0;
 double GSGeography::RadToDeg = 180.0 / GSGeography::PI;
 double GSGeography::MetersPerLatitudeDegree = 111'320.0;
 double GSGeography::FeetPerMeter = 3.2808399;
+double GSGeography::KnotsToMetersSecond = 0.514444;
 
 double GSGeography::MetersPerDegreeLat()
 {
