@@ -83,13 +83,15 @@ public:
 
     class GSReqSpawnAircraft : public GSRequest {
     public:
-        GSReqSpawnAircraft(GSSimConnect& simHandle, int t) : GSRequest(simHandle), m_type(t) {}
+        GSReqSpawnAircraft(GSSimConnect& simHandle, GSAirport& airport, int t):
+            GSRequest(simHandle), m_airport(airport), m_type(t) {}
         GSRequest::SendResult Process() override;
         bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
     private:
-        int m_type;
+        GSAirport& m_airport;
         SIMCONNECT_DATA_INITPOSITION m_pos{};
+        int m_type;
     };
 };
 } // namespace NS_GSLiveAirportMSFS

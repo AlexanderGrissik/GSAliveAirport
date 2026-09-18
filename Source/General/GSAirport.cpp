@@ -49,6 +49,24 @@ void GSAirport::LoadInfo(GSSimConnect& handler)
     handler.PostReqCommand(new GSReqInfo(handler, *this));
 }
 
+const GSAirport::ParkingSlotExt* GSAirport::GetClosestJetwayParking(const GSCoord& location) const
+{
+    const ParkingSlotExt* closest = nullptr;
+
+    for (const auto& [index, parking] : m_parkings) {
+        if (!parking.m_jetway)
+            continue;
+
+        if (!closest ||
+            GSGeography::DistanceMeters(location, parking.m_longLat) <
+            GSGeography::DistanceMeters(location, closest->m_longLat)) {
+            closest = &parking;
+        }
+    }
+
+    return closest;
+}
+
 bool GSAirport::NetworkContainsNode(const std::vector<TaxiPathExt*>& network, DWORD nodeIndex)
 {
     return std::any_of(network.begin(), network.end(), [nodeIndex](const TaxiPathExt* path) {

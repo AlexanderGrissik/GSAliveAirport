@@ -81,6 +81,7 @@ public:
 
     void LoadInfo(GSSimConnect& handler);
     void OrganizeStructures();
+    const ParkingSlotExt* GetClosestJetwayParking(const GSCoord& location) const;
     const std::string& GetICAO() const { return m_icao; } 
     const GSCoord& GetLongLat() const { return m_location; }
    

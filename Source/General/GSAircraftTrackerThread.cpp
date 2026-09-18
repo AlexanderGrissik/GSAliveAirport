@@ -186,10 +186,10 @@ void GSAircraftTrackerThread::PrintAircrafts(bool parkedOnly, double distKM) con
 
 void GSAircraftTrackerThread::SpawnTestAircrafts()
 {
-    PostReqCommand(new GSReqSpawnAircraft(*this, 1));
-    PostReqCommand(new GSReqSpawnAircraft(*this, 2));
-    PostReqCommand(new GSReqSpawnAircraft(*this, 3));
-    PostReqCommand(new GSReqSpawnAircraft(*this, 4));
+    PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 1));
+    PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 2));
+    PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 3));
+    PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 4));
 }
 
 GSRequest::SendResult GSAircraftTrackerThread::GSReqScan::Process()
@@ -377,8 +377,12 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
 
     if (m_type == 2) {
         title = "737 Max 8 Passengers";
-        m_pos.Latitude = posUser.Lat() - 0.001;
-        m_pos.Longitude = posUser.Long() + 0.001;
+        const auto* parking = m_airport.GetClosestJetwayParking(userAircraft->GetLongLat());
+        if (parking) {
+            m_pos.Latitude = parking->m_longLat.Lat();
+            m_pos.Longitude = parking->m_longLat.Long();
+            m_pos.Heading = parking->headingDegTrue;
+        }
     } else if (m_type == 3) {
         title = "Cessna C152";
         m_pos.Latitude = posUser.Lat() + 0.001;
