@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../General/GSSimConnect.h"
 #include "../Animation/GSAnimationObject.h"
+#include "../General/GSSimConnect.h"
 #include "GSCmdReq.h"
 
 namespace NS_GSLiveAirportMSFS

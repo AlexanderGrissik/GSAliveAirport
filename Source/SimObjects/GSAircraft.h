@@ -9,19 +9,17 @@
 #pragma warning(pop)
 
 #include "../General/GSCoord.h"
+#include "../General/GSSimConnect.h"
 #include <array>
 #include <cstddef>
-#include <chrono>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
-#include <string_view>
-#include <vector>
+#include <utility>
 
 namespace NS_GSLiveAirportMSFS
 {
-
-class GSSimConnect;
 
 class GSAircraft
 {

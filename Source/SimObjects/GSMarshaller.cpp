@@ -1,7 +1,8 @@
 #include "GSMarshaller.h"
-#include "../GSGeography.h"
-#include "../GSCatalog.h"
-#include "Animation/GSAnimSingle.h"
+#include "../General/GSGeography.h"
+#include "../General/GSCatalog.h"
+#include "../Animation/GSAnimSingle.h"
+#include "../SimObjects/GSAircraft.h"
 
 namespace NS_GSLiveAirportMSFS
 {

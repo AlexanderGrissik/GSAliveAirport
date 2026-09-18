@@ -1,6 +1,6 @@
 #include "GSStatic.h"
-#include "../GSGeography.h"
-#include "../GSCatalog.h"
+#include "../General/GSGeography.h"
+#include "../General/GSCatalog.h"
 
 namespace NS_GSLiveAirportMSFS
 {

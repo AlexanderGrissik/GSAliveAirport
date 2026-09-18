@@ -1,8 +1,12 @@
 #pragma once
 
 #include "GSSimConnect.h"
-#include <random>
 #include <cstddef>
+#include <random>
+#include <stop_token>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace NS_GSLiveAirportMSFS
 {

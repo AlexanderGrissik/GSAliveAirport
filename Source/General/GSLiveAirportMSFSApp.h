@@ -2,7 +2,6 @@
 
 #include "GSAircraftTrackerThread.h"
 #include "GSConsole.h"
-#include "GSSimConnect.h"
 #include "GSSpawnerThread.h"
 #include "../Animation/GSAnimationThread.h"
 #include <atomic>

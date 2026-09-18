@@ -3,10 +3,13 @@
 #include "GSSimConnect.h"
 #include "../SimObjects/GSAircraftGround.h"
 #include "GSCoord.h"
+#include <cstddef>
+#include <functional>
+#include <memory>
 #include <stop_token>
 #include <thread>
 #include <unordered_map>
-#include <memory>
+#include <vector>
 
 namespace NS_GSLiveAirportMSFS
 {

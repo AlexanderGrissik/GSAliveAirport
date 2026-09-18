@@ -3,19 +3,12 @@
 #include "../SimObjects/GSAircraft.h"
 #include "GSSimConnect.h"
 
-#include <condition_variable>
-#include <cstdint>
-#include <deque>
-#include <functional>
-#include <map>
+#include <chrono>
 #include <memory>
-#include <mutex>
-#include <optional>
 #include <stop_token>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
 namespace NS_GSLiveAirportMSFS
 {

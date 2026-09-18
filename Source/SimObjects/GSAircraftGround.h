@@ -1,14 +1,13 @@
 #pragma once
 
 #include "GSAircraft.h"
-#include "../General/GSSimConnect.h"
 #include "GSSimObj.h"
+#include <cstddef>
 #include <list>
+#include <memory>
 
 namespace NS_GSLiveAirportMSFS
 {
-
-class GSSimConnect;
 
 class GSAircraftGround : public GSSimObj::IObjUpdate
 {

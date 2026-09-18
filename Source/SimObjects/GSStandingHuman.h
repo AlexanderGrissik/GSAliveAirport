@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GSSimObj.h"
-#include "../GSCoord.h"
+#include "../General/GSCoord.h"
 
 namespace NS_GSLiveAirportMSFS
 {

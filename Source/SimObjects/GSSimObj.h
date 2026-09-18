@@ -1,16 +1,19 @@
 #pragma once
 
-#include "../GSLogStream.h"
+#include "../General/GSCoord.h"
+#include "../General/GSLogStream.h"
+#include "../General/GSRequest.h"
+#include "../General/GSSimConnect.h"
+#include "../Animation/GSAnimationObject.h"
 #include "GSAircraft.h"
-#include "../GSRequest.h"
-#include "../GSAnimationObject.h"
-#include <vector>
+#include <array>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace NS_GSLiveAirportMSFS
 {
-
-class GSSimConnect;
 
 class GSSimObj
 {

@@ -1,7 +1,8 @@
 #include "GSLavatoryTruck.h"
-#include "../GSGeography.h"
-#include "../GSCatalog.h"
-#include "Animation/GSAnimBFLOT.h"
+#include "../General/GSGeography.h"
+#include "../General/GSCatalog.h"
+#include "../Animation/GSAnimBFLOT.h"
+#include "../SimObjects/GSAircraft.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -62,7 +63,7 @@ void GSLavatoryTruck::SetFinalPositionAndState()
 
     if (m_hasAnimLavaratory) {
         auto* anim = new GSAnimBFLOT(m_simObjectID);
-        anim->AddFrameSet(0, 200, 30.0, 0, 1755, 30, 0, 1942, 30);
+        anim->AddFrameSet(50, 51, 30.0, 0, 1755, 30, 0, 1942, 30);
         RegisterAnim(anim);
     }
 }

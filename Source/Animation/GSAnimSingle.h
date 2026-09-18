@@ -16,7 +16,7 @@ public:
     };
     #pragma pack(pop)
 
-    GSAGSAnimSinglenimBFLO(SIMCONNECT_OBJECT_ID objID) : GSAnimationObject(objID) {}
+    GSAnimSingle(SIMCONNECT_OBJECT_ID objID) : GSAnimationObject(objID) {}
 
     static void InitDatums(GSSimConnect& handler);
 

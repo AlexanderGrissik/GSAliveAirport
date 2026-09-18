@@ -9,6 +9,7 @@
 #include <optional>
 #include <new>
 #include <intrin.h>
+#include <utility>
 
 template <typename T, std::size_t CAP>
 class GSQuickQueue

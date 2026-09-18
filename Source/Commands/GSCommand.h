@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../General/GSQuickQueue.h"
-#include <functional>
+#include <memory>
 
 namespace NS_GSLiveAirportMSFS
 {

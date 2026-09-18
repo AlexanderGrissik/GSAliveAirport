@@ -1,5 +1,6 @@
 #include "GSCateringCart.h"
 #include "../General/GSGeography.h"
+#include "../SimObjects/GSAircraft.h"
 
 namespace NS_GSLiveAirportMSFS
 {

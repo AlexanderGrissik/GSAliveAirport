@@ -1,6 +1,6 @@
 #include "GSTruckFacility.h"
-#include "../GSGeography.h"
-#include "../GSCatalog.h"
+#include "../General/GSGeography.h"
+#include "../General/GSCatalog.h"
 #include "GSStandingHuman.h"
 
 namespace NS_GSLiveAirportMSFS

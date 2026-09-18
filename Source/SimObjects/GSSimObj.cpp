@@ -1,7 +1,7 @@
 #include "GSSimObj.h"
-#include "../cmds/GSCmdReq.h"
-#include "../cmds/GSCmdAnimObj.h"
-#include "../GSSimConnect.h"
+#include "../Commands/GSCmdReq.h"
+#include "../Commands/GSCmdAnimObj.h"
+#include "../General/GSSimConnect.h"
 
 namespace NS_GSLiveAirportMSFS
 {

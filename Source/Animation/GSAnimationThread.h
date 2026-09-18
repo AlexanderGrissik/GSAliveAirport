@@ -1,4 +1,13 @@
+#pragma once
+
 #include "GSAnimationObject.h"
+#include "../General/GSSimConnect.h"
+
+#include <chrono>
+#include <memory>
+#include <stop_token>
+#include <thread>
+#include <unordered_map>
 
 namespace NS_GSLiveAirportMSFS
 {

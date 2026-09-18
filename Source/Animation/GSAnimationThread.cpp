@@ -1,6 +1,9 @@
 #include "GSAnimationThread.h"
 #include "../Commands/GSCmdAnimObj.h"
 #include "../General/GSLogStream.h"
+#include "GSAnimBFLO.h"
+#include "GSAnimBFLOT.h"
+#include "GSAnimSingle.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -47,7 +50,9 @@ void GSAnimationThread::RunLoopAnimation(std::stop_token stopToken)
 
 void GSAnimationThread::OnConnect()
 {
-    GSAnimationObject::InitDatums(*this);
+    GSAnimBFLO::InitDatums(*this);
+    GSAnimBFLOT::InitDatums(*this);
+    GSAnimSingle::InitDatums(*this);
 }
 
 void GSAnimationThread::DoAnimation()

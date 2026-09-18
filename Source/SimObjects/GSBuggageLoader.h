@@ -1,8 +1,11 @@
 #pragma once
 
-#include "../General/GSSimConnect.h"
 #include "GSSimObj.h"
 #include "../General/GSDefinitions.h"
+#include "../General/GSLogStream.h"
+#include <array>
+#include <cstddef>
+#include <utility>
 
 namespace NS_GSLiveAirportMSFS
 {

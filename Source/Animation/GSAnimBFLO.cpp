@@ -1,5 +1,5 @@
 #include "GSAnimBFLO.h"
-#include "../GeneralGSLogStream.h"
+#include "../General/GSLogStream.h"
 
 namespace NS_GSLiveAirportMSFS
 {

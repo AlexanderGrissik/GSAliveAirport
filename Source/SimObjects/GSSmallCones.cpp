@@ -1,6 +1,6 @@
 #include "GSSmallCones.h"
-#include "../GSGeography.h"
-#include "../GSCatalog.h"
+#include "../General/GSGeography.h"
+#include "../General/GSCatalog.h"
 #include "GSStatic.h"
 
 namespace NS_GSLiveAirportMSFS

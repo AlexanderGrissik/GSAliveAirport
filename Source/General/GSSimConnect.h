@@ -1,19 +1,12 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#pragma warning(push)
-#pragma warning(disable : 4245)
-#include <SimConnect.h>
-#pragma warning(pop)
-
 #include "../Commands/GSCmdReq.h"
 #include "GSDefinitions.h"
-#include <condition_variable>
+#include <array>
 #include <cstddef>
-#include <mutex>
+#include <functional>
 #include <stop_token>
+#include <unordered_map>
 #include <utility>
 
 namespace NS_GSLiveAirportMSFS

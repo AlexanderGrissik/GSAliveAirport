@@ -21,7 +21,7 @@ void GSAnimSingle::InitDatums(GSSimConnect& handler)
 
 void GSAnimSingle::AddFrameSet(GSDefinitions::GSDefID defID, float startFrame, float endFrame, float fps)
 {
-    m_frame = { startFrame, endFrame, fps };
+    m_frame = { startFrame, endFrame, fps, startFrame, std::abs(endFrame - startFrame) };
     m_defID = defID;
 }
 
