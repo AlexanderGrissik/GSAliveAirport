@@ -226,6 +226,13 @@ void GSSimConnect::InvokeAddDatum(SIMCONNECT_DATA_DEFINITION_ID DefineID, const 
     }
 }
 
+void GSSimConnect::InvokeAddFacilityDatum(SIMCONNECT_DATA_DEFINITION_ID DefineID, const char* DatumName)
+{
+    if (!CaptureResult(SimConnect_AddToFacilityDefinition(m_handle, DefineID, DatumName), 0).isOK()) {
+        GSLogStream::LogError("Unable to add definitions for: ") << DefineID << ", Name: " << DatumName;
+    }
+}
+
 void GSSimConnect::InvokeMapClientEvent(SIMCONNECT_CLIENT_EVENT_ID EventID, const char * EventName)
 {
     if (!CaptureResult(SimConnect_MapClientEventToSimEvent(m_handle, EventID, EventName), 0).isOK()) {

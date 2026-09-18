@@ -27,10 +27,14 @@ public:
     virtual void OnSimStop() = 0;
 
     void InvokeAddDatum(SIMCONNECT_DATA_DEFINITION_ID DefineID, const char *DatumName, const char *UnitsName, SIMCONNECT_DATATYPE DatumType);
+    void InvokeAddFacilityDatum(SIMCONNECT_DATA_DEFINITION_ID DefineID, const char* DatumName);
     void InvokeMapClientEvent(SIMCONNECT_CLIENT_EVENT_ID EventID, const char * EventName);
 
     template <size_t SZ>
     void InvokeAddDatums(const std::array<GSDefinitions::DatumSpec, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID);
+
+    template <size_t SZ>
+    void InvokeAddFacilityDatums(const std::array<const char*, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID);
 
     template <typename Method, typename... Args>
     GSDefinitions::SendResult Invoke(Method&& method, Args&&... args) { return CaptureResult(method(GetHandle(), std::forward<Args>(args)...), 0U); }
@@ -88,6 +92,14 @@ void GSSimConnect::InvokeAddDatums(const std::array<GSDefinitions::DatumSpec, SZ
     for (const GSDefinitions::DatumSpec &datum : arr) {
         InvokeAddDatum(defID, datum.name, datum.units, datum.type);
     }        
+}
+
+template <size_t SZ>
+void GSSimConnect::InvokeAddFacilityDatums(const std::array<const char*, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID)
+{
+    for (const auto& datum : arr) {
+        InvokeAddFacilityDatum(defID, datum);
+    }
 }
 
 } // namespace NS_GSLiveAirportMSFS

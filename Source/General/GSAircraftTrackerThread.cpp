@@ -56,6 +56,7 @@ void GSAircraftTrackerThread::RunLoopTracker(std::stop_token stopToken)
 
 void GSAircraftTrackerThread::OnConnect()
 {
+    GSAirport::InitDatums(*this);
     GSAircraft::InitDatums(*this);
     GSSimObj::InitDatums(*this);
     m_lastScanTime = std::chrono::steady_clock::now() - 10s;
@@ -82,6 +83,13 @@ void GSAircraftTrackerThread::RequestScan()
     PostReqCommand(new GSReqScan(*this));
     m_scanInProgress = true;
     m_lastScanTime = std::chrono::steady_clock::now();
+}
+
+void GSAircraftTrackerThread::RequestAirportScan()
+{
+    m_tempClosest.reset();
+    m_tempClosestDistance = std::numeric_limits<double>::max();
+    PostReqCommand(new GSReqScanAirport(*this));
 }
 
 void GSAircraftTrackerThread::HandleRemoved()
@@ -199,8 +207,12 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqScan::Process()
 }
 
 void GSAircraftTrackerThread::HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft)
-{
+{ 
     m_userAircraft = aircraft;
+    if (!m_currAirport || GSGeography::DistanceMeters(m_currAirport->GetLongLat(), m_userAircraft->GetLongLat()) > MinAirportRefreshDistMtr) {
+        RequestAirportScan();
+    }
+
     CmdPtr cmd(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER, aircraft));
     m_singleObserver.PostCommand(cmd);
 }
@@ -264,6 +276,30 @@ bool GSAircraftTrackerThread::HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_B
     return false;
 }
 
+bool GSAircraftTrackerThread::HandleScanAirportMessage(SIMCONNECT_RECV_AIRPORT_LIST &entry)
+{
+    for (DWORD i = 0; i < entry.dwArraySize; ++i) {
+        const auto& airport = entry.rgData[i];
+        const GSCoord airportPos{ airport.Longitude, airport.Latitude };
+        const double distance = GSGeography::DistanceMeters(m_userAircraft->GetLongLat(), airportPos);
+        if (distance < m_tempClosestDistance) {
+            m_tempClosestDistance = distance;
+            m_tempClosest.reset(new SIMCONNECT_DATA_FACILITY_AIRPORT(airport));
+        }
+    }
+
+    if (entry.dwEntryNumber + 1 == entry.dwOutOf) {
+        if (m_tempClosest.get() && m_tempClosestDistance < DiscoveryRadiusMeters) {
+            m_currAirport = std::make_shared<GSAirport>(m_tempClosest->Ident, GSCoord{ m_tempClosest->Longitude, m_tempClosest->Latitude });
+            m_currAirport->LoadInfo(*this);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 bool GSAircraftTrackerThread::GSReqScan::OnMessage(SIMCONNECT_RECV *message, DWORD messageSize)
 {
     GSAircraftTrackerThread &tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
@@ -285,6 +321,38 @@ void GSAircraftTrackerThread::GSReqScan::OnException(SIMCONNECT_RECV_EXCEPTION *
     
     tracker.SetInProgress(false);
     tracker.HandleRemoved();
+}
+
+GSRequest::SendResult GSAircraftTrackerThread::GSReqScanAirport::Process()
+{
+    auto id = m_simHandle.NextRequestID();
+    GSRequest::SendResult rc = {
+        m_simHandle.InvokeRequest(id, SimConnect_RequestFacilitiesList, SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, id), true };
+    
+    if (!rc.m_simRC.isOK()) {
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqScanAirport::Process Failed call: ") << rc.m_simRC.rc;
+        rc.m_keep = false;
+    } 
+
+    return rc;
+}
+
+bool GSAircraftTrackerThread::GSReqScanAirport::OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) 
+{
+    GSAircraftTrackerThread &tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
+
+    if (!message || message->dwID != SIMCONNECT_RECV_ID_AIRPORT_LIST) {
+        GSLogStream::LogError("Unexpected message: ") << (message ? message->dwID : -1) << ", Size: " << messageSize;
+        return false;
+    }
+
+    return tracker.HandleScanAirportMessage(*reinterpret_cast<SIMCONNECT_RECV_AIRPORT_LIST *>(message));
+}
+    
+void GSAircraftTrackerThread::GSReqScanAirport::OnException(SIMCONNECT_RECV_EXCEPTION *message)
+{
+    GSLogStream::LogError("GSAircraftTrackerThread::GSReqScanAirport:: Exception: ") << message->dwID <<
+        ", Exception: " << message->dwException << "Index:" << message->dwIndex;
 }
 
 GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()

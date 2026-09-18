@@ -141,6 +141,9 @@
     <ClInclude Include="Source\SimObjects\GSWingmans.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
+    <ClInclude Include="Source\General\GSAirport.h">
+      <Filter>Source\General</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp">
@@ -241,6 +244,9 @@
     </ClCompile>
     <ClCompile Include="Source\SimObjects\GSWingmans.cpp">
       <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\General\GSAirport.cpp">
+      <Filter>Source\General</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

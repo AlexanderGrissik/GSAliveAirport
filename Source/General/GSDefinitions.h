@@ -28,6 +28,7 @@ public:
         GSDefID_Aircraft = 1,
         GSDefID_Position,
         GSDefID_AIWaypoints,
+        GSDefID_AirportInfo,
         GSDefID_CateringTruckStateGet,
         GSDefID_CateringTruckStateSet,
         GSDefID_GroundPowerStateSet,

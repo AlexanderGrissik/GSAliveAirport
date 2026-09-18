@@ -2,7 +2,7 @@
 
 #include "../SimObjects/GSAircraft.h"
 #include "GSSimConnect.h"
-
+#include "GSAirport.h"
 #include <chrono>
 #include <memory>
 #include <stop_token>
@@ -18,6 +18,7 @@ class GSAircraftTrackerThread final : public GSSimConnect
 public:
     static constexpr double ActiveRadiusMeters = 1'000.0;
     static constexpr DWORD DiscoveryRadiusMeters = 5000;
+    static constexpr double MinAirportRefreshDistMtr = 2000;
 
     ~GSAircraftTrackerThread() override {}
     GSAircraftTrackerThread(GSSimConnect& singleObserver): m_singleObserver(singleObserver) {}
@@ -42,11 +43,13 @@ public:
     void RunLoopTracker(std::stop_token stopToken);
 
     void RequestScan();
+    void RequestAirportScan();
     void HandleRemoved();
     bool HandleExistingAircraft(std::shared_ptr<GSAircraft> &aircraft, std::shared_ptr<GSAircraft> &existing);
     bool HandleNewAircraft(std::shared_ptr<GSAircraft>& aircraft);
     void HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft);
     bool HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
+    bool HandleScanAirportMessage(SIMCONNECT_RECV_AIRPORT_LIST &entry);
     void PrintAircrafts(bool parkedOnly, double distKM) const;
     void SpawnTestAircrafts();
 
@@ -58,8 +61,19 @@ public:
     std::chrono::steady_clock::time_point m_lastScanTime{};
     std::jthread m_thread;
     std::shared_ptr<GSAircraft> m_userAircraft;
+    std::shared_ptr<GSAirport> m_currAirport;
+    std::unique_ptr<SIMCONNECT_DATA_FACILITY_AIRPORT> m_tempClosest;
+    double m_tempClosestDistance = std::numeric_limits<double>::max();
 
     class GSReqScan : public GSRequest {
+    public:
+        using GSRequest::GSRequest;
+        GSRequest::SendResult Process() override;
+        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
+        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
+    };
+
+    class GSReqScanAirport : public GSRequest {
     public:
         using GSRequest::GSRequest;
         GSRequest::SendResult Process() override;

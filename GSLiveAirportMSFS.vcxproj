@@ -21,6 +21,7 @@
     <ClInclude Include="Source\Commands\GSCmdReq.h" />
     <ClInclude Include="Source\Commands\GSCommand.h" />
     <ClInclude Include="Source\General\GSAircraftTrackerThread.h" />
+    <ClInclude Include="Source\General\GSAirport.h" />
     <ClInclude Include="Source\General\GSCatalog.h" />
     <ClInclude Include="Source\General\GSConsole.h" />
     <ClInclude Include="Source\General\GSCoord.h" />
@@ -60,6 +61,7 @@
     <ClCompile Include="Source\Animation\GSAnimBFLOT.cpp" />
     <ClCompile Include="Source\Animation\GSAnimSingle.cpp" />
     <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp" />
+    <ClCompile Include="Source\General\GSAirport.cpp" />
     <ClCompile Include="Source\General\GSCatalog.cpp" />
     <ClCompile Include="Source\General\GSConsole.cpp" />
     <ClCompile Include="Source\General\GSGeography.cpp" />
