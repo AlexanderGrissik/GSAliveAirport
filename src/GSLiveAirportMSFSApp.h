@@ -4,6 +4,7 @@
 #include "GSConsole.h"
 #include "GSSimConnect.h"
 #include "GSSpawnerThread.h"
+#include "GSAnimationThread.h"
 
 #include <atomic>
 
@@ -12,7 +13,7 @@ namespace NS_GSLiveAirportMSFS
 class GSLiveAirportMSFSApp final
 {
 public:
-    GSLiveAirportMSFSApp(): m_aircraftTracker(m_spawner) {}
+    GSLiveAirportMSFSApp(): m_aircraftTracker(m_spawner), m_spawner(m_animThread) {}
     ~GSLiveAirportMSFSApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
 
     GSLiveAirportMSFSApp(const GSLiveAirportMSFSApp &) = delete;
@@ -28,6 +29,7 @@ private:
 
     std::atomic_bool m_quit{false};
     GSAircraftTrackerThread m_aircraftTracker;
+    GSAnimationThread m_animThread;
     GSSpawnerThread m_spawner;
     GSConsole m_console;
 };

@@ -25,7 +25,7 @@ private:
 
     void OnCreated() override;
     void OnDespawning() override {}
-    
+
     size_t m_spawned = 0;
     GSBuggageLoader& m_loader;
 };

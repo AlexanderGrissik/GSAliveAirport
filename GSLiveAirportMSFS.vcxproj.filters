@@ -96,6 +96,12 @@
     <ClCompile Include="src\simobj\GSWingmans.cpp">
       <Filter>src\simobj</Filter>
     </ClCompile>
+    <ClCompile Include="src\GSAnimationObject.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GSAnimationThread.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cmds\GSCommand.h">
@@ -202,6 +208,15 @@
     </ClInclude>
     <ClInclude Include="src\simobj\GSWingmans.h">
       <Filter>src\simobj</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GSAnimationObject.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GSAnimationThread.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cmds\GSCmdAnimObj.h">
+      <Filter>src\cmds</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

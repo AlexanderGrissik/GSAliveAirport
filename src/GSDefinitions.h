@@ -8,6 +8,8 @@
 #include <SimConnect.h>
 #pragma warning(pop)
 
+#define VD(x) (void)(x)
+
 namespace NS_GSLiveAirportMSFS {
 
 class GSDefinitions
@@ -31,6 +33,9 @@ public:
         GSDefID_GroundPowerExtStateSet,
         GSDefID_BuggageLoaderExtStateGet,
         GSDefID_BuggageLoaderExtStateSet,
+        GSDefID_AnimVelocBodyY,
+        GSDefID_AnimWagonBLO,
+        GSDefID_AnimWagonFLO
     };
 
     enum ECommands
@@ -43,7 +48,10 @@ public:
         CMD_SPAWNER_AIRCRAFT_ADDED,
         CMD_SPAWNER_AIRCRAFT_REMOVED,
         CMD_SPAWNER_AIRCRAFT_MODIFIED,
-        CMD_SPAWNER_AIRCRAFT_USER
+        CMD_SPAWNER_AIRCRAFT_USER,
+        CMD_ANIM_OBJ_ADD,
+        CMD_ANIM_OBJ_REM,
+        CMD_ANIM_OBJ_REM_DONE
     };
 
     struct DatumSpec

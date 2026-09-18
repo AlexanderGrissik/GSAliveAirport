@@ -13,6 +13,7 @@ int GSLiveAirportMSFSApp::Run()
 {
     m_aircraftTracker.Start();
     m_spawner.Start();
+    m_animThread.Start();
 
     std::cout << "GSLiveAirportMSFS for MSFS 2024\n"
               << "Automatic aircraft tracking: dynamic at 1 km, discover to 5 km.\n"

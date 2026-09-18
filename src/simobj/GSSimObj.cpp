@@ -1,5 +1,6 @@
 #include "GSSimObj.h"
 #include "../cmds/GSCmdReq.h"
+#include "../cmds/GSCmdAnimObj.h"
 #include "../GSSimConnect.h"
 
 namespace NS_GSLiveAirportMSFS
@@ -31,6 +32,8 @@ void GSSimObj::Despawn()
 
     if (m_attached.size() > 0) {
         DespawnAttached();
+    } else if (m_hasAnim) {
+        UnregisterAnim();
     } else {
         m_simHandle.PostReqCommand(new GSReqDelete(m_simHandle, *this));
     }
@@ -60,6 +63,21 @@ void GSSimObj::Freeze()
     std::array updatePos{ m_initPos };
     m_simHandle.PostReqCommand(new GSReqSetPos(
         m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_Position, std::move(updatePos)));
+}
+
+void GSSimObj::RegisterAnim(GSAnimationObject* animObj)
+{
+    CmdPtr cmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_ADD, m_simHandle, animObj));
+    m_simHandle.PostCommand(cmd);
+    m_hasAnim = true;
+}
+
+void GSSimObj::UnregisterAnim()
+{
+    CmdPtr cmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_REM, m_simHandle, m_simObjectID, 
+        new GSReqRemAnim(m_simHandle, *this)));
+    m_simHandle.PostCommand(cmd);
+    m_hasAnim = false;
 }
 
 GSRequest::SendResult GSSimObj::GSReqCreate::Process()

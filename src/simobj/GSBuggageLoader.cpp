@@ -101,6 +101,11 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
     Freeze();
 
     if (m_ext) {
+        auto* anim = new GSAnimationObject(m_simObjectID);
+        anim->AddFrameSet(GSAnimationObject::WAGON_BLO, 4213, 0, 30.0);
+        anim->AddFrameSet(GSAnimationObject::WAGON_FLO, 650, 0, 30.0);
+        RegisterAnim(anim);
+
         auto ptrWorker = new GSStatic(m_simHandle, m_aircraft, *this);
         ptrWorker->SetTitle(GSCatalog::GetInstance().GetBuggageWorkerExt());
         ptrWorker->SetPosRel(GSStatic::REL_ABSOLUTE);
@@ -109,6 +114,11 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
         ptrWorker->GetInitPos().Altitude = m_initPos.Altitude;
         ptrWorker->GetInitPos().OnGround = 1;
         ptrWorker->PreSpawn();
+        
+        auto* animWorker = new GSAnimationObject(0);
+        animWorker->AddFrameSet(GSAnimationObject::WAGON_BLO, 4213, 0, 30.0);
+        ptrWorker->SetAnimObj(animWorker);
+
         m_attached.emplace_back(ptrWorker);
     }
 

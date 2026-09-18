@@ -3,6 +3,7 @@
 #include "../GSLogStream.h"
 #include "GSAircraft.h"
 #include "../GSRequest.h"
+#include "../GSAnimationObject.h"
 #include <vector>
 #include <memory>
 
@@ -31,12 +32,15 @@ public:
     virtual ~GSSimObj() {}
 
     static void InitDatums(GSSimConnect& handler);
+    
+    virtual bool PreSpawn() = 0;
     void Spawn();
     void Despawn();
     void SpawnAttached();
     void DespawnAttached();
     void Freeze();
-    virtual bool PreSpawn() = 0;
+    void RegisterAnim(GSAnimationObject* animObj);
+    void UnregisterAnim();
 
     const std::string& GetTitle() const { return m_title; }
     const SIMCONNECT_DATA_INITPOSITION& GetInitPos() const { return m_initPos; }
@@ -54,7 +58,7 @@ protected:
 
     virtual void OnCreated() = 0;
     virtual void OnDespawning() = 0;
-
+    
     GSSimConnect& m_simHandle;
     GSAircraft& m_aircraft;
     SIMCONNECT_OBJECT_ID m_simObjectID = 0;
@@ -62,6 +66,7 @@ protected:
     std::string m_title;
     SIMCONNECT_DATA_INITPOSITION m_initPos{};
     std::vector<std::unique_ptr<GSSimObj>> m_attached; 
+    bool m_hasAnim = false;
 
     class GSReqCreate : public GSSimObjReq {
     public:
@@ -149,6 +154,13 @@ protected:
             GSSimObj::GSReqSetDataSimObj<SIMCONNECT_DATA_INITPOSITION, 1>(
                 simHandle, simObj, definitionID, std::forward<std::array<SIMCONNECT_DATA_INITPOSITION, 1>>(data)) {
         }
+    };
+
+    class GSReqRemAnim : public GSSimObjReq {
+        using GSSimObjReq::GSSimObjReq;
+        GSRequest::SendResult Process() override { m_simObj.Despawn(); return { {0,0,NOERROR},false }; }
+        bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override { VD(message); VD(messageSize); return true; };
+        void OnException(SIMCONNECT_RECV_EXCEPTION* message) override { VD(message); };
     };
 
     friend GSReqCreate;

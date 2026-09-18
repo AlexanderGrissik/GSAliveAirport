@@ -35,5 +35,10 @@ bool GSStatic::PreSpawn()
 void GSStatic::SetFinalPositionAndState()
 {
     Freeze();
+
+    if (m_animObj.get()) {
+        m_animObj->ResetObjID(m_simObjectID);
+        RegisterAnim(m_animObj.release());
+    }
 }
 }

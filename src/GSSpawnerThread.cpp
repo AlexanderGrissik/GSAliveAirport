@@ -8,6 +8,7 @@
 #include "simobj/GSGroundPowerMSFS.h"
 #include "simobj/GSBuggageLoader.h"
 #include "cmds/GSCmdAircraftUpdate.h"
+#include "cmds/GSCmdAnimObj.h"
 #include "GSCatalog.h"
 #include "GSGeography.h"
 #include <chrono>
@@ -72,6 +73,23 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
     case GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER:
         UserAircraft(*static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraft());
         break;
+    case GSDefinitions::CMD_ANIM_OBJ_ADD: {
+        auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
+        CmdPtr newCmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_ADD, *this, cmdAnim.AnimObj().release()));
+        m_animThread.PostCommand(newCmd);
+        break;
+    }
+    case GSDefinitions::CMD_ANIM_OBJ_REM: {
+        auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
+        CmdPtr newCmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_REM, *this, cmdAnim.ObjID(), cmdAnim.ReleaseReq()));
+        m_animThread.PostCommand(newCmd);
+        break;
+    }
+    case GSDefinitions::CMD_ANIM_OBJ_REM_DONE: {
+        auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
+        cmdAnim.GetReq().Process();
+        break;
+    }
     default:
         GSLogStream::LogError("GSSpawnerThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;

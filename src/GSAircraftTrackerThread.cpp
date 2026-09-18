@@ -30,8 +30,7 @@ void GSAircraftTrackerThread::Stop()
     m_thread.join();
 }
 
-void GSAircraftTrackerThread::AircraftTrackerLoop(std::stop_token stopToken,
-                                                  GSAircraftTrackerThread *self)
+void GSAircraftTrackerThread::AircraftTrackerLoop(std::stop_token stopToken, GSAircraftTrackerThread *self)
 {
     self->RunLoopTracker(stopToken);
 }
