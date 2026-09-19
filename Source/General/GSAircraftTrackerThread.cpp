@@ -59,6 +59,7 @@ void GSAircraftTrackerThread::OnConnect()
     GSAirport::InitDatums(*this);
     GSAircraft::InitDatums(*this);
     GSSimObj::InitDatums(*this);
+    InvokeMapClientEvent(GSDefinitions::GSDefID_Jetway, "TOGGLE_JETWAY");
     m_lastScanTime = std::chrono::steady_clock::now() - 10s;
 }
 
@@ -377,11 +378,11 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
 
     if (m_type == 2) {
         title = "737 Max 8 Passengers";
-        const auto* parking = m_airport.GetClosestJetwayParking(userAircraft->GetLongLat());
+        const auto parking = m_airport.GetClosestJetwayParking(userAircraft->GetLongLat());
         if (parking) {
-            m_pos.Latitude = parking->m_longLat.Lat();
-            m_pos.Longitude = parking->m_longLat.Long();
-            m_pos.Heading = parking->headingDegTrue;
+            m_pos.Latitude = (*parking)->m_loc.Lat();
+            m_pos.Longitude = (*parking)->m_loc.Long();
+            m_pos.Heading = (*parking)->m_heading;
         }
     } else if (m_type == 3) {
         title = "Cessna C152";
@@ -413,7 +414,7 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
         auto requestId = m_simHandle.NextRequestID();
         auto aiRC = m_simHandle.InvokeRequest(requestId, SimConnect_AIReleaseControl, msg->dwObjectID, requestId);
 
-        std::this_thread::sleep_for(300ms);
+        std::this_thread::sleep_for(100ms);
 
         auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_LongLat, 1,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
@@ -425,6 +426,14 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
         if (!simRC1.isOK() || !simRC2.isOK() || !simRC.isOK() || !aiRC.isOK()) {
             GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Failed call Freeze: ") << 
                 simRC1.rc << "," << simRC2.rc << "," << simRC.rc;
+        }
+
+        std::this_thread::sleep_for(100ms);
+    
+        if (m_type == 2) {
+            m_simHandle.Invoke(
+                SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Jetway,
+                0, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
         }
     } else {
         GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Unexpected Message: ") << message->dwID;

@@ -2,7 +2,6 @@
 
 #include "GSSimConnect.h"
 #include <cstddef>
-#include <random>
 #include <stop_token>
 #include <string>
 #include <utility>
@@ -66,8 +65,6 @@ private:
     std::string m_extGPUMedium;
     std::string m_extLavatory;
     std::string m_empty;
-    std::mt19937 m_rng{std::random_device{}()};
-
     class GSCatalogReq : public GSRequest {
         using GSRequest::GSRequest;
         GSRequest::SendResult Process() override;

@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "GSRoadsNetwork.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -47,29 +48,6 @@ public:
     };
     #pragma pack(pop)
 
-    struct TaxiPathExt;
-     
-    struct TaxiPointExt : public TaxiPoint {
-        TaxiPointExt(DWORD idx, const TaxiPoint& pnt): TaxiPoint(pnt), m_itemIndex(idx) {}
-        DWORD m_itemIndex;
-        GSCoord m_longLat;
-        std::vector<TaxiPathExt*> m_conns;
-    };
-
-    struct ParkingSlotExt : public ParkingSlot {
-        ParkingSlotExt(DWORD idx, const ParkingSlot& slot): ParkingSlot(slot), m_itemIndex(idx) {}
-        DWORD m_itemIndex;
-        GSCoord m_longLat;
-        TaxiPointExt* m_taxiPoint = nullptr;
-        Jetway* m_jetway = nullptr;
-    };
-
-    struct TaxiPathExt : public TaxiPath {
-        TaxiPathExt(const TaxiPath& path): TaxiPath(path) {}
-        TaxiPointExt* m_nodeA = nullptr;
-        TaxiPointExt* m_nodeB = nullptr;
-    };
-
     static_assert(sizeof(ParkingSlot) == 32);
     static_assert(sizeof(TaxiPoint) == 12);
     static_assert(sizeof(TaxiPath) == 16);
@@ -81,22 +59,21 @@ public:
 
     void LoadInfo(GSSimConnect& handler);
     void OrganizeStructures();
-    const ParkingSlotExt* GetClosestJetwayParking(const GSCoord& location) const;
+    std::optional<const GSRoadsNetwork*> GetNetworkByParking(const GSCoord& loc) const;
+    std::optional<const GSRoadsNetwork::RoadNode*> GetClosestJetwayParking(const GSCoord& loc) const;
     const std::string& GetICAO() const { return m_icao; } 
     const GSCoord& GetLongLat() const { return m_location; }
    
 private:
 
-    static bool NetworkContainsNode(const std::vector<TaxiPathExt*>& network, DWORD nodeIndex);
-    static void MergeNetworks(std::vector<std::vector<TaxiPathExt*>>& networks, std::size_t targetIndex, std::size_t sourceIndex);
 
     std::string m_icao;
     GSCoord m_location;
-    std::unordered_map<DWORD, ParkingSlotExt> m_parkings;
-    std::unordered_map<DWORD, TaxiPointExt> m_taxiPoints;
+    std::unordered_map<DWORD, ParkingSlot> m_parkings;
+    std::unordered_map<DWORD, TaxiPoint> m_taxiPoints;
     std::unordered_map<DWORD, Jetway> m_jetways;
-    std::vector<TaxiPathExt> m_taxiPaths;
-    std::vector<std::vector<TaxiPathExt*>> m_roadNetworks;
+    std::vector<TaxiPath> m_taxiPaths;
+    std::vector<GSRoadsNetwork> m_roadNetworks;
 
     class GSReqInfo : public GSRequest
     {

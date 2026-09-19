@@ -49,103 +49,120 @@ void GSAirport::LoadInfo(GSSimConnect& handler)
     handler.PostReqCommand(new GSReqInfo(handler, *this));
 }
 
-const GSAirport::ParkingSlotExt* GSAirport::GetClosestJetwayParking(const GSCoord& location) const
-{
-    const ParkingSlotExt* closest = nullptr;
-
-    for (const auto& [index, parking] : m_parkings) {
-        if (!parking.m_jetway)
-            continue;
-
-        if (!closest ||
-            GSGeography::DistanceMeters(location, parking.m_longLat) <
-            GSGeography::DistanceMeters(location, closest->m_longLat)) {
-            closest = &parking;
-        }
-    }
-
-    return closest;
-}
-
-bool GSAirport::NetworkContainsNode(const std::vector<TaxiPathExt*>& network, DWORD nodeIndex)
-{
-    return std::any_of(network.begin(), network.end(), [nodeIndex](const TaxiPathExt* path) {
-        return path->startIndex == static_cast<int>(nodeIndex) || path->endIndex == static_cast<int>(nodeIndex);
-    });
-}
-
-void GSAirport::MergeNetworks(std::vector<std::vector<TaxiPathExt*>>& networks, std::size_t targetIndex, std::size_t sourceIndex)
-{
-    auto& target = networks[targetIndex];
-    const auto& source = networks[sourceIndex];
-
-    target.insert(target.end(), source.begin(), source.end());
-    networks.erase(networks.begin() + sourceIndex);
-}
-
 void GSAirport::OrganizeStructures()
 {
-    for (auto& [index, point] : m_taxiPoints) {
-        point.m_longLat = GSGeography::RelativePosition(0.0, m_location, point.biasZMeters, point.biasXMeters);
-    }
+    m_roadNetworks.clear();
 
-    for (auto& [index, parking] : m_parkings) {
-        parking.m_longLat = GSGeography::RelativePosition(0.0, m_location, parking.biasZMeters, parking.biasXMeters);
+    const auto nodeExists = [this](DWORD id) {
+        return m_parkings.contains(id) || m_taxiPoints.contains(id);
+    };
 
-        const auto jetway = m_jetways.find(index);
-        if (jetway != m_jetways.end())
-            parking.m_jetway = &jetway->second;
-    }
+    const auto addNode = [this](GSRoadsNetwork& network, DWORD id) {
+        if (const auto parking = m_parkings.find(id); parking != m_parkings.end()) {
+            const GSCoord location = GSGeography::RelativePosition(
+                0.0, m_location, parking->second.biasZMeters, parking->second.biasXMeters);
+            
+            // SimConnect TAXI_PARKING TYPE: VEHICLE
+            const auto nodeType = parking->second.type == 13 ? GSRoadsNetwork::VEHICLE : GSRoadsNetwork::PARKING;
+            network.AddNode(id, location, parking->second.headingDegTrue, nodeType, m_jetways.contains(id));
+            return;
+        }
 
-    for (TaxiPathExt& path : m_taxiPaths) {
-        const auto pointA = m_taxiPoints.find(path.startIndex);
-        const auto pointB = m_taxiPoints.find(path.endIndex);
-        const auto parkingA = m_parkings.find(path.startIndex);
-        const auto parkingB = m_parkings.find(path.endIndex);
+        const auto point = m_taxiPoints.find(id);
+        const GSCoord location = GSGeography::RelativePosition(0.0, m_location, point->second.biasZMeters, point->second.biasXMeters);
+        network.AddNode(id, location, 0.0F, GSRoadsNetwork::NORMAL, false);
+    };
 
-        if (parkingA != m_parkings.end() && pointB != m_taxiPoints.end()) {
-            parkingA->second.m_taxiPoint = &pointB->second;
+    for (const TaxiPath& path : m_taxiPaths) {
+        const DWORD startId = static_cast<DWORD>(path.startIndex);
+        const DWORD endId = static_cast<DWORD>(path.endIndex);
+        if (!nodeExists(startId) || !nodeExists(endId)) {
+            GSLogStream::LogError("GSAirport::OrganizeStructures - Missing taxi path endpoint: ")
+                << startId << ", " << endId;
             continue;
         }
 
-        if (parkingB != m_parkings.end() && pointA != m_taxiPoints.end()) {
-            parkingB->second.m_taxiPoint = &pointA->second;
-            continue;
-        }
-
-        if (pointA == m_taxiPoints.end() || pointB == m_taxiPoints.end())
-            continue;
-
-        path.m_nodeA = &pointA->second;
-        path.m_nodeB = &pointB->second;
-        pointA->second.m_conns.emplace_back(&path);
-        pointB->second.m_conns.emplace_back(&path);
-    }
-
-    std::vector<size_t> matches;
-    matches.reserve(64);
-
-    for (TaxiPathExt& path : m_taxiPaths) {
-        matches.clear();
-        for (size_t i = 0; i < m_roadNetworks.size(); ++i) {
-            if (NetworkContainsNode(m_roadNetworks[i], path.startIndex) ||
-                NetworkContainsNode(m_roadNetworks[i], path.endIndex)) {
-                matches.emplace_back(i);
+        std::vector<std::size_t> matches;
+        for (std::size_t i = 0; i < m_roadNetworks.size(); ++i) {
+            if (m_roadNetworks[i].HasNode(startId) || m_roadNetworks[i].HasNode(endId)) {
+                matches.push_back(i);
             }
         }
 
-        if (matches.empty()) {
-            m_roadNetworks.emplace_back();
-            m_roadNetworks.back().emplace_back(&path);
+        if (matches.size() > 2) {
+            GSLogStream::LogError("GSAirport::OrganizeStructures - Taxi path joins more than two networks: ")
+                << startId << ", " << endId;
+            continue;
         }
-        else {
-            const size_t target = matches.front();
-            m_roadNetworks[target].emplace_back(&path);
 
-            for (size_t i = matches.size(); i-- > 1;)
-                MergeNetworks(m_roadNetworks, target, matches[i]);
+        std::size_t targetIndex;
+        if (matches.empty()) {
+            targetIndex = m_roadNetworks.size();
+            m_roadNetworks.emplace_back();
+        } else {
+            targetIndex = matches.front();
+        }
+
+        if (matches.size() == 2) {
+            const std::size_t sourceIndex = matches.back();
+            m_roadNetworks[targetIndex].MergeNetwork(m_roadNetworks[sourceIndex]);
+            m_roadNetworks.erase(m_roadNetworks.begin() + sourceIndex);
+        }
+
+        GSRoadsNetwork& network = m_roadNetworks[targetIndex];
+        addNode(network, startId);
+        addNode(network, endId);
+        network.AddPath(startId, endId);
+    }
+}
+
+std::optional<const GSRoadsNetwork*> GSAirport::GetNetworkByParking(const GSCoord& loc) const
+{
+    constexpr double MaxParkingDistMtr = 200.0;
+
+    const GSRoadsNetwork* closestNetwork = nullptr;
+    double closestDistance = MaxParkingDistMtr;
+    for (const GSRoadsNetwork& network : m_roadNetworks) {
+        const auto parking = network.GetClosestNormalParking(loc);
+        if (!parking) {
+            continue;
+        }
+
+        const double distance = GSGeography::DistanceMeters(loc, (*parking)->m_loc);
+        if (distance <= MaxParkingDistMtr && (!closestNetwork || distance < closestDistance)) {
+            closestNetwork = &network;
+            closestDistance = distance;
         }
     }
+
+    if (!closestNetwork) {
+        return std::nullopt;
+    }
+    return closestNetwork;
+}
+
+std::optional<const GSRoadsNetwork::RoadNode*> GSAirport::GetClosestJetwayParking(const GSCoord& loc) const
+{
+    const GSRoadsNetwork::RoadNode* closest = nullptr;
+    double closestDistance = 0.0;
+
+    for (const GSRoadsNetwork& network : m_roadNetworks) {
+        const auto parking = network.GetClosestJetwayParking(loc);
+        if (!parking) {
+            continue;
+        }
+
+        const double distance = GSGeography::DistanceMeters(loc, (*parking)->m_loc);
+        if (!closest || distance < closestDistance) {
+            closest = *parking;
+            closestDistance = distance;
+        }
+    }
+
+    if (!closest) {
+        return std::nullopt;
+    }
+    return closest;
 }
 
 GSRequest::SendResult GSAirport::GSReqInfo::Process()
@@ -178,10 +195,10 @@ bool GSAirport::GSReqInfo::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize
     const auto& entry = *reinterpret_cast<const SIMCONNECT_RECV_FACILITY_DATA*>(message);
     switch (entry.Type) {
     case SIMCONNECT_FACILITY_DATA_TAXI_PARKING:
-        m_airport.m_parkings.try_emplace(entry.ItemIndex, entry.ItemIndex, *reinterpret_cast<const ParkingSlot*>(&entry.Data));
+        m_airport.m_parkings.try_emplace(entry.ItemIndex, *reinterpret_cast<const ParkingSlot*>(&entry.Data));
         break;
     case SIMCONNECT_FACILITY_DATA_TAXI_POINT:
-        m_airport.m_taxiPoints.try_emplace(entry.ItemIndex, entry.ItemIndex, *reinterpret_cast<const TaxiPoint*>(&entry.Data));
+        m_airport.m_taxiPoints.try_emplace(entry.ItemIndex, *reinterpret_cast<const TaxiPoint*>(&entry.Data));
         break;
     case SIMCONNECT_FACILITY_DATA_JETWAY: {
         const auto& path = *reinterpret_cast<const Jetway*>(&entry.Data);

@@ -30,7 +30,9 @@
     <ClInclude Include="Source\General\GSLiveAirportMSFSApp.h" />
     <ClInclude Include="Source\General\GSLogStream.h" />
     <ClInclude Include="Source\General\GSQuickQueue.h" />
+    <ClInclude Include="Source\General\GSRandom.h" />
     <ClInclude Include="Source\General\GSRequest.h" />
+    <ClInclude Include="Source\General\GSRoadsNetwork.h" />
     <ClInclude Include="Source\General\GSSimConnect.h" />
     <ClInclude Include="Source\General\GSSpawnerThread.h" />
     <ClInclude Include="Source\SimObjects\GSAircraft.h" />
@@ -67,6 +69,7 @@
     <ClCompile Include="Source\General\GSGeography.cpp" />
     <ClCompile Include="Source\General\GSLiveAirportMSFSApp.cpp" />
     <ClCompile Include="Source\General\GSLogStream.cpp" />
+    <ClCompile Include="Source\General\GSRoadsNetwork.cpp" />
     <ClCompile Include="Source\General\GSSimConnect.cpp" />
     <ClCompile Include="Source\General\GSSpawnerThread.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraft.cpp" />

@@ -5,6 +5,7 @@
 #include "GSBuggageTrain.h"
 #include "../Animation/GSAnimBFLO.h"
 #include "../Animation/GSAnimSingle.h"
+#include <algorithm>
 
 namespace NS_GSLiveAirportMSFS
 {

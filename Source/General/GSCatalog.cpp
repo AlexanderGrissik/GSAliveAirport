@@ -1,5 +1,7 @@
 #include "GSCatalog.h"
 #include "GSLogStream.h"
+#include "GSRandom.h"
+#include <random>
 #include <regex>
 
 namespace NS_GSLiveAirportMSFS
@@ -94,7 +96,7 @@ const std::string& GSCatalog::GetEntry(EntiresVec& entires)
 
     std::uniform_int_distribution<size_t> dist(0, entires.size() - 1);
 
-    return entires[dist(m_rng)]->first;
+    return entires[dist(GSRandom::Engine())]->first;
 }
 
 GSRequest::SendResult GSCatalog::GSCatalogReq::Process()
