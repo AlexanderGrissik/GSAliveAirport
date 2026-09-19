@@ -20,7 +20,8 @@ public:
 
     static const double s_SpawnDistMeters;
 
-    GSSpawnerThread(GSSimConnect& animThread) : m_animThread(animThread) {}
+    GSSpawnerThread(GSSimConnect& animThread, GSSimConnect& mvmntThread):
+        m_animThread(animThread), m_mvmntThread(mvmntThread) {}
     ~GSSpawnerThread() override {}
     GSSpawnerThread(const GSSpawnerThread &) = delete;
     GSSpawnerThread &operator=(const GSSpawnerThread &) = delete;
@@ -59,6 +60,8 @@ private:
     GroundMap m_groundPendingDelete;
     std::unordered_map<DWORD, GSAircraft> m_groundPendingUpdate;
     std::vector<std::reference_wrapper<GSAircraftGround>> m_groundHelper;
+    std::shared_ptr<GSAirport> m_airport;
     GSSimConnect& m_animThread;
+    GSSimConnect& m_mvmntThread;
 };
 } // namespace NS_GSLiveAirportMSFS

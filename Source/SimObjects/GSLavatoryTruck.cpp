@@ -7,10 +7,22 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSLavatoryTruck::OnCreated()
+bool GSLavatoryTruck::OnCreated()
 {
-    SetFinalPositionAndState();
-    OnObjSpawned(true);
+    FinalizeRoute();
+    return false;
+}
+
+void GSLavatoryTruck::OnArrived()
+{
+    if (m_hasAnimLavaratory) {
+        auto* anim = new GSAnimBFLOT(m_simObjectID);
+        anim->AddFrameSet(50, 51, 30.0, 0, 1755, 30, 0, 1942, 30);
+        RegisterAnim(anim);
+    }
+
+    Freeze();
+    ContinueSpawn();
 }
 
 bool GSLavatoryTruck::PreSpawn()
@@ -54,17 +66,9 @@ bool GSLavatoryTruck::PreSpawn()
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 
+    PrepareRoute();
+
     return true;
 }
 
-void GSLavatoryTruck::SetFinalPositionAndState()
-{
-    Freeze();
-
-    if (m_hasAnimLavaratory) {
-        auto* anim = new GSAnimBFLOT(m_simObjectID);
-        anim->AddFrameSet(50, 51, 30.0, 0, 1755, 30, 0, 1942, 30);
-        RegisterAnim(anim);
-    }
-}
 }

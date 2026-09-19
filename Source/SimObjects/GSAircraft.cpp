@@ -70,6 +70,7 @@ void GSAircraft::InitDatums(GSSimConnect& handler)
 void GSAircraft::CopyDynInfo(const GSAircraft& another)
 {
     memcpy(&m_rawData, &another.m_rawData, AIRCRAFT_WIREDATA_DYNSIZE);
+    m_trafficState = m_rawData.trafficState.data();
 }
 
 void GSAircraft::LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry)

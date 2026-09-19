@@ -18,6 +18,7 @@ void GSRoadsNetwork::AddNode(DWORD id, const GSCoord& loc, float heading, GSRoad
 		    GSLogStream::LogError("Duplicate Node ID with different type: ") << itr.first->second.m_pntType << " vs " << tp;
         }
 	} else {
+        m_allNodes.emplace_back(&itr.first->second);
         if (tp == PARKING) {
             m_normalParkings.emplace_back(&itr.first->second);
         } else if (tp == VEHICLE) {
@@ -73,6 +74,16 @@ std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetRandomVehicleP
 	return m_vehicleParkings[distribution(GSRandom::Engine())];
 }
 
+std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetRandomNode() const
+{
+	if (m_allNodes.empty()) {
+		return std::nullopt;
+	}
+
+	std::uniform_int_distribution<std::size_t> distribution(0, m_allNodes.size() - 1);
+	return m_allNodes[distribution(GSRandom::Engine())];
+}
+
 void GSRoadsNetwork::MergeNetwork(GSRoadsNetwork& network)
 {
 	if (this == &network) { return; }
@@ -90,6 +101,7 @@ void GSRoadsNetwork::MergeNetwork(GSRoadsNetwork& network)
 		}
 
 		if (inserted) {
+			m_allNodes.push_back(&destinationIt->second);
 			if (sourceNode.m_pntType == PARKING) {
 				m_normalParkings.push_back(&destinationIt->second);
 			} else if (sourceNode.m_pntType == VEHICLE) {

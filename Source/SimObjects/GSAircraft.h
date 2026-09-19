@@ -10,6 +10,7 @@
 
 #include "../General/GSCoord.h"
 #include "../General/GSSimConnect.h"
+#include "../General/GSRoadsNetwork.h"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -110,6 +111,9 @@ public:
     GSCoord GetLongLat() const { return {m_rawData.longitude,m_rawData.latitude}; }
     bool IsTaxing() const { return m_trafficState == "STATE_SIMPLE_TAXI"; }
     bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
+    void SetRoads(const GSRoadsNetwork* net, const GSRoadsNetwork::RoadNode* prkNode) { m_roads = net; m_parkingNode = prkNode; }
+    const GSRoadsNetwork* GetRoads() const { return m_roads; }
+    const GSRoadsNetwork::RoadNode* GetParkingNode() const { return m_parkingNode; }
 
     using DoorRef = std::optional<std::pair<InterPntRef, size_t>>;
     DoorRef GetRearRightDoor() const { return rearRightDoorPnt; }
@@ -134,6 +138,8 @@ private:
 
     AircraftSizeCategory m_category;
     std::string m_trafficState;
+    const GSRoadsNetwork* m_roads;
+    const GSRoadsNetwork::RoadNode* m_parkingNode;
     DWORD objectID{};
 };
 

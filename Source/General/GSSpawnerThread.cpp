@@ -9,6 +9,8 @@
 #include "../SimObjects/GSBuggageLoader.h"
 #include "../Commands/GSCmdAircraftUpdate.h"
 #include "../Commands/GSCmdAnimObj.h"
+#include "../Commands/GSCmdSimObj.h"
+#include "../Commands/GSCmdAirport.h"
 #include "GSCatalog.h"
 #include "GSGeography.h"
 #include <chrono>
@@ -90,6 +92,32 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
         cmdAnim.GetReq().Process();
         break;
     }
+    case GSDefinitions::CMD_MVMNT_OBJ_ADD: {
+        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
+        CmdPtr newCmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ADD, cmdObj.SimObj()));
+        m_mvmntThread.PostCommand(newCmd);
+        break;
+    }
+    case GSDefinitions::CMD_MVMNT_OBJ_REM: {
+        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
+        CmdPtr newCmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_REM, cmdObj.SimObj()));
+        m_mvmntThread.PostCommand(newCmd);
+        break;
+    }
+    case GSDefinitions::CMD_MVMNT_OBJ_REM_RET: {
+        break;
+    }
+    case GSDefinitions::CMD_MVMNT_OBJ_ARR: {
+        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
+        cmdObj.SimObj().OnArrived();
+        break;
+    }
+    case GSDefinitions::CMD_AIRPORT: {
+        auto& cmdObj = static_cast<GSCmdAirport&>(cmd);
+        m_airport = cmdObj.Airport();
+        GSLogStream::Log("Curr Airport: ") << m_airport->GetICAO().c_str();
+        break;
+    }
     default:
         GSLogStream::LogError("GSSpawnerThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;
@@ -101,16 +129,16 @@ void GSSpawnerThread::NewAircraft(const GSAircraft& aircraft)
     GSAircraftGround* grnd = nullptr;
     switch (aircraft.GetCategory()) {
     case GSAircraft::AircraftSizeCategory::Small:
-        grnd = new GSAircraftGroundSmall(aircraft, *this);
+        grnd = new GSAircraftGroundSmall(aircraft, *this, m_airport);
         break;
     case GSAircraft::AircraftSizeCategory::Large:
-        grnd = new GSAircraftGroundLarge(aircraft, *this);
+        grnd = new GSAircraftGroundLarge(aircraft, *this, m_airport);
         break;
     case GSAircraft::AircraftSizeCategory::ExtraLarge:
-        grnd = new GSAircraftGroundXL(aircraft, *this);
+        grnd = new GSAircraftGroundXL(aircraft, *this, m_airport);
         break;
     default:
-        grnd = new GSAircraftGroundMedium(aircraft, *this);
+        grnd = new GSAircraftGroundMedium(aircraft, *this, m_airport);
         break;
     }
 

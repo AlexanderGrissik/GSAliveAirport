@@ -6,26 +6,16 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSPushback::OnCreated()
+bool GSPushback::OnCreated()
 {
-    SetFinalPositionAndState();
-    if (!m_driver)
-        OnObjSpawned(true);
-    else
-        SpawnAttached();
+    FinalizeRoute();
+    return false;
 }
 
-void GSPushback::OnSpawned(bool ok, GSSimObj& obj)
+void GSPushback::OnArrived()
 {
-    (void)obj; (void)ok;
-    OnObjSpawned(true);
-}
-
-void GSPushback::OnDespawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    m_attached.clear();
-    Despawn();
+    Freeze();
+    ContinueSpawn();
 }
 
 bool GSPushback::PreSpawn()
@@ -56,26 +46,9 @@ bool GSPushback::PreSpawn()
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 
-    if (m_driver) {
-        const auto driverPos = GSGeography::RelativePosition(
-            m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, 1.54733, -0.35635);
-        
-        auto ptrDriver = new GSStatic(m_simHandle, m_aircraft, *this);
-        ptrDriver->SetTitle("FSDT_Driver_01_Tug_M1A");
-        ptrDriver->SetPosition({ driverPos.Long(), driverPos.Lat()});
-        ptrDriver->SetPosRel(GSStatic::REL_ABSOLUTE);
-        ptrDriver->SetHeading(m_initPos.Heading);
-        ptrDriver->GetInitPos().Altitude = 1.0961 + m_initPos.Altitude;
-        ptrDriver->GetInitPos().OnGround = 0;
-        ptrDriver->PreSpawn();
-        m_attached.emplace_back(ptrDriver);
-    }
+    PrepareRoute();
 
     return true;
 }
 
-void GSPushback::SetFinalPositionAndState()
-{
-    Freeze();
-}
 }

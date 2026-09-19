@@ -1,0 +1,24 @@
+#pragma once
+
+#include "../SimObjects/GSSimObj.h"
+#include "../General/GSAirport.h"
+#include <memory>
+
+namespace NS_GSLiveAirportMSFS
+{
+
+class GSCmdAirport : public GSCommand
+{
+public:
+
+    GSCmdAirport(int cmd, std::shared_ptr<GSAirport>& airport) : GSCommand(cmd), m_airport(airport) {}
+    virtual ~GSCmdAirport() {}
+
+    std::shared_ptr<GSAirport>& Airport() { return m_airport; }
+
+private:
+
+    std::shared_ptr<GSAirport> m_airport;
+};
+
+} // namespace NS_GSLiveAirportMSFS

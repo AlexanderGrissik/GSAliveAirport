@@ -59,7 +59,7 @@ public:
 
     void LoadInfo(GSSimConnect& handler);
     void OrganizeStructures();
-    std::optional<const GSRoadsNetwork*> GetNetworkByParking(const GSCoord& loc) const;
+    std::optional<std::pair<const GSRoadsNetwork*, const GSRoadsNetwork::RoadNode*>> GetNetworkByParking(const GSCoord& loc) const;
     std::optional<const GSRoadsNetwork::RoadNode*> GetClosestJetwayParking(const GSCoord& loc) const;
     const std::string& GetICAO() const { return m_icao; } 
     const GSCoord& GetLongLat() const { return m_location; }

@@ -5,6 +5,17 @@
 namespace NS_GSLiveAirportMSFS
 {
 
+GSAircraftGround::GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport):
+    m_aircraft(aircraft), m_simConnect(simConn), m_airport(airport)
+{
+    if (m_airport) {
+        auto prk = m_airport->GetNetworkByParking(aircraft.GetLongLat());
+        if (prk.has_value()) {
+            m_aircraft.SetRoads(prk->first, prk->second);
+        }
+    }
+}
+
 void GSAircraftGround::Spawn()
 {
     if (m_spawnState == SpawnState::SPAWNING || m_spawnState == SpawnState::SPAWNED) {
@@ -56,10 +67,8 @@ void GSAircraftGround::OnSpawned(bool ok, GSSimObj& obj)
         m_spawnState = SpawnState::SPAWNED;
 }
 
-void GSAircraftGround::OnDespawned(bool ok, GSSimObj& obj)
+void GSAircraftGround::OnDespawned()
 {
-    (void)obj;
-    (void)ok;
     --m_spawnedObjs;
     if (!m_spawnedObjs) {
         m_objs.clear();

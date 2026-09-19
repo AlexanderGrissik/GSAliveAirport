@@ -7,7 +7,7 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSGroundPower : public GSSimObj, public GSSimObj::IObjUpdate
+class GSGroundPower : public GSSimObj
 {
 public:
 
@@ -24,23 +24,19 @@ public:
     };
     #pragma pack(pop)
 
-    GSGroundPower(GSSimConnect& simHandle, GSAircraft& aircraft, IObjUpdate& iUpdate, GPUType tp) :
-        GSSimObj(simHandle, aircraft, iUpdate), m_gpuType(tp) {
+    GSGroundPower(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, GPUType tp) :
+        GSSimObj(simHandle, aircraft, parent), m_gpuType(tp) {
     }
 
     static void InitDatums(GSSimConnect& handler);
 
-    void OnSpawned(bool ok, GSSimObj& obj) override;
-    void OnDespawned(bool ok, GSSimObj& obj) override;
-
-    void SetFinalPositionAndState();
-
 private:
 
-    void OnCreated() override;
-    void OnDespawning() override {}
     bool PreSpawn() override;
-
+    bool OnCreated() override;
+    void OnArrived() override;
+    void OnDespawning() override {}
+    
     GPUType m_gpuType;
 
     class GSReqSetDataSimObj : public GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1> {

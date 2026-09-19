@@ -6,29 +6,10 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSBuggageTrain::OnCreated()
+bool GSBuggageTrain::OnCreated()
 {
-    SetFinalPositionAndState();
-    if (m_attached.size())
-        SpawnAttached();
-    else
-        OnObjSpawned(true);
-}
-
-void GSBuggageTrain::OnSpawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (++m_spawned == m_attached.size())
-        OnObjSpawned(true);
-}
-
-void GSBuggageTrain::OnDespawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (--m_spawned <= 0) {
-        m_attached.clear();
-        Despawn();
-    }
+    Freeze();
+    return true;
 }
 
 bool GSBuggageTrain::PreSpawn()
@@ -107,8 +88,4 @@ bool GSBuggageTrain::PreSpawn()
     return true;
 }
 
-void GSBuggageTrain::SetFinalPositionAndState()
-{
-    Freeze();
-}
 }

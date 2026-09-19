@@ -6,7 +6,7 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSWingmans : public GSSimObj, public GSSimObj::IObjUpdate
+class GSWingmans : public GSSimObj
 {
 public:
 
@@ -15,23 +15,18 @@ public:
         SMALL
     };
 
-    GSWingmans(GSSimConnect& simHandle, GSAircraft& aircraft, IObjUpdate& iUpdate, CountType tp):
-        GSSimObj(simHandle, aircraft, iUpdate), m_countTP(tp) {}
-
-    void OnSpawned(bool ok, GSSimObj& obj) override;
-    void OnDespawned(bool ok, GSSimObj& obj) override;
-
-    void SetFinalPositionAndState();
+    GSWingmans(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, CountType tp):
+        GSSimObj(simHandle, aircraft, parent), m_countTP(tp) {}
 
 private:
 
-    void OnCreated() override;
-    void OnDespawning() override {}
     bool PreSpawn() override;
-
+    bool OnCreated() override;
+    void OnArrived() override {}
+    void OnDespawning() override {}
+    
     static void BuildWalkPath(const GSCoord& wp1, const GSCoord& wp2, GSSimObj& simObj);
 
     CountType m_countTP;
-    size_t m_spawned = 0;
 };
 }

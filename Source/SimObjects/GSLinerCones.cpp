@@ -7,29 +7,10 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSLinerCones::OnCreated()
+bool GSLinerCones::OnCreated()
 {
-    SetFinalPositionAndState();
-    if (m_attached.size())
-        SpawnAttached();
-    else 
-        OnObjSpawned(true);
-}
-
-void GSLinerCones::OnSpawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (++m_spawned == m_attached.size())
-        OnObjSpawned(true);
-}
-
-void GSLinerCones::OnDespawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (--m_spawned <= 0) {
-        m_attached.clear();
-        Despawn();
-    }
+    Freeze();
+    return true;
 }
 
 bool GSLinerCones::PreSpawn()
@@ -71,8 +52,4 @@ bool GSLinerCones::PreSpawn()
     return true;
 }
 
-void GSLinerCones::SetFinalPositionAndState()
-{
-    Freeze();
-}
 }

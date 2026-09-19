@@ -7,10 +7,17 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSMarshaller::OnCreated()
+bool GSMarshaller::OnCreated()
 {
-    SetFinalPositionAndState();
-    OnObjSpawned(true);
+    Freeze();
+
+    if (m_hasAnimMarshall) {
+        auto* anim = new GSAnimSingle(m_simObjectID);
+        anim->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 0, 2179, 30.0);
+        RegisterAnim(anim);
+    }
+
+    return true;
 }
 
 bool GSMarshaller::PreSpawn()
@@ -39,14 +46,4 @@ bool GSMarshaller::PreSpawn()
     return true;
 }
 
-void GSMarshaller::SetFinalPositionAndState()
-{
-    Freeze();
-
-    if (m_hasAnimMarshall) {
-        auto* anim = new GSAnimSingle(m_simObjectID);
-        anim->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 0, 2179, 30.0);
-        RegisterAnim(anim);
-    }
-}
 }

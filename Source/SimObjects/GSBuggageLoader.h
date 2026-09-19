@@ -10,7 +10,7 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSBuggageLoader : public GSSimObj, public GSSimObj::IObjUpdate
+class GSBuggageLoader : public GSSimObj
 {
 public:
 
@@ -28,25 +28,23 @@ public:
     };
     #pragma pack(pop)
 
-    GSBuggageLoader(GSSimConnect& simHandle, GSAircraft& aircraft, IObjUpdate& iUpdate, bool front) :
-        GSSimObj(simHandle, aircraft, iUpdate), m_front(front) {}
+    GSBuggageLoader(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, bool front) :
+        GSSimObj(simHandle, aircraft, parent), m_front(front) {}
 
     static void InitDatums(GSSimConnect& handler);
 
-    void OnSpawned(bool ok, GSSimObj& obj) override;
-    void OnDespawned(bool ok, GSSimObj& obj) override;
-
     void SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
+    void SetFinalPositionAndStatePost();
 
 private:
 
-    void OnCreated() override;
-    void OnDespawning() override;
     bool PreSpawn() override;
-
+    bool OnCreated() override;
+    void OnArrived() override;
+    void OnDespawning() override;
+    
     float CalcLoaderOpenAngle(const GSBuggageLoader::StateWireDataGet& rawStateGet);
 
-    size_t m_spawned = 0;
     float m_doorPosElev = 0.0f;
     DWORD m_doorIdx = 0;
     bool m_front = false;
@@ -64,6 +62,7 @@ private:
             }
             else {
                 GSLogStream::LogError("GSBuggageLoader::GSReqGetDataSimObj::OnMessage Unexpected Message: ") << message->dwID;
+                m_simObj.OnObjSpawned(true);
             }
             return true;
         }

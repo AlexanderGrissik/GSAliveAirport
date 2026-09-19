@@ -6,29 +6,16 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSTruckFacility::OnCreated()
+bool GSTruckFacility::OnCreated()
 {
-    SetFinalPositionAndState();
-    if (m_attached.size())
-        SpawnAttached();
-    else
-        OnObjSpawned(true);
+    FinalizeRoute();
+    return false;
 }
 
-void GSTruckFacility::OnSpawned(bool ok, GSSimObj& obj)
+void GSTruckFacility::OnArrived()
 {
-    (void)obj; (void)ok;
-    if (++m_spawned == m_attached.size())
-        OnObjSpawned(true);
-}
-
-void GSTruckFacility::OnDespawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (--m_spawned <= 0) {
-        m_attached.clear();
-        Despawn();
-    }
+    Freeze();
+    ContinueSpawn();
 }
 
 bool GSTruckFacility::PreSpawn()
@@ -61,11 +48,9 @@ bool GSTruckFacility::PreSpawn()
     ptrH2->PreSpawn();
     m_attached.emplace_back(ptrH2);
 
+    PrepareRoute();
+
     return true;
 }
 
-void GSTruckFacility::SetFinalPositionAndState()
-{
-    Freeze();
-}
 }

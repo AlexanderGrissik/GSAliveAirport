@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GSAircraft.h"
+#include "../General/GSAirport.h"
 #include "GSSimObj.h"
 #include <cstddef>
 #include <list>
@@ -9,7 +10,7 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSAircraftGround : public GSSimObj::IObjUpdate
+class GSAircraftGround : public GSSimObjUpdate
 {
 public:
 
@@ -21,23 +22,24 @@ public:
         DESPAWNING
     };
 
-    GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn): m_aircraft(aircraft), m_simConnect(simConn) {}
+    GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport);
     virtual ~GSAircraftGround() = default;
 
     virtual void BuildObjs() = 0;
 
     void OnSpawned(bool ok, GSSimObj& obj) override;
-    void OnDespawned(bool ok, GSSimObj& obj) override;
+    void OnDespawned() override;
     
     void Spawn();
     void Despawn();
-    void UpdateAircraft(const GSAircraft& aircraft) { m_aircraft = aircraft; }
+    void UpdateAircraft(const GSAircraft& aircraft) { m_aircraft.CopyDynInfo(aircraft); }
     SpawnState GetSpawnState() const { return m_spawnState; }
     const GSAircraft& Aircraft() const { return m_aircraft; }
 
 protected:
 
     GSAircraft m_aircraft;
+    std::shared_ptr<GSAirport> m_airport;
     GSSimConnect& m_simConnect;
     SpawnState m_spawnState = SpawnState::UNSPAWNED;
     std::list<std::unique_ptr<GSSimObj>> m_objs;

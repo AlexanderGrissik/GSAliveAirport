@@ -5,10 +5,17 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSStatic::OnCreated()
+bool GSStatic::OnCreated()
 {
-    SetFinalPositionAndState();
-    OnObjSpawned(true);
+    Freeze();
+
+    if (m_animObj.get()) {
+        m_animObj->ResetObjID(m_simObjectID);
+        m_animObj->SetAIWaypoints(&m_aiWaypoints);
+        RegisterAnim(m_animObj.release());
+    }
+    
+    return true;
 }
 
 bool GSStatic::PreSpawn()
@@ -32,16 +39,4 @@ bool GSStatic::PreSpawn()
     return true;
 }
 
-void GSStatic::SetFinalPositionAndState()
-{
-    Freeze();
-
-    if (m_animObj.get()) {
-        m_animObj->ResetObjID(m_simObjectID);
-        m_animObj->SetAIWaypoints(&m_aiWaypoints);
-        RegisterAnim(m_animObj.release());
-    }
-
-    ShootWaypoints();
-}
 }

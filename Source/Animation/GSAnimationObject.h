@@ -39,7 +39,7 @@ protected:
     void Move(GSSimConnect& handler, float elapsedMilli);
 
     SIMCONNECT_OBJECT_ID m_simObjectID;
-    const std::vector<SIMCONNECT_DATA_WAYPOINT>* m_aiWaypoints;
+    const std::vector<SIMCONNECT_DATA_WAYPOINT>* m_aiWaypoints = nullptr;
     GSCoord m_currLocation;
     std::size_t m_tgtWaypoint = 1U;
 };

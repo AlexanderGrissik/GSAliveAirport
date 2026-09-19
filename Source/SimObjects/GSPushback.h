@@ -5,7 +5,7 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSPushback : public GSSimObj, public GSSimObj::IObjUpdate
+class GSPushback : public GSSimObj
 {
 public:
 
@@ -15,21 +15,16 @@ public:
         PUSH_XL
     };
 
-    GSPushback(GSSimConnect& simHandle, GSAircraft& aircraft, IObjUpdate& iUpdate, PushType tp):
-        GSSimObj(simHandle, aircraft, iUpdate), m_pushType(tp) {}
-
-    void OnSpawned(bool ok, GSSimObj& obj) override;
-    void OnDespawned(bool ok, GSSimObj& obj) override;
-
-    void SetFinalPositionAndState();
+    GSPushback(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, PushType tp):
+        GSSimObj(simHandle, aircraft, parent), m_pushType(tp) {}
 
 private:
 
-    void OnCreated() override;
-    void OnDespawning() override {}
     bool PreSpawn() override;
-
+    bool OnCreated() override;
+    void OnArrived() override;
+    void OnDespawning() override {}
+    
     PushType m_pushType;
-    bool m_driver = false;
 };
 }

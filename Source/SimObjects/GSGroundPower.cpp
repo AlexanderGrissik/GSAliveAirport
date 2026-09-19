@@ -21,23 +21,24 @@ void GSGroundPower::InitDatums(GSSimConnect& handler)
     handler.InvokeAddDatums(GSDatums_GroundPowerExtStateSet, GSDefinitions::GSDefID::GSDefID_GroundPowerExtStateSet);
 }
 
-void GSGroundPower::OnCreated()
+bool GSGroundPower::OnCreated()
 {
-    SetFinalPositionAndState();
-    SpawnAttached();
+    FinalizeRoute();
+    return false;
 }
 
-void GSGroundPower::OnSpawned(bool ok, GSSimObj& obj)
+void GSGroundPower::OnArrived()
 {
-    (void)obj; (void)ok;
-    OnObjSpawned(true);
-}
+    std::array updateData1{ StateWireDataSet{ 1.0f } };
+    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
+        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_GroundPowerStateSet, std::move(updateData1)));
 
-void GSGroundPower::OnDespawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    m_attached.clear();
-    Despawn();
+    std::array updateData2{ StateWireDataSet{ 1.0f } };
+    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
+        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_GroundPowerExtStateSet, std::move(updateData2)));
+
+    Freeze();
+    ContinueSpawn();
 }
 
 bool GSGroundPower::PreSpawn()
@@ -104,19 +105,8 @@ bool GSGroundPower::PreSpawn()
         m_attached.emplace_back(ptrDriver);
     }
 
+    PrepareRoute();
     return true;
 }
 
-void GSGroundPower::SetFinalPositionAndState()
-{
-    std::array updateData1{ StateWireDataSet{ 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
-        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_GroundPowerStateSet, std::move(updateData1)));
-
-    std::array updateData2{ StateWireDataSet{ 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
-        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_GroundPowerExtStateSet, std::move(updateData2)));
-
-    Freeze();
-}
 }

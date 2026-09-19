@@ -39,13 +39,14 @@ class GSQuickQueue
 
     T* valPos(size_t pos) { return std::launder(reinterpret_cast<T*>(&m_array[ItemIdex(pos)])); }
 
-    alignas(s_cacheLineSize) std::array<storage_type, CAP> m_array;
-    std::atomic_size_t m_push_pos;
-    std::atomic_size_t m_pop_pos;
+    alignas(s_cacheLineSize) std::array<storage_type, CAP> m_array{};
+    std::atomic_size_t m_push_pos{ 0 };
+    std::atomic_size_t m_pop_pos{ 0 };
     std::atomic_flag m_producerLock{};
 
 public:
 
+    #pragma warning(suppress : 26495) // aligned raw-storage array is value-initialized
     GSQuickQueue() = default;
 
     ~GSQuickQueue() {

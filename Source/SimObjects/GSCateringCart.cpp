@@ -22,9 +22,18 @@ void GSCateringCart::InitDatums(GSSimConnect& handler)
     handler.InvokeAddDatums(GSDatums_CateringTruckStateSet, GSDefinitions::GSDefID::GSDefID_CateringTruckStateSet);
 }
 
-void GSCateringCart::OnCreated()
+bool GSCateringCart::OnCreated()
 {
     m_simHandle.PostReqCommand(new GSReqGetDataSimObj(m_simHandle, *this));
+    return false;
+}
+
+void GSCateringCart::OnArrived()
+{
+    std::array updateData{ StateWireDataSet{ m_initPos.Longitude, m_initPos.Latitude, m_doorPosElev, 1.0f } };
+    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(m_simHandle, *this, std::move(updateData)));
+
+    Freeze();
 }
 
 bool GSCateringCart::PreSpawn()
@@ -50,6 +59,9 @@ bool GSCateringCart::PreSpawn()
     m_initPos.Latitude = doorPos.Lat();
 
     m_doorPosElev = airData.alt_abv_grnd + cateringDoor->posYFeet;
+    
+    PrepareRoute();
+
     return true;
 }
 
@@ -61,11 +73,7 @@ void GSCateringCart::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& en
     m_initPos.Longitude = out.Long();
     m_initPos.Latitude = out.Lat();
 
-    std::array updateData{ StateWireDataSet{ m_initPos.Longitude, m_initPos.Latitude, m_doorPosElev, 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(m_simHandle, *this, std::move(updateData)));
-
-    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_LongLat, 1));
-    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_Altitude, 1));
-    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_Attitude, 1));
+    FinalizeRoute();
+    ContinueSpawn();
 }
 }

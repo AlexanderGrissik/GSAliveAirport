@@ -31,13 +31,14 @@ public:
 
     static void InitDatums(GSSimConnect& handler);
     void SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
-
+    
 private:
 
-    void OnCreated() override;
-    void OnDespawning() override {}
     bool PreSpawn() override;
-
+    bool OnCreated() override;
+    void OnArrived() override;
+    void OnDespawning() override {}
+        
     float m_doorPosElev = 0.0f;
 
     class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {

@@ -49,6 +49,7 @@ public:
 
     std::optional<const RoadNode*> GetClosestNormalParking(const GSCoord& location) const;
     std::optional<const RoadNode*> GetRandomVehicleParking() const;
+	std::optional<const RoadNode*> GetRandomNode() const;
 
     void MergeNetwork(GSRoadsNetwork& network);
     void FindShortestPath(const RoadNode& start, const RoadNode& end, std::list<const RoadNode*>& out) const;
@@ -60,6 +61,7 @@ private:
 	std::deque<RoadPath> m_roadPaths; // Removing elements will break pointers.
 	std::vector<RoadNode*> m_normalParkings;
 	std::vector<RoadNode*> m_vehicleParkings;
+    std::vector<RoadNode*> m_allNodes;
 };
 
 }

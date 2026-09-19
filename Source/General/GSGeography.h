@@ -30,6 +30,9 @@ public:
     [[nodiscard]] static double MetersPerDegreeLong(double latitude);
 
     [[nodiscard]] static GSCoord RelativePosition(double headingDeg, const GSCoord coordA, double YMeters, double XMeters);
+
+    [[nodiscard]] static GSCoord FindReverseCircleIntersection(
+        const GSCoord& center, double radiusMeters, const GSCoord& pnt, double headingDeg);
 };
 
 } // namespace NS_GSLiveAirportMSFS

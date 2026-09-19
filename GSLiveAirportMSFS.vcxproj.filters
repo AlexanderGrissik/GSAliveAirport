@@ -150,6 +150,15 @@
     <ClInclude Include="Source\General\GSRandom.h">
       <Filter>Source\General</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SimObjects\GSMovementThread.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Commands\GSCmdSimObj.h">
+      <Filter>Source\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Commands\GSCmdAirport.h">
+      <Filter>Source\Commands</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp">
@@ -256,6 +265,9 @@
     </ClCompile>
     <ClCompile Include="Source\General\GSRoadsNetwork.cpp">
       <Filter>Source\General</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SimObjects\GSMovementThread.cpp">
+      <Filter>Source\SimObjects</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -116,12 +116,14 @@ void GSAirport::OrganizeStructures()
     }
 }
 
-std::optional<const GSRoadsNetwork*> GSAirport::GetNetworkByParking(const GSCoord& loc) const
+std::optional<std::pair<const GSRoadsNetwork*, const GSRoadsNetwork::RoadNode*>> GSAirport::GetNetworkByParking(const GSCoord& loc) const
 {
     constexpr double MaxParkingDistMtr = 200.0;
 
     const GSRoadsNetwork* closestNetwork = nullptr;
+    const GSRoadsNetwork::RoadNode* closestParking = nullptr;
     double closestDistance = MaxParkingDistMtr;
+
     for (const GSRoadsNetwork& network : m_roadNetworks) {
         const auto parking = network.GetClosestNormalParking(loc);
         if (!parking) {
@@ -132,13 +134,14 @@ std::optional<const GSRoadsNetwork*> GSAirport::GetNetworkByParking(const GSCoor
         if (distance <= MaxParkingDistMtr && (!closestNetwork || distance < closestDistance)) {
             closestNetwork = &network;
             closestDistance = distance;
+            closestParking = parking.value();
         }
     }
 
     if (!closestNetwork) {
         return std::nullopt;
     }
-    return closestNetwork;
+    return std::make_pair(closestNetwork,closestParking);
 }
 
 std::optional<const GSRoadsNetwork::RoadNode*> GSAirport::GetClosestJetwayParking(const GSCoord& loc) const

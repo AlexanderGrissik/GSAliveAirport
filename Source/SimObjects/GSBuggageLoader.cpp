@@ -27,25 +27,15 @@ void GSBuggageLoader::InitDatums(GSSimConnect& handler)
     handler.InvokeAddDatums(GSDatums_BuggageLoaderExtStateSet, GSDefinitions::GSDefID::GSDefID_BuggageLoaderExtStateSet);
 }
 
-void GSBuggageLoader::OnSpawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (++m_spawned == m_attached.size())
-        OnObjSpawned(true);
-}
-
-void GSBuggageLoader::OnDespawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (--m_spawned <= 0) {
-        m_attached.clear();
-        Despawn();
-    }
-}
-
-void GSBuggageLoader::OnCreated()
+bool GSBuggageLoader::OnCreated()
 {
     m_simHandle.PostReqCommand(new GSReqGetDataSimObj(m_simHandle, *this));
+    return false;
+}
+
+void GSBuggageLoader::OnArrived()
+{
+    SetFinalPositionAndStatePost();
 }
 
 void GSBuggageLoader::OnDespawning()
@@ -84,6 +74,8 @@ bool GSBuggageLoader::PreSpawn()
 
     m_doorPosElev = airData.alt_abv_grnd + cargoDoor->first.get().posYFeet; 
 
+    PrepareRoute();
+
     return true;
 }
 
@@ -95,10 +87,15 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
     std::array updateData{ StateWireDataSet{ CalcLoaderOpenAngle(rawStateGet) } };
     m_simHandle.PostReqCommand(new GSReqSetDataSimObj(m_simHandle, *this, std::move(updateData)));
 
-    const auto loaderPos = GSGeography::RelativePosition(m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude}, -rawStateGet.endRampZMeters - 0.5, 0.0);
+    const auto loaderPos = GSGeography::RelativePosition(m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -rawStateGet.endRampZMeters - 0.5, 0.0);
     m_initPos.Longitude = loaderPos.Long();
     m_initPos.Latitude = loaderPos.Lat();
 
+    FinalizeRoute();
+}
+
+void GSBuggageLoader::SetFinalPositionAndStatePost()
+{
     m_simHandle.PostReqCommand(new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0));
 
     Freeze();
@@ -127,11 +124,8 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
     auto ptrTrain = new GSBuggageTrain(m_simHandle, m_aircraft, *this, *this);
     ptrTrain->PreSpawn();
     m_attached.emplace_back(ptrTrain);
-
-    if (m_attached.size())
-        SpawnAttached();
-    else
-        OnObjSpawned(true);
+        
+    ContinueSpawn();
 }
 
 float GSBuggageLoader::CalcLoaderOpenAngle(const GSBuggageLoader::StateWireDataGet& rawStateGet)

@@ -7,25 +7,21 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-class GSBuggageTrain : public GSSimObj, public GSSimObj::IObjUpdate
+class GSBuggageTrain : public GSSimObj
 {
 public:
 
-    GSBuggageTrain(GSSimConnect& simHandle, GSAircraft& aircraft, IObjUpdate& iUpdate, GSBuggageLoader& loader) :
-        GSSimObj(simHandle, aircraft, iUpdate), m_loader(loader) {}
+    GSBuggageTrain(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, GSBuggageLoader& loader) :
+        GSSimObj(simHandle, aircraft, parent), m_loader(loader) {}
 
-    void OnSpawned(bool ok, GSSimObj& obj) override;
-    void OnDespawned(bool ok, GSSimObj& obj) override;
     bool PreSpawn() override;
 
-    void SetFinalPositionAndState();
-
 private:
-
-    void OnCreated() override;
+        
+    bool OnCreated() override;
+    void OnArrived() override;
     void OnDespawning() override {}
 
-    size_t m_spawned = 0;
     GSBuggageLoader& m_loader;
 };
 }

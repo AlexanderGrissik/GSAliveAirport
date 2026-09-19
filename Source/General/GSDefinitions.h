@@ -39,7 +39,8 @@ public:
         GSDefID_AnimVelocBodyY,
         GSDefID_AnimWagonBLO,
         GSDefID_AnimWagonBFLO,
-        GSDefID_AnimWagonBFLOT
+        GSDefID_AnimWagonBFLOT,
+        GSDefID_PlanePosition
     };
 
     enum ECommands
@@ -55,7 +56,12 @@ public:
         CMD_SPAWNER_AIRCRAFT_USER,
         CMD_ANIM_OBJ_ADD,
         CMD_ANIM_OBJ_REM,
-        CMD_ANIM_OBJ_REM_DONE
+        CMD_ANIM_OBJ_REM_DONE,
+        CMD_MVMNT_OBJ_ADD,
+        CMD_MVMNT_OBJ_REM,
+        CMD_MVMNT_OBJ_REM_RET,
+        CMD_MVMNT_OBJ_ARR,
+        CMD_AIRPORT,
     };
 
     struct DatumSpec

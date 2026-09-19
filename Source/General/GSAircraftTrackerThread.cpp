@@ -4,6 +4,7 @@
 #include "GSGeography.h"
 #include "GSLogStream.h"
 #include "../Commands/GSCmdAircraftUpdate.h"
+#include "../Commands/GSCmdAirport.h"
 #include "GSSpawnerThread.h"
 #include <algorithm>
 #include <array>
@@ -293,6 +294,9 @@ bool GSAircraftTrackerThread::HandleScanAirportMessage(SIMCONNECT_RECV_AIRPORT_L
         if (m_tempClosest.get() && m_tempClosestDistance < DiscoveryRadiusMeters) {
             m_currAirport = std::make_shared<GSAirport>(m_tempClosest->Ident, GSCoord{ m_tempClosest->Longitude, m_tempClosest->Latitude });
             m_currAirport->LoadInfo(*this);
+
+            CmdPtr cmd(new GSCmdAirport(GSDefinitions::CMD_AIRPORT, m_currAirport));
+            m_singleObserver.PostCommand(cmd);
         }
 
         return true;

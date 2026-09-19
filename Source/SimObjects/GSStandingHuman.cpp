@@ -6,10 +6,10 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSStandingHuman::OnCreated()
+bool GSStandingHuman::OnCreated()
 {
-    SetFinalPositionAndState();
-    OnObjSpawned(true);
+    Freeze();
+    return true;
 }
 
 bool GSStandingHuman::PreSpawn()
@@ -40,8 +40,4 @@ bool GSStandingHuman::PreSpawn()
     return true;
 }
 
-void GSStandingHuman::SetFinalPositionAndState()
-{
-    Freeze();
-}
 }

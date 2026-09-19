@@ -7,29 +7,16 @@
 namespace NS_GSLiveAirportMSFS
 {
 
-void GSWingmans::OnCreated()
+bool GSWingmans::OnCreated()
 {
-    SetFinalPositionAndState();
-    if (m_attached.size())
-        SpawnAttached();
-    else
-        OnObjSpawned(true);
-}
+    Freeze();
 
-void GSWingmans::OnSpawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (++m_spawned == m_attached.size())
-        OnObjSpawned(true);
-}
-
-void GSWingmans::OnDespawned(bool ok, GSSimObj& obj)
-{
-    (void)obj; (void)ok;
-    if (--m_spawned <= 0) {
-        m_attached.clear();
-        Despawn();
-    }
+    auto* anim = new GSAnimSingle(m_simObjectID);
+    anim->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 230, 267, 30.0);
+    anim->SetAIWaypoints(&m_aiWaypoints);
+    RegisterAnim(anim);
+    
+    return true;
 }
 
 bool GSWingmans::PreSpawn()
@@ -46,8 +33,6 @@ bool GSWingmans::PreSpawn()
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
     m_initPos.Altitude = airData.groundAltitudeFeet;
-
-    
 
     double YShift = (m_countTP == GSWingmans::AIRLINE ? 8 : 5);
     auto halfWing = airData.wingSpanMeters / 2.0;
@@ -116,13 +101,4 @@ void GSWingmans::BuildWalkPath(const GSCoord& wp1, const GSCoord& wp2, GSSimObj&
     simObj.AddWaypoint(center, alt, speedKTs, 0.0, flags | SIMCONNECT_WAYPOINT_WRAP_TO_FIRST);
 }
 
-void GSWingmans::SetFinalPositionAndState()
-{
-    Freeze();
-
-    auto* anim = new GSAnimSingle(m_simObjectID);
-    anim->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 230, 267, 30.0);
-    anim->SetAIWaypoints(&m_aiWaypoints);
-    RegisterAnim(anim);
-}
 }

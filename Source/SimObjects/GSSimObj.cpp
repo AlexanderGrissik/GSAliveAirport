@@ -2,6 +2,8 @@
 #include "../Commands/GSCmdReq.h"
 #include "../Commands/GSCmdAnimObj.h"
 #include "../General/GSSimConnect.h"
+#include "../General/GSGeography.h"
+#include "../Commands/GSCmdSimObj.h"
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -56,6 +58,21 @@ void GSSimObj::DespawnAttached()
         obj->Despawn();
 }
 
+void GSSimObj::OnSpawned(bool ok, GSSimObj& obj)
+{
+    (void)obj; (void)ok;
+    if (++m_childSpawned == m_attached.size())
+        OnObjSpawned(true);
+}
+
+void GSSimObj::OnDespawned()
+{
+    if (--m_childSpawned <= 0) {
+        m_attached.clear();
+        Despawn();
+    }
+}
+
 void GSSimObj::Freeze()
 {
     //auto reqID = m_simHandle.NextRequestID();
@@ -93,10 +110,98 @@ void GSSimObj::AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float 
 void GSSimObj::ShootWaypoints()
 {
     if (m_aiWaypoints.size()) {
+        //GSLogStream::Log("GSSimObj::ShootWaypoints - object ") << m_simObjectID << " points=" << m_aiWaypoints.size();
+        //for (size_t index = 0; index < m_aiWaypoints.size(); ++index) {
+        //    const auto& waypoint = m_aiWaypoints[index];
+        //    GSLogStream::Log() << "  [" << index << "] lat=" << waypoint.Latitude << " long=" << waypoint.Longitude << " alt=" << waypoint.Altitude;
+        //}
+
         m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
             GSDefinitions::GSDefID_AIWaypoints, m_simObjectID, 0, static_cast<DWORD>(m_aiWaypoints.size()),
             static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), m_aiWaypoints.data());
+
+        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ADD, *this));
+        m_simHandle.PostCommand(cmd);
+    } else {
+        OnArrived();
     }
+}
+
+void GSSimObj::PrepareRoute()
+{
+    const auto* roads = m_aircraft.GetRoads();
+    if (!roads)
+        return;
+
+    GSLogStream::Log("Route Exists");
+
+    const GSRoadsNetwork::RoadNode* srcNode = nullptr;
+    auto prk = roads->GetRandomVehicleParking();
+    if (prk.has_value()) {
+        srcNode = prk.value();
+    } else {
+        auto prk2 = roads->GetRandomNode();
+        if (prk2.has_value())
+            srcNode = prk2.value();
+        else
+            return;
+    }
+
+    GSLogStream::Log("Source Found");
+    
+    std::list<const GSRoadsNetwork::RoadNode*> route;
+    roads->FindShortestPath(*srcNode, *m_aircraft.GetParkingNode() , route);
+    if (route.size() < 2) {
+        route.clear();
+        return;
+    }
+
+    static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
+    m_aiWaypoints.reserve(route.size() + 10);
+    for (const auto* pnt : route) {
+        m_aiWaypoints.emplace_back(pnt->m_loc.Lat(), pnt->m_loc.Long(), m_initPos.Altitude, flags, 30.0, 0.0);
+    }
+
+    m_aiWaypoints.pop_back();
+
+    m_preMoveInitPos = { m_initPos.Longitude, m_initPos.Latitude };
+    const auto& src = m_aiWaypoints.front();
+    m_initPos.Longitude = src.Longitude;
+    m_initPos.Latitude = src.Latitude;
+    m_routePrepared = true;
+}
+
+void GSSimObj::FinalizeRoute()
+{
+    if (m_aiWaypoints.empty())
+        return;
+
+    static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
+    auto intrCoord = GSGeography::FindReverseCircleIntersection(
+        m_aircraft.GetLongLat(), m_aircraft.GetRawData().wingSpanMeters / 2.0,
+        { m_initPos.Longitude, m_initPos.Latitude }, m_initPos.Heading + 180.0);
+
+    m_aiWaypoints.emplace_back(intrCoord.Lat(), intrCoord.Long(), m_initPos.Altitude, flags, 30.0, 0.0);
+    m_aiWaypoints.emplace_back(m_initPos.Latitude, m_initPos.Longitude, m_initPos.Altitude, flags, 30.0, 0.0);
+
+    ShootWaypoints();
+}
+
+void GSSimObj::RestoreInitPos()
+{ 
+    if (m_routePrepared) {
+        m_initPos.Longitude = m_preMoveInitPos.Long(); 
+        m_initPos.Latitude = m_preMoveInitPos.Lat(); 
+        m_routePrepared = false;
+    }
+}
+
+void GSSimObj::ContinueSpawn()
+{
+    if (m_attached.size())
+        SpawnAttached();
+    else
+        OnObjSpawned(true);
 }
 
 GSRequest::SendResult GSSimObj::GSReqCreate::Process()
@@ -119,7 +224,10 @@ bool GSSimObj::GSReqCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSiz
     if (message->dwID == SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID) {
         auto* msg = static_cast<SIMCONNECT_RECV_ASSIGNED_OBJECT_ID*>(message);
         m_simObj.SetSimObjectID(msg->dwObjectID);
-        m_simObj.OnCreated();
+        m_simObj.RestoreInitPos();
+        if (m_simObj.OnCreated()) {
+            m_simObj.ContinueSpawn();
+        }
     } else {
         m_simObj.OnObjSpawned(false);
         GSLogStream::LogError("GSSimObjReq::GSReqCreate::OnMessage Unexpected Message: ") << message->dwID;
@@ -141,7 +249,7 @@ GSRequest::SendResult GSSimObj::GSReqDelete::Process()
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSSimObjReq::GSReqDelete::Process Failed call: ") << simRC.rc;
     } else {
-        m_simObj.OnObjDespawned(true);
+        m_simObj.OnObjDespawned();
         //m_simObj.SetInProgress(true); // Unclear if SimConnect_AIRemoveObject fires OnMessage.
     }
     return {simRC, true};
