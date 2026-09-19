@@ -19,7 +19,7 @@ public:
 private:
         
     bool OnCreated() override;
-    void OnArrived() override;
+    void OnArrived() override {}
     void OnDespawning() override {}
 
     GSBuggageLoader& m_loader;
