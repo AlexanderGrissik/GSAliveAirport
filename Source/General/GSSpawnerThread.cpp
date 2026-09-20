@@ -115,7 +115,7 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
     case GSDefinitions::CMD_AIRPORT: {
         auto& cmdObj = static_cast<GSCmdAirport&>(cmd);
         m_airport = cmdObj.Airport();
-        GSLogStream::Log("Curr Airport: ") << m_airport->GetICAO().c_str();
+        GSLogStream::Log("Current Airport: ") << m_airport->GetICAO().c_str();
         break;
     }
     default:
@@ -172,7 +172,6 @@ void GSSpawnerThread::RemoveAircraft(const GSAircraft& aircraft)
     m_groundPendingUpdate.erase(objID);
     m_groundPendingDelete.insert(m_groundUnspawned.extract(objID));
     m_groundPendingDelete.insert(m_groundSpawned.extract(objID));
-    GSLogStream::LogError("GSSpawnerThread::RemoveAircraft - AircraftGround Removed: ") << objID;
 }
 
 void GSSpawnerThread::UserAircraft(const GSAircraft& aircraft)
@@ -209,7 +208,6 @@ void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd, const GSAircraft
         grnd.UpdateAircraft(aircraftUpdated);
         if (SpawnCond(aircraftUpdated)) {
             grnd.Spawn();
-            GSLogStream::Log("GSSpawnerThread - New AircraftGround: ") << aircraftUpdated.GetObjID();
             m_groundSpawned.insert(m_groundUnspawned.extract(aircraftUpdated.GetObjID()));
         }
     } else { // DESPAWNING

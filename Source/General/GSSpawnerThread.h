@@ -37,6 +37,8 @@ public:
 
 private:
 
+    const char* GetDebugName() const override { return "GSSpawnerThread"; }
+
     void HelperPrepare(size_t sz);
 
     void NewAircraft(const GSAircraft& aircraft);

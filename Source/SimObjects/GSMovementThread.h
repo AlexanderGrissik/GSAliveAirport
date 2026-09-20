@@ -40,6 +40,8 @@ public:
 
 private:
 
+	const char* GetDebugName() const override { return "GSMovementThread"; }
+
 	static void MoveTrackLoop(std::stop_token stopToken, GSMovementThread* self);
 	void RunLoopMoveTracking(std::stop_token stopToken);
 	void RequestTracking();

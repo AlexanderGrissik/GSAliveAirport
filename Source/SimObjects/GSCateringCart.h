@@ -51,9 +51,9 @@ private:
             if (message->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
                 static_cast<GSCateringCart&>(m_simObj).SetFinalPositionAndState(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message));
             } else {
+                m_simObj.OnObjSpawned(true);
                 GSLogStream::LogError("GSCateringCart::GSReqGetDataSimObj::OnMessage Unexpected Message: ") << message->dwID;
             }
-            m_simObj.OnObjSpawned(true);
             return true;
         }
 

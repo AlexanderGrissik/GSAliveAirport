@@ -77,14 +77,11 @@ GSConsole::AppCommand GSConsole::Parse(std::string_view line)
     input >> command;
     command = GSLogStream::Lower(std::move(command));
     if (command.empty()) return {};
-    if (command == "quit" || command == "exit") return {AppCommandType::Quit};
-    if (command == "help" || command == "?") return {AppCommandType::Help};
-    if (command == "status") return {AppCommandType::Status};
+    if (command == "quit") return {AppCommandType::Quit};
+    if (command == "help") return {AppCommandType::Help};
     if (command == "tracked") return {AppCommandType::Tracked};
-    if (command == "aircraft1" || command == "radius1") return {AppCommandType::Aircraft1};
+    if (command == "tracked_1km") return {AppCommandType::Tracked_1km};
     if (command == "parked") return {AppCommandType::Parked};
-    if (command == "ground") return {AppCommandType::Ground};
-    if (command == "roads") return GetCommandWithArg(input, AppCommandType::Roads);
     if (command == "log") return {AppCommandType::Log};
     if (command == "test") return {AppCommandType::Test};
     return {AppCommandType::Unknown};
@@ -92,16 +89,15 @@ GSConsole::AppCommand GSConsole::Parse(std::string_view line)
 
 void GSConsole::PrintHelp()
 {
-    GSLogStream::Print("Commands:\n"
-              "  status              Connection and component counts\n"
-              "  tracked             Retained aircraft (admitted inside 1 km)\n"
-              "  aircraft1           Aircraft currently within 1 km\n"
-              "  parked              Detailed list excluding STATE_SIMPLE_TAXI\n"
-              "  ground              Request one 5 km ground-object debug list\n"
-              "  roads <ICAO>        List non-aircraft roads (TYPE 6/7) and endpoints\n"
+    GSLogStream::Print(
+              "Commands:\n"
+              "  tracked             Print all detected aircrafts\n"
+              "  tracked_1km         Print detected aircrafts currently within 1 km\n"
+              "  parked              Print detected parked aircrafts\n"
               "  log                 Toggle background event/periodic logging\n"
-              "  test                Spawn all size of parked aircrafts near the user once\n"
-              "  help | quit\n");
+              "  test                Spawn all size of parked aircrafts once near the user\n"
+              "  quit                Close the application\n"
+              "  help                This help\n");
 }
 
 void GSConsole::PrintPrompt()

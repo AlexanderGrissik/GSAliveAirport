@@ -59,8 +59,7 @@ private:
             (void)messageSize;
             if (message->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
                 static_cast<GSBuggageLoader&>(m_simObj).SetFinalPositionAndState(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message));
-            }
-            else {
+            } else {
                 GSLogStream::LogError("GSBuggageLoader::GSReqGetDataSimObj::OnMessage Unexpected Message: ") << message->dwID;
                 m_simObj.OnObjSpawned(true);
             }

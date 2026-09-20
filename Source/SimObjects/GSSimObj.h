@@ -54,6 +54,7 @@ public:
     SIMCONNECT_OBJECT_ID GetSimObjectID() const { return m_simObjectID; }
     GSSimConnect& GetSimConnect() const { return m_simHandle; }
     const SIMCONNECT_DATA_WAYPOINT& GetDestPoint() const { return m_aiWaypoints.back(); }
+    const std::chrono::steady_clock::time_point& GetStartMoveTime() const { return m_startMoveTime; } 
 
     void SetSimObjectID(DWORD id) { m_simObjectID = static_cast<SIMCONNECT_OBJECT_ID>(id); }
     void OnObjSpawned(bool ok) { m_parent.OnSpawned(ok, *this); }
@@ -82,6 +83,7 @@ protected:
     SIMCONNECT_DATA_INITPOSITION m_initPos{};
     std::vector<std::unique_ptr<GSSimObj>> m_attached; 
     std::vector<SIMCONNECT_DATA_WAYPOINT> m_aiWaypoints;
+    std::chrono::steady_clock::time_point m_startMoveTime;
     GSCoord m_preMoveInitPos;
     size_t m_childSpawned = 0;
     bool m_hasAnim = false;

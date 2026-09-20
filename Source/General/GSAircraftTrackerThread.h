@@ -39,6 +39,8 @@ public:
 
   private:
 
+    const char* GetDebugName() const override { return "GSAircraftTrackerThread"; }
+
     static void AircraftTrackerLoop(std::stop_token stopToken, GSAircraftTrackerThread *self);
     void RunLoopTracker(std::stop_token stopToken);
 

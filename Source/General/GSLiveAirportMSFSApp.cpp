@@ -16,8 +16,8 @@ int GSLiveAirportMSFSApp::Run()
     m_animThread.Start();
     m_mvmntThread.Start();
 
-    std::cout << "GSLiveAirportMSFS for MSFS 2024\n"
-              << "Automatic aircraft tracking: dynamic at 1 km, discover to 5 km.\n"
+    std::cout << "Ground Services Live Airport for MSFS 2024\n"
+              << "Version: 1.0\n"
               << "Type 'help' for commands.\n";
 
     GSConsole::PrintPrompt();
@@ -43,25 +43,19 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
     case AT::Help:
         GSConsole::PrintHelp();
         break;
-    case AT::Status:
-        break;
     case AT::Tracked:
         PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_ALL);
         break;
-    case AT::Aircraft1:
+    case AT::Tracked_1km:
         PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_1KM);
         break;
     case AT::Parked:
         PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_PARKED);
         break;
-    case AT::Ground:
-        break;
-    case AT::Roads:
-        break;
     case AT::Log: {
         const bool enabled = !GSLogStream::LoggingEnabled();
         GSLogStream::SetLoggingEnabled(enabled);
-        std::cout << "Logging " << (enabled ? "enabled" : "disabled");
+        std::cout << "Logging " << (enabled ? "enabled\n" : "disabled\n");
         break;
     }
     case AT::Test:
@@ -84,6 +78,6 @@ void GSLiveAirportMSFSApp::PostACTrackCommandAndWait(int cmdId)
 
 int main()
 {
-    NS_GSLiveAirportMSFS::GSLiveAirportMSFSApp app;
-    return app.Run();
+    std::unique_ptr<NS_GSLiveAirportMSFS::GSLiveAirportMSFSApp> app(new NS_GSLiveAirportMSFS::GSLiveAirportMSFSApp());
+    return app->Run();
 }

@@ -109,22 +109,19 @@ void GSSimObj::AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float 
 
 void GSSimObj::ShootWaypoints()
 {
-    if (m_aiWaypoints.size()) {
-        //GSLogStream::Log("GSSimObj::ShootWaypoints - object ") << m_simObjectID << " points=" << m_aiWaypoints.size();
-        //for (size_t index = 0; index < m_aiWaypoints.size(); ++index) {
-        //    const auto& waypoint = m_aiWaypoints[index];
-        //    GSLogStream::Log() << "  [" << index << "] lat=" << waypoint.Latitude << " long=" << waypoint.Longitude << " alt=" << waypoint.Altitude;
-        //}
+    //GSLogStream::Log("GSSimObj::ShootWaypoints - object ") << m_simObjectID << " points=" << m_aiWaypoints.size();
+    //for (size_t index = 0; index < m_aiWaypoints.size(); ++index) {
+    //    const auto& waypoint = m_aiWaypoints[index];
+    //    GSLogStream::Log() << "  [" << index << "] lat=" << waypoint.Latitude << " long=" << waypoint.Longitude << " alt=" << waypoint.Altitude;
+    //}
 
-        m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
-            GSDefinitions::GSDefID_AIWaypoints, m_simObjectID, 0, static_cast<DWORD>(m_aiWaypoints.size()),
-            static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), m_aiWaypoints.data());
+    m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
+        GSDefinitions::GSDefID_AIWaypoints, m_simObjectID, 0, static_cast<DWORD>(m_aiWaypoints.size()),
+        static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), m_aiWaypoints.data());
 
-        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ADD, *this));
-        m_simHandle.PostCommand(cmd);
-    } else {
-        OnArrived();
-    }
+    m_startMoveTime = std::chrono::steady_clock::now();
+    CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ADD, *this));
+    m_simHandle.PostCommand(cmd);
 }
 
 void GSSimObj::PrepareRoute()
@@ -132,8 +129,6 @@ void GSSimObj::PrepareRoute()
     const auto* roads = m_aircraft.GetRoads();
     if (!roads)
         return;
-
-    GSLogStream::Log("Route Exists");
 
     const GSRoadsNetwork::RoadNode* srcNode = nullptr;
     auto prk = roads->GetRandomVehicleParking();
@@ -146,8 +141,6 @@ void GSSimObj::PrepareRoute()
         else
             return;
     }
-
-    GSLogStream::Log("Source Found");
     
     std::list<const GSRoadsNetwork::RoadNode*> route;
     roads->FindShortestPath(*srcNode, *m_aircraft.GetParkingNode() , route);
@@ -173,8 +166,10 @@ void GSSimObj::PrepareRoute()
 
 void GSSimObj::FinalizeRoute()
 {
-    if (m_aiWaypoints.empty())
+    if (m_aiWaypoints.empty()) {
+        OnArrived();
         return;
+    }
 
     static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
     auto intrCoord = GSGeography::FindReverseCircleIntersection(

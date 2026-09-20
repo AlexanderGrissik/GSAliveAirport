@@ -46,6 +46,8 @@ private:
     GSCatalog(const GSCatalog &) = delete;
     GSCatalog &operator=(const GSCatalog &) = delete;
 
+    const char* GetDebugName() const override { return "GSCatalog"; }
+
     using EntiresVec = std::vector<const std::pair<std::string, std::string>*>;
     const std::string& GetEntry(EntiresVec& entires);
 

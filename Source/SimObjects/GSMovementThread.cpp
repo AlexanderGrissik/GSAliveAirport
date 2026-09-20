@@ -90,10 +90,13 @@ void GSMovementThread::RemovePending()
 {
     while (!m_pendRemObjs.empty()) {
         auto itr = m_pendRemObjs.begin();
-        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_REM, *itr->second));
-        itr->second->GetSimConnect().PostCommand(cmd);
+        GSSimObj* obj = itr->second;
 
+        m_trackObjs.erase(itr->first);
         m_pendRemObjs.erase(itr);
+
+        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_REM_RET, *obj));
+        itr->second->GetSimConnect().PostCommand(cmd);
     }
 }
 
@@ -102,9 +105,10 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
     static double ArrivalDistanceMtr = 10.0;
     StateWireDataGet rawStateGet;
     GSSimConnect::ReadMsgData(&rawStateGet, sizeof(rawStateGet), entry);
-    
+
     const auto& dst = obj.GetDestPoint();
-    if (ArrivalDistanceMtr > GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, { rawStateGet.posLong, rawStateGet.posLat })) {
+    if ((std::chrono::steady_clock::now() - obj.GetStartMoveTime() > 300s) ||
+        (ArrivalDistanceMtr > GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, { rawStateGet.posLong, rawStateGet.posLat }))) {
         m_trackObjs.erase(obj.GetSimObjectID());
         m_pendRemObjs.erase(obj.GetSimObjectID());
         CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ARR, obj));

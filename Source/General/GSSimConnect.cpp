@@ -164,7 +164,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
         const auto &event = *reinterpret_cast<SIMCONNECT_RECV_EVENT *>(message);
         if (event.uEventID == GSDefinitions::GSEventID_SimState) {
             if (event.dwData != 0) {
-                GSLogStream::Log("Simulation started.");
+                GSLogStream::Log("Simulation detected.");
                 m_simStarted = true;
                 OnSimStart();
             } else {
@@ -187,7 +187,8 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
             m_sendIDToPtr.erase(itr);
             m_reqIDToPtr.erase(id);
         } else {
-            GSLogStream::Log("GSSimConnect - Unexpected exception: ") << msg.dwException << ", sendID: " << msg.dwSendID;
+            GSLogStream::Log("GSSimConnect - Unexpected exception: ") << GetDebugName() << ", Exception: "
+                << msg.dwException << ", sendID: " << msg.dwSendID;
         }
         break;
     }

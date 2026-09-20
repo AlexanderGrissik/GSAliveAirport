@@ -35,6 +35,8 @@ void GSAircraftGround::Spawn()
 
     for (auto& itr : m_objs)
         itr->Spawn();
+
+    GSLogStream::Log("Services Spawning for: ") << m_aircraft.GetObjID();
 }
 
 void GSAircraftGround::Despawn()
@@ -48,6 +50,7 @@ void GSAircraftGround::Despawn()
         m_spawnState = SpawnState::DESPAWNING;
         for (auto& itr : m_objs)
             itr->Despawn();
+        GSLogStream::Log("Services Despawning for: ") << m_aircraft.GetObjID();
     } else {
         m_spawnState = SpawnState::UNSPAWNED;
     }
@@ -63,8 +66,10 @@ void GSAircraftGround::OnSpawned(bool ok, GSSimObj& obj)
         });
     }
 
-    if (m_spawnedObjs == m_objs.size())
+    if (m_spawnedObjs == m_objs.size()) {
+        GSLogStream::Log("Services InPlace for: ") << m_aircraft.GetObjID();
         m_spawnState = SpawnState::SPAWNED;
+    }
 }
 
 void GSAircraftGround::OnDespawned()
@@ -72,6 +77,7 @@ void GSAircraftGround::OnDespawned()
     --m_spawnedObjs;
     if (!m_spawnedObjs) {
         m_objs.clear();
+        GSLogStream::Log("Services Despawned for: ") << m_aircraft.GetObjID();
         m_spawnState = SpawnState::UNSPAWNED;
     }
 }

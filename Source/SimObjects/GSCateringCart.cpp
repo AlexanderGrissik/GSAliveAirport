@@ -34,6 +34,7 @@ void GSCateringCart::OnArrived()
     m_simHandle.PostReqCommand(new GSReqSetDataSimObj(m_simHandle, *this, std::move(updateData)));
 
     Freeze();
+    ContinueSpawn();
 }
 
 bool GSCateringCart::PreSpawn()
@@ -74,6 +75,5 @@ void GSCateringCart::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& en
     m_initPos.Latitude = out.Lat();
 
     FinalizeRoute();
-    ContinueSpawn();
 }
 }

@@ -52,6 +52,7 @@ public:
 
 protected:
     virtual void OnCommand(GSCommand& cmd) = 0;
+    virtual const char* GetDebugName() const = 0;
 
     void RunDispatch(std::stop_token stopToken);
     void RunCommands();

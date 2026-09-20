@@ -27,6 +27,8 @@ public:
 
 private:
 
+	const char* GetDebugName() const override { return "GSAnimationThread"; }
+
 	static void AnimationLoop(std::stop_token stopToken, GSAnimationThread* self);
 	void RunLoopAnimation(std::stop_token stopToken);
 	void DoAnimation();
