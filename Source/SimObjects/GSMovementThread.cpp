@@ -107,7 +107,7 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
     GSSimConnect::ReadMsgData(&rawStateGet, sizeof(rawStateGet), entry);
 
     const auto& dst = obj.GetDestPoint();
-    if ((std::chrono::steady_clock::now() - obj.GetStartMoveTime() > 300s) ||
+    if ((std::chrono::steady_clock::now() - obj.GetStartMoveTime() > 900s) ||
         (ArrivalDistanceMtr > GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, { rawStateGet.posLong, rawStateGet.posLat }))) {
         m_trackObjs.erase(obj.GetSimObjectID());
         m_pendRemObjs.erase(obj.GetSimObjectID());

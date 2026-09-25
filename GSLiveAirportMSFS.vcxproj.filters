@@ -105,12 +105,6 @@
     <ClInclude Include="Source\SimObjects\GSBuggageTrain.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSCateringCart.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSGroundPower.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
     <ClInclude Include="Source\SimObjects\GSLavatoryTruck.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
@@ -158,6 +152,12 @@
     </ClInclude>
     <ClInclude Include="Source\Commands\GSCmdAirport.h">
       <Filter>Source\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SimObjects\GSCateringCart.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SimObjects\GSGroundPower.h">
+      <Filter>Source\SimObjects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -227,9 +227,6 @@
     <ClCompile Include="Source\SimObjects\GSCateringCart.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSGroundPower.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
     <ClCompile Include="Source\SimObjects\GSLavatoryTruck.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
@@ -267,6 +264,9 @@
       <Filter>Source\General</Filter>
     </ClCompile>
     <ClCompile Include="Source\SimObjects\GSMovementThread.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SimObjects\GSGroundPower.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
   </ItemGroup>

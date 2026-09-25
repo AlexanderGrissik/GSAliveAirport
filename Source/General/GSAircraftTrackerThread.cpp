@@ -292,11 +292,13 @@ bool GSAircraftTrackerThread::HandleScanAirportMessage(SIMCONNECT_RECV_AIRPORT_L
 
     if (entry.dwEntryNumber + 1 == entry.dwOutOf) {
         if (m_tempClosest.get() && m_tempClosestDistance < DiscoveryRadiusMeters) {
-            m_currAirport = std::make_shared<GSAirport>(m_tempClosest->Ident, GSCoord{ m_tempClosest->Longitude, m_tempClosest->Latitude });
-            m_currAirport->LoadInfo(*this);
+            if (!m_currAirport || m_currAirport->GetICAO() != m_tempClosest->Ident) {
+                m_currAirport = std::make_shared<GSAirport>(m_tempClosest->Ident, GSCoord{ m_tempClosest->Longitude, m_tempClosest->Latitude });
+                m_currAirport->LoadInfo(*this);
 
-            CmdPtr cmd(new GSCmdAirport(GSDefinitions::CMD_AIRPORT, m_currAirport));
-            m_singleObserver.PostCommand(cmd);
+                CmdPtr cmd(new GSCmdAirport(GSDefinitions::CMD_AIRPORT, m_currAirport));
+                m_singleObserver.PostCommand(cmd);
+            }
         }
 
         return true;
@@ -382,7 +384,7 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
 
     if (m_type == 2) {
         title = "737 Max 8 Passengers";
-        const auto parking = m_airport.GetClosestJetwayParking(userAircraft->GetLongLat());
+        const auto parking = m_airport.GetRoadNet().GetClosestJetwayParking(userAircraft->GetLongLat());
         if (parking) {
             m_pos.Latitude = (*parking)->m_loc.Lat();
             m_pos.Longitude = (*parking)->m_loc.Long();

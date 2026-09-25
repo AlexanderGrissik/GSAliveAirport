@@ -6,7 +6,6 @@
 #include <vector>
 #include <unordered_map>
 #include <optional>
-#include <deque>
 #include <list>
 
 namespace NS_GSLiveAirportMSFS
@@ -27,6 +26,11 @@ public:
 		VEHICLE
 	};
 
+	enum RoadPathType {
+		PATH_NORMAL,
+		PATH_VEHICLE
+	};
+
 	struct RoadPath;
 
 	struct RoadNode {
@@ -41,10 +45,13 @@ public:
 		RoadNode* m_nodeA;
 		RoadNode* m_nodeB;
         double m_distMeters;
+		RoadPathType m_pathType;
+		bool m_custom;
 	};
 
 	void AddNode(DWORD id, const GSCoord& loc, float heading, RoadNodeType tp, bool hasJetway);
-	void AddPath(DWORD idA, DWORD idB);
+	void AddPath(DWORD idA, DWORD idB, RoadPathType pathType);
+	void AddPath(const RoadPath& path);
 	bool HasNode(DWORD id) const { return m_roadNodes.contains(id); }
 
     std::optional<const RoadNode*> GetClosestNormalParking(const GSCoord& location) const;
@@ -54,14 +61,16 @@ public:
     void MergeNetwork(GSRoadsNetwork& network);
     void FindShortestPath(const RoadNode& start, const RoadNode& end, std::list<const RoadNode*>& out) const;
     std::optional<const RoadNode*> GetClosestJetwayParking(const GSCoord& location) const;
-    
+	RoadPath GetClosestDisjointNodes(GSRoadsNetwork& other);
+	void Print();
+
 private:
 
 	std::unordered_map<DWORD, RoadNode> m_roadNodes;
-	std::deque<RoadPath> m_roadPaths; // Removing elements will break pointers.
-	std::vector<RoadNode*> m_normalParkings;
-	std::vector<RoadNode*> m_vehicleParkings;
-    std::vector<RoadNode*> m_allNodes;
+	std::list<RoadPath> m_roadPaths; // Removing elements will break pointers.
+	std::vector<const RoadNode*> m_normalParkings;
+	std::vector<const RoadNode*> m_vehicleParkings;
+    std::vector<const RoadNode*> m_allNodes;
 };
 
 }

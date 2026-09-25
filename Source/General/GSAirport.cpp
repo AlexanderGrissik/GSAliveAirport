@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <iterator>
 
 namespace NS_GSLiveAirportMSFS
 {
@@ -51,41 +52,52 @@ void GSAirport::LoadInfo(GSSimConnect& handler)
 
 void GSAirport::OrganizeStructures()
 {
-    m_roadNetworks.clear();
+    constexpr DWORD ParkingFlag = 0x80000000u;
 
-    const auto nodeExists = [this](DWORD id) {
-        return m_parkings.contains(id) || m_taxiPoints.contains(id);
+    std::list<GSRoadsNetwork> roadNetworks;
+    
+    const auto nodeExists = [this, ParkingFlag](DWORD id) {
+        const DWORD index = id & ~ParkingFlag;
+        return (id & ParkingFlag)
+            ? m_parkings.contains(index)
+            : m_taxiPoints.contains(index);
     };
 
-    const auto addNode = [this](GSRoadsNetwork& network, DWORD id) {
-        if (const auto parking = m_parkings.find(id); parking != m_parkings.end()) {
-            const GSCoord location = GSGeography::RelativePosition(
-                0.0, m_location, parking->second.biasZMeters, parking->second.biasXMeters);
-            
-            // SimConnect TAXI_PARKING TYPE: VEHICLE
-            const auto nodeType = parking->second.type == 13 ? GSRoadsNetwork::VEHICLE : GSRoadsNetwork::PARKING;
-            network.AddNode(id, location, parking->second.headingDegTrue, nodeType, m_jetways.contains(id));
-            return;
-        }
+    const auto addNode = [this, ParkingFlag](GSRoadsNetwork& network, DWORD id) {
+        const DWORD index = id & ~ParkingFlag;
 
-        const auto point = m_taxiPoints.find(id);
-        const GSCoord location = GSGeography::RelativePosition(0.0, m_location, point->second.biasZMeters, point->second.biasXMeters);
-        network.AddNode(id, location, 0.0F, GSRoadsNetwork::NORMAL, false);
+        if (id & ParkingFlag) {
+            const auto& parking = m_parkings.at(index);
+            const GSCoord location = GSGeography::RelativePosition(
+                0.0, m_location, parking.biasZMeters, parking.biasXMeters);
+
+            const auto nodeType = parking.type == 13 ? GSRoadsNetwork::VEHICLE : GSRoadsNetwork::PARKING;
+
+            network.AddNode(
+                id, location, parking.headingDegTrue,
+                nodeType, m_jetways.contains(index));
+        } else {
+            const auto& point = m_taxiPoints.at(index);
+            const GSCoord location = GSGeography::RelativePosition(
+                0.0, m_location, point.biasZMeters, point.biasXMeters);
+
+            network.AddNode(id, location, 0.0F, GSRoadsNetwork::NORMAL, false);
+        }
     };
 
     for (const TaxiPath& path : m_taxiPaths) {
         const DWORD startId = static_cast<DWORD>(path.startIndex);
-        const DWORD endId = static_cast<DWORD>(path.endIndex);
+        const DWORD endId = static_cast<DWORD>(path.endIndex) | (path.type == 3 ? ParkingFlag : 0u);
         if (!nodeExists(startId) || !nodeExists(endId)) {
             GSLogStream::LogError("GSAirport::OrganizeStructures - Missing taxi path endpoint: ")
-                << startId << ", " << endId;
+                << path.type << ": " << startId << ", " << endId;
             continue;
         }
 
-        std::vector<std::size_t> matches;
-        for (std::size_t i = 0; i < m_roadNetworks.size(); ++i) {
-            if (m_roadNetworks[i].HasNode(startId) || m_roadNetworks[i].HasNode(endId)) {
-                matches.push_back(i);
+        std::vector<std::list<GSRoadsNetwork>::iterator> matches;
+        for (auto it = roadNetworks.begin(); it != roadNetworks.end(); ++it) {
+            if (it->HasNode(startId) || it->HasNode(endId)) {
+                matches.push_back(it);
             }
         }
 
@@ -95,77 +107,54 @@ void GSAirport::OrganizeStructures()
             continue;
         }
 
-        std::size_t targetIndex;
-        if (matches.empty()) {
-            targetIndex = m_roadNetworks.size();
-            m_roadNetworks.emplace_back();
-        } else {
-            targetIndex = matches.front();
-        }
+        auto targetIt = matches.empty() ? roadNetworks.emplace(roadNetworks.end()) : matches.front();
 
         if (matches.size() == 2) {
-            const std::size_t sourceIndex = matches.back();
-            m_roadNetworks[targetIndex].MergeNetwork(m_roadNetworks[sourceIndex]);
-            m_roadNetworks.erase(m_roadNetworks.begin() + sourceIndex);
+            targetIt->MergeNetwork(*matches.back());
+            roadNetworks.erase(matches.back());
         }
 
-        GSRoadsNetwork& network = m_roadNetworks[targetIndex];
+        GSRoadsNetwork::RoadPathType pathType =
+            (path.type == 6 || path.type == 7) ? GSRoadsNetwork::PATH_VEHICLE : GSRoadsNetwork::PATH_NORMAL;
+
+        GSRoadsNetwork& network = *targetIt;
         addNode(network, startId);
         addNode(network, endId);
-        network.AddPath(startId, endId);
+        network.AddPath(startId, endId, pathType);
     }
+
+    MergeAllRoadNetworks(roadNetworks);
 }
 
-std::optional<std::pair<const GSRoadsNetwork*, const GSRoadsNetwork::RoadNode*>> GSAirport::GetNetworkByParking(const GSCoord& loc) const
+void GSAirport::MergeAllRoadNetworks(std::list<GSRoadsNetwork>& roadNetworks)
 {
-    constexpr double MaxParkingDistMtr = 200.0;
+    while (roadNetworks.size() > 1) {
+        GSRoadsNetwork& accumulator = roadNetworks.front();
 
-    const GSRoadsNetwork* closestNetwork = nullptr;
-    const GSRoadsNetwork::RoadNode* closestParking = nullptr;
-    double closestDistance = MaxParkingDistMtr;
-
-    for (const GSRoadsNetwork& network : m_roadNetworks) {
-        const auto parking = network.GetClosestNormalParking(loc);
-        if (!parking) {
-            continue;
+        auto closestIt = roadNetworks.end();
+        GSRoadsNetwork::RoadPath bestPath{ nullptr, nullptr, 9999999.0, GSRoadsNetwork::PATH_VEHICLE, true };
+        for (auto it = std::next(roadNetworks.begin()); it != roadNetworks.end(); ++it) {
+            const auto path = accumulator.GetClosestDisjointNodes(*it);
+            if (path.m_distMeters < bestPath.m_distMeters) {
+                bestPath = path;
+                closestIt = it;
+            }
         }
 
-        const double distance = GSGeography::DistanceMeters(loc, (*parking)->m_loc);
-        if (distance <= MaxParkingDistMtr && (!closestNetwork || distance < closestDistance)) {
-            closestNetwork = &network;
-            closestDistance = distance;
-            closestParking = parking.value();
-        }
-    }
-
-    if (!closestNetwork) {
-        return std::nullopt;
-    }
-    return std::make_pair(closestNetwork,closestParking);
-}
-
-std::optional<const GSRoadsNetwork::RoadNode*> GSAirport::GetClosestJetwayParking(const GSCoord& loc) const
-{
-    const GSRoadsNetwork::RoadNode* closest = nullptr;
-    double closestDistance = 0.0;
-
-    for (const GSRoadsNetwork& network : m_roadNetworks) {
-        const auto parking = network.GetClosestJetwayParking(loc);
-        if (!parking) {
-            continue;
+        if (closestIt == roadNetworks.end() || !bestPath.m_nodeA || !bestPath.m_nodeB) {
+             GSLogStream::LogError("No bridge between networks on MergeAllRoadNetworks");
+             return;
         }
 
-        const double distance = GSGeography::DistanceMeters(loc, (*parking)->m_loc);
-        if (!closest || distance < closestDistance) {
-            closest = *parking;
-            closestDistance = distance;
-        }
+        accumulator.MergeNetwork(*closestIt);   
+        roadNetworks.erase(closestIt);
+        accumulator.AddPath(bestPath);
     }
 
-    if (!closest) {
-        return std::nullopt;
-    }
-    return closest;
+    // Move the single merged network into the member.
+    m_roadNetwork = std::move(roadNetworks.front());
+
+    m_roadNetwork.Print();
 }
 
 GSRequest::SendResult GSAirport::GSReqInfo::Process()

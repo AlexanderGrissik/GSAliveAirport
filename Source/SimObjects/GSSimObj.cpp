@@ -126,16 +126,17 @@ void GSSimObj::ShootWaypoints()
 
 void GSSimObj::PrepareRoute()
 {
-    const auto* roads = m_aircraft.GetRoads();
-    if (!roads)
+    const auto* ap = m_aircraft.GetAirport();
+    const auto* acPrk = m_aircraft.GetParking();
+    if (!ap || !acPrk)
         return;
 
     const GSRoadsNetwork::RoadNode* srcNode = nullptr;
-    auto prk = roads->GetRandomVehicleParking();
+    auto prk = ap->GetRoadNet().GetRandomVehicleParking();
     if (prk.has_value()) {
         srcNode = prk.value();
     } else {
-        auto prk2 = roads->GetRandomNode();
+        auto prk2 = ap->GetRoadNet().GetRandomNode();
         if (prk2.has_value())
             srcNode = prk2.value();
         else
@@ -143,7 +144,7 @@ void GSSimObj::PrepareRoute()
     }
     
     std::list<const GSRoadsNetwork::RoadNode*> route;
-    roads->FindShortestPath(*srcNode, *m_aircraft.GetParkingNode() , route);
+    ap->GetRoadNet().FindShortestPath(*srcNode, *acPrk, route);
     if (route.size() < 2) {
         route.clear();
         return;

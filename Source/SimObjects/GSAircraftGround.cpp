@@ -9,9 +9,10 @@ GSAircraftGround::GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& sim
     m_aircraft(aircraft), m_simConnect(simConn), m_airport(airport)
 {
     if (m_airport) {
-        auto prk = m_airport->GetNetworkByParking(aircraft.GetLongLat());
+        m_aircraft.SetAirport(m_airport.get());
+        const auto prk = m_airport->GetRoadNet().GetClosestNormalParking(aircraft.GetLongLat());
         if (prk.has_value()) {
-            m_aircraft.SetRoads(prk->first, prk->second);
+            m_aircraft.SetParking(prk.value());
         }
     }
 }

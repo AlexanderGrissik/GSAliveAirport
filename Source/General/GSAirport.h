@@ -59,13 +59,13 @@ public:
 
     void LoadInfo(GSSimConnect& handler);
     void OrganizeStructures();
-    std::optional<std::pair<const GSRoadsNetwork*, const GSRoadsNetwork::RoadNode*>> GetNetworkByParking(const GSCoord& loc) const;
-    std::optional<const GSRoadsNetwork::RoadNode*> GetClosestJetwayParking(const GSCoord& loc) const;
     const std::string& GetICAO() const { return m_icao; } 
     const GSCoord& GetLongLat() const { return m_location; }
+    const GSRoadsNetwork& GetRoadNet() const { return m_roadNetwork; } 
    
 private:
 
+    void MergeAllRoadNetworks(std::list<GSRoadsNetwork>& roadNetworks);
 
     std::string m_icao;
     GSCoord m_location;
@@ -73,7 +73,7 @@ private:
     std::unordered_map<DWORD, TaxiPoint> m_taxiPoints;
     std::unordered_map<DWORD, Jetway> m_jetways;
     std::vector<TaxiPath> m_taxiPaths;
-    std::vector<GSRoadsNetwork> m_roadNetworks;
+    GSRoadsNetwork m_roadNetwork;
 
     class GSReqInfo : public GSRequest
     {

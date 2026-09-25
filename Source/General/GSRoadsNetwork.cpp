@@ -27,7 +27,7 @@ void GSRoadsNetwork::AddNode(DWORD id, const GSCoord& loc, float heading, GSRoad
     }
 }
 
-void GSRoadsNetwork::AddPath(DWORD idA, DWORD idB)
+void GSRoadsNetwork::AddPath(DWORD idA, DWORD idB, RoadPathType pathType)
 {
 	auto itrA = m_roadNodes.find(idA);
 	auto itrB = m_roadNodes.find(idB);
@@ -37,10 +37,22 @@ void GSRoadsNetwork::AddPath(DWORD idA, DWORD idB)
 	}
 
 	RoadPath& path = m_roadPaths.emplace_back(
-		&itrA->second, &itrB->second, GSGeography::DistanceMeters(itrA->second.m_loc, itrB->second.m_loc));
+		&itrA->second, &itrB->second, GSGeography::DistanceMeters(itrA->second.m_loc, itrB->second.m_loc), pathType, false);
 
 	itrA->second.m_paths.push_back(&path);
 	itrB->second.m_paths.push_back(&path);
+}
+
+void GSRoadsNetwork::AddPath(const RoadPath& path)
+{
+    if (!path.m_nodeA || !path.m_nodeB) {
+        GSLogStream::LogError("GSRoadsNetwork::AddPath - Null endpoint(s)");
+        return;
+    }
+
+    RoadPath& newPath = m_roadPaths.emplace_back(path);   // copies m_distMeters as-is
+    path.m_nodeA->m_paths.push_back(&newPath);
+    path.m_nodeB->m_paths.push_back(&newPath);
 }
 
 std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetClosestNormalParking(const GSCoord& location) const
@@ -88,43 +100,24 @@ void GSRoadsNetwork::MergeNetwork(GSRoadsNetwork& network)
 {
 	if (this == &network) { return; }
 
-	std::unordered_map<const RoadNode*, RoadNode*> nodeMapping;
-	nodeMapping.reserve(network.m_roadNodes.size());
+	// Move the nodes in. unordered_map::merge moves the node handles, so every RoadNode
+    // keeps its address — the source paths' m_nodeA/m_nodeB therefore stay valid. Node IDs
+    // are unique per network, so nothing collides (on a collision merge keeps *this*'s node,
+    // the same "destination wins" rule the old try_emplace loop used).
+    m_roadNodes.merge(network.m_roadNodes);
 
-	for (const auto& [id, sourceNode] : network.m_roadNodes) {
-		auto [destinationIt, inserted] = m_roadNodes.try_emplace(
-			id, sourceNode.m_loc, sourceNode.m_pntType, sourceNode.m_heading, sourceNode.m_hasJetway);
-
-		if (!inserted && destinationIt->second.m_pntType != sourceNode.m_pntType) {
-			GSLogStream::LogError("GSRoadsNetwork::MergeNetwork - Duplicate node ID with different type: ")
-				<< destinationIt->second.m_pntType << " vs " << sourceNode.m_pntType;
-		}
-
-		if (inserted) {
-			m_allNodes.push_back(&destinationIt->second);
-			if (sourceNode.m_pntType == PARKING) {
-				m_normalParkings.push_back(&destinationIt->second);
-			} else if (sourceNode.m_pntType == VEHICLE) {
-				m_vehicleParkings.push_back(&destinationIt->second);
-			}
-		}
-
-		nodeMapping.emplace(&sourceNode, &destinationIt->second);
+	if (!network.m_roadNodes.empty()) {
+		GSLogStream::LogError("Duplicate Node IDs on MergeNetwork.");
 	}
 
-	for (const RoadPath& sourcePath : network.m_roadPaths) {
-		const auto nodeAIt = nodeMapping.find(sourcePath.m_nodeA);
-		const auto nodeBIt = nodeMapping.find(sourcePath.m_nodeB);
-		if (nodeAIt == nodeMapping.end() || nodeBIt == nodeMapping.end()) {
-			GSLogStream::LogError("GSRoadsNetwork::MergeNetwork - Path endpoint missing from source network");
-			continue;
-		}
+    // Move the paths in. list::splice moves the list nodes, so every RoadPath keeps its
+    // address — the nodes' m_paths therefore stay valid.
+    m_roadPaths.splice(m_roadPaths.end(), network.m_roadPaths);
 
-		RoadPath& destinationPath = m_roadPaths.emplace_back(
-			nodeAIt->second, nodeBIt->second, sourcePath.m_distMeters);
-		nodeAIt->second->m_paths.push_back(&destinationPath);
-		nodeBIt->second->m_paths.push_back(&destinationPath);
-	}
+    // The index vectors hold RoadNode* which are still valid — just append them.
+    m_allNodes.insert(m_allNodes.end(), network.m_allNodes.begin(), network.m_allNodes.end());
+    m_normalParkings.insert(m_normalParkings.end(), network.m_normalParkings.begin(), network.m_normalParkings.end());
+    m_vehicleParkings.insert(m_vehicleParkings.end(), network.m_vehicleParkings.begin(), network.m_vehicleParkings.end());
 }
 
 std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetClosestJetwayParking(const GSCoord& location) const
@@ -150,18 +143,19 @@ std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetClosestJetwayP
 	return closest;
 }
 
-// A* search using road-segment distance as cost and straight-line geographic distance to the end as the heuristic.
+// A* search using weighted road-segment distance. Vehicle paths use their real
+// length; normal paths cost 100 times their length to strongly prefer vehicle paths.
 void GSRoadsNetwork::FindShortestPath(const RoadNode& start, const RoadNode& end, std::list<const RoadNode*>& out) const
 {
 	struct OpenEntry {
 		const RoadNode* m_node;
-		double m_distanceFromStart;
-		double m_estimatedTotalDistance;
+		double m_costFromStart;
+		double m_estimatedTotalCost;
 	};
 	struct LowestEstimatedDistance {
 		bool operator()(const OpenEntry& left, const OpenEntry& right) const
 		{
-			return left.m_estimatedTotalDistance > right.m_estimatedTotalDistance;
+			return left.m_estimatedTotalCost > right.m_estimatedTotalCost;
 		}
 	};
 
@@ -187,10 +181,10 @@ void GSRoadsNetwork::FindShortestPath(const RoadNode& start, const RoadNode& end
 		open.pop();
 
 		const auto distanceIt = distanceFromStart.find(current.m_node);
-		if (distanceIt == distanceFromStart.end() || current.m_distanceFromStart > distanceIt->second) {
+		if (distanceIt == distanceFromStart.end() || current.m_costFromStart > distanceIt->second) {
 			continue;
 		}
-		const double currentDistance = distanceIt->second;
+		const double currentCost = distanceIt->second;
 
 		if (current.m_node == &end) {
 			for (const RoadNode* node = &end;; node = previousNode.at(node)) {
@@ -211,17 +205,48 @@ void GSRoadsNetwork::FindShortestPath(const RoadNode& start, const RoadNode& end
 				continue;
 			}
 
-			const double candidateDistance = currentDistance + path->m_distMeters;
-			auto [nextDistanceIt, inserted] = distanceFromStart.try_emplace(next, candidateDistance);
-			if (!inserted && candidateDistance >= nextDistanceIt->second) {
+			const double edgeCost = path->m_distMeters *
+				(path->m_pathType == PATH_VEHICLE ? 1.0 : 100.0);
+			const double candidateCost = currentCost + edgeCost;
+			auto [nextDistanceIt, inserted] = distanceFromStart.try_emplace(next, candidateCost);
+			if (!inserted && candidateCost >= nextDistanceIt->second) {
 				continue;
 			}
 
-			nextDistanceIt->second = candidateDistance;
+			nextDistanceIt->second = candidateCost;
 			previousNode.insert_or_assign(next, current.m_node);
-			open.push({ next, candidateDistance, candidateDistance + estimatedDistanceToEnd(next) });
+			open.push({ next, candidateCost, candidateCost + estimatedDistanceToEnd(next) });
 		}
 	}
+}
+
+GSRoadsNetwork::RoadPath GSRoadsNetwork::GetClosestDisjointNodes(GSRoadsNetwork& other)
+{
+	RoadPath shrt{ nullptr, nullptr, 9999999.0, PATH_VEHICLE, true };
+
+    for (auto& [idA, nodeA] : m_roadNodes) {
+        for (auto& [idB, nodeB] : other.m_roadNodes) {
+            const double dist = GSGeography::DistanceMeters(nodeA.m_loc, nodeB.m_loc);
+            if (dist < shrt.m_distMeters) { 
+				shrt.m_distMeters = dist; 
+				shrt.m_nodeA = &nodeA;
+				shrt.m_nodeB = &nodeB; 
+			}
+        }
+    }
+
+    return shrt;
+}
+
+void GSRoadsNetwork::Print()
+{
+	/*for (const auto& pt : m_roadPaths) {
+		if (pt.m_custom) {
+			GSLogStream::Log("Path Dsit: ") << pt.m_distMeters << ", "
+				<< pt.m_nodeA->m_loc.Long() << "," << pt.m_nodeA->m_loc.Lat()
+				<< " <-> " << pt.m_nodeB->m_loc.Long() << "," << pt.m_nodeB->m_loc.Lat();
+		}
+	}*/
 }
 
 }
