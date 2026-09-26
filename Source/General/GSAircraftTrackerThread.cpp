@@ -252,21 +252,25 @@ bool GSAircraftTrackerThread::HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_B
 
     std::shared_ptr<GSAircraft> aircraft = std::make_shared<GSAircraft>();
     aircraft->LoadDynamicState(entry);
-
+    
     if (aircraft->IsUser()) {
         HandleAircraftUser(aircraft);
     } else {
-        bool rc = true;
-        auto itr = m_tracked.find(entry.dwObjectID);
-        if (itr != m_tracked.end()) { // Already tracking
-            rc &= HandleExistingAircraft(aircraft, itr->second);
-        } else {
-            aircraft->LoadFullState(entry);
-            rc &= HandleNewAircraft(aircraft);
-        }
+        if (aircraft->GetObjID() != 0) {
+            bool rc = true;
+            auto itr = m_tracked.find(entry.dwObjectID);
+            if (itr != m_tracked.end()) { // Already tracking
+                rc &= HandleExistingAircraft(aircraft, itr->second);
+            } else {
+                aircraft->LoadFullState(entry);
+                rc &= HandleNewAircraft(aircraft);
+            }
 
-        if (rc)
-            m_lastScanIDs.emplace(entry.dwObjectID);
+            if (rc)
+                m_lastScanIDs.emplace(entry.dwObjectID);
+        } else {
+            GSLogStream::LogError("ID:0 and not User, skipping...");
+        }
     }
 
     if (entry.dwoutof == entry.dwentrynumber) {

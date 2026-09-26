@@ -52,6 +52,7 @@ private:
     void AddPendingUpdate(const GSAircraft& aircraftUpdated);
     void CheckForPendingUpdate();
     void CheckForPendingRemove();
+    void CheckForPendingAdd();
 
     std::jthread m_thread;
     GSCoord m_userPos;
@@ -60,6 +61,7 @@ private:
     GroundMap m_groundUnspawned;
     GroundMap m_groundSpawned;
     GroundMap m_groundPendingDelete;
+    std::unordered_map<DWORD, GSAircraft> m_groundPendingAdd;
     std::unordered_map<DWORD, GSAircraft> m_groundPendingUpdate;
     std::vector<std::reference_wrapper<GSAircraftGround>> m_groundHelper;
     std::shared_ptr<GSAirport> m_airport;

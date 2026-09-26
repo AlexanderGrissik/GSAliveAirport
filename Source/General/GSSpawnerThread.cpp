@@ -32,6 +32,7 @@ void GSSpawnerThread::Start()
             RunDispatch(stopToken);
             CheckForPendingUpdate();
             CheckForPendingRemove();
+            CheckForPendingAdd();
 
             if (!IsSimStarted() || !IsLastLoopMessage()) {
                 std::this_thread::sleep_for(1000ms);
@@ -126,6 +127,14 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
 
 void GSSpawnerThread::NewAircraft(const GSAircraft& aircraft)
 {
+    if (m_groundPendingDelete.contains(aircraft.GetObjID())) {
+        GSLogStream::Log("Frequent Respawn: ") << aircraft.GetObjID();
+        if (!m_groundPendingAdd.emplace(aircraft.GetObjID(), aircraft).second) {
+            GSLogStream::LogError("Aircraft already in PendingAdd: ") << aircraft.GetObjID();
+        }
+        return;
+    }
+
     GSAircraftGround* grnd = nullptr;
     switch (aircraft.GetCategory()) {
     case GSAircraft::AircraftSizeCategory::Small:
@@ -153,6 +162,12 @@ void GSSpawnerThread::NewAircraft(const GSAircraft& aircraft)
 
 void GSSpawnerThread::ModAircraft(const GSAircraft& aircraft)
 {
+    auto itrPendAdd = m_groundPendingAdd.find(aircraft.GetObjID());
+    if (itrPendAdd != m_groundPendingAdd.end()) {
+        itrPendAdd->second.CopyDynInfo(aircraft);
+        return;
+    }
+
     auto itr = m_groundUnspawned.find(aircraft.GetObjID());
     if (itr != m_groundUnspawned.end()) {
         CheckForUnspawned(*itr->second, aircraft);
@@ -170,6 +185,7 @@ void GSSpawnerThread::RemoveAircraft(const GSAircraft& aircraft)
 {
     auto objID = aircraft.GetObjID();
     m_groundPendingUpdate.erase(objID);
+    m_groundPendingAdd.erase(objID);
     m_groundPendingDelete.insert(m_groundUnspawned.extract(objID));
     m_groundPendingDelete.insert(m_groundSpawned.extract(objID));
 }
@@ -265,6 +281,22 @@ void GSSpawnerThread::CheckForPendingRemove()
 
     for (auto id : m_groundHelper) {
         m_groundPendingDelete.erase(id.get().Aircraft().GetObjID());
+    }
+}
+
+void GSSpawnerThread::CheckForPendingAdd()
+{
+    std::list<DWORD> added;
+
+    for (auto& itr : m_groundPendingAdd) {
+        if (!m_groundPendingDelete.contains(itr.second.GetObjID())) {
+            added.emplace_back(itr.second.GetObjID());
+            NewAircraft(itr.second);
+        }
+    }
+
+    for (auto val : added) {
+        m_groundPendingAdd.erase(val);
     }
 }
 
