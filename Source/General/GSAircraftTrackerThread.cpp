@@ -255,7 +255,7 @@ bool GSAircraftTrackerThread::HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_B
     
     if (aircraft->IsUser()) {
         HandleAircraftUser(aircraft);
-    } else {
+    } else if (m_currAirport) {
         if (aircraft->GetObjID() != 0) {
             bool rc = true;
             auto itr = m_tracked.find(entry.dwObjectID);

@@ -59,8 +59,8 @@ void GSMovementThread::OnConnect()
 void GSMovementThread::RequestTracking()
 {
     auto currTime = std::chrono::steady_clock::now();
-    for (auto obj : m_trackObjs) {
-        PostReqCommand(new GSReqObjPosition(*this, *obj.second));
+    for (auto& obj : m_trackObjs) {
+        PostReqCommand(new GSReqObjPosition(*this, *obj.second.m_simObj, &obj.second));
         IncrInflight();
     }
 
@@ -72,7 +72,7 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
     switch (cmd.GetCmdID()) {
     case GSDefinitions::CMD_MVMNT_OBJ_ADD: {
         auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
-        m_trackObjs.emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj());
+        m_trackObjs.try_emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj(), std::chrono::steady_clock::now(), 0.0);
         break;
     }
     case GSDefinitions::CMD_MVMNT_OBJ_REM: {
@@ -100,19 +100,35 @@ void GSMovementThread::RemovePending()
     }
 }
 
-void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, GSSimObj& obj)
+void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, GSMovementThread::TrackState& track)
 {
     static double ArrivalDistanceMtr = 10.0;
     StateWireDataGet rawStateGet;
     GSSimConnect::ReadMsgData(&rawStateGet, sizeof(rawStateGet), entry);
 
-    const auto& dst = obj.GetDestPoint();
-    if ((std::chrono::steady_clock::now() - obj.GetStartMoveTime() > 900s) ||
-        (ArrivalDistanceMtr > GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, { rawStateGet.posLong, rawStateGet.posLat }))) {
-        m_trackObjs.erase(obj.GetSimObjectID());
-        m_pendRemObjs.erase(obj.GetSimObjectID());
-        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ARR, obj));
-        obj.GetSimConnect().PostCommand(cmd);
+    const auto nowTime = std::chrono::steady_clock::now();
+    const auto& dst = track.m_simObj->GetDestPoint();
+    const auto distToDest = GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, { rawStateGet.posLong, rawStateGet.posLat });
+
+    bool arrived = false;
+    if ((nowTime - track.m_simObj->GetStartMoveTime() > 900s) || (ArrivalDistanceMtr > distToDest)) {
+        arrived = true;
+    } else if (nowTime - track.m_lastPosCheckTime > 10s) {
+        if (std::abs(distToDest - track.m_lastDistToDest) < 1.0) {
+            arrived = true;
+        }
+
+        track.m_lastPosCheckTime = nowTime;
+        track.m_lastDistToDest = distToDest;
+    }
+
+    if (arrived) {
+        auto objID = track.m_simObj->GetSimObjectID();
+        auto simObj = track.m_simObj;
+        m_trackObjs.erase(objID);
+        m_pendRemObjs.erase(objID);
+        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ARR, *simObj));
+        simObj->GetSimConnect().PostCommand(cmd);
     }
     
     DecrInflight();
@@ -140,7 +156,7 @@ bool GSMovementThread::GSReqObjPosition::OnMessage(SIMCONNECT_RECV* message, DWO
     if (!message || message->dwID != SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
         GSLogStream::LogError("Unexpected message: ") << (message ? message->dwID : -1) << ", Size: " << messageSize;
     } else {
-        tracker.HandlePosMessage(*reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message), m_simObj);
+        tracker.HandlePosMessage(*reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message), *m_track);
     }
 
     return true;

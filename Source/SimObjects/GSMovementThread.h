@@ -24,6 +24,12 @@ public:
 	};
 	#pragma pack(pop)
 
+	struct TrackState { 
+		GSSimObj* m_simObj;
+		std::chrono::steady_clock::time_point m_lastPosCheckTime;
+		double m_lastDistToDest;
+	};
+
 	void Start();
 	void Stop();
 
@@ -36,7 +42,7 @@ public:
 	void IncrInflight() { ++m_inflightReqs; }
 	void DecrInflight() { --m_inflightReqs; }
 
-	void HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, GSSimObj& obj);
+	void HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, TrackState& track);
 
 private:
 
@@ -47,7 +53,7 @@ private:
 	void RequestTracking();
 	void RemovePending();
 
-	std::unordered_map<SIMCONNECT_OBJECT_ID, GSSimObj*> m_trackObjs;
+	std::unordered_map<SIMCONNECT_OBJECT_ID, TrackState> m_trackObjs;
 	std::unordered_map<SIMCONNECT_OBJECT_ID, GSSimObj*> m_pendRemObjs;
 	std::chrono::steady_clock::time_point m_lastTrackTime{};
 	std::jthread m_thread;
@@ -55,10 +61,12 @@ private:
 
 	class GSReqObjPosition : public GSSimObj::GSSimObjReq {
 	public:
-		using GSSimObj::GSSimObjReq::GSSimObjReq;
+		GSReqObjPosition(GSSimConnect& simHandle, GSSimObj& simObj, TrackState* track) : GSSimObjReq(simHandle, simObj), m_track(track) {}
 		GSRequest::SendResult Process() override;
 		bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
 		void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
+	private:
+		TrackState* m_track;
 	};
 };
 
