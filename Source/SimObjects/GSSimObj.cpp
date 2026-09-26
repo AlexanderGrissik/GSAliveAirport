@@ -35,13 +35,12 @@ void GSSimObj::Spawn()
 
 void GSSimObj::Despawn()
 {
-    OnDespawning();
-
     if (m_attached.size() > 0) {
         DespawnAttached();
     } else if (m_hasAnim) {
         UnregisterAnim();
     } else {
+        OnDespawning();
         m_simHandle.PostReqCommand(new GSReqDelete(m_simHandle, *this));
     }
 }
