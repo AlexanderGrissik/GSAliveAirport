@@ -128,6 +128,10 @@ void GSAirport::OrganizeStructures()
 
 void GSAirport::MergeAllRoadNetworks(std::list<GSRoadsNetwork>& roadNetworks)
 {
+    if (roadNetworks.empty()) {
+        return;
+    }
+
     while (roadNetworks.size() > 1) {
         GSRoadsNetwork& accumulator = roadNetworks.front();
 
