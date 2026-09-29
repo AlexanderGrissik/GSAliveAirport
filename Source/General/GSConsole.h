@@ -15,7 +15,7 @@ public:
 
     enum class AppCommandType
     {
-        None, Quit, Help, Tracked, Tracked_1km, Parked, Log, Test, Unknown,
+        None, Quit, Help, Tracked, Tracked_1km, Parked, Log, Debug, Test, Unknown,
     };
 
     struct AppCommand

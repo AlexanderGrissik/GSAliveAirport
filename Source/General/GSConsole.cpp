@@ -83,6 +83,11 @@ GSConsole::AppCommand GSConsole::Parse(std::string_view line)
     if (command == "tracked_1km") return {AppCommandType::Tracked_1km};
     if (command == "parked") return {AppCommandType::Parked};
     if (command == "log") return {AppCommandType::Log};
+    if (command == "debug") {
+        AppCommand debug{AppCommandType::Debug};
+        std::getline(input >> std::ws, debug.argument);
+        return debug;
+    }
     if (command == "test") return {AppCommandType::Test};
     return {AppCommandType::Unknown};
 }
@@ -95,6 +100,9 @@ void GSConsole::PrintHelp()
               "  tracked_1km         Print detected aircrafts currently within 1 km\n"
               "  parked              Print detected parked aircrafts\n"
               "  log                 Toggle background event/periodic logging\n"
+              "  debug               Show available debug loggers and their state\n"
+              "  debug XXX,YYY       Enable only the named loggers (case-insensitive)\n"
+              "  debug all|off       Enable or disable all debug loggers\n"
               "  test                Spawn all size of parked aircrafts once near the user\n"
               "  quit                Close the application\n"
               "  help                This help\n");

@@ -58,6 +58,13 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
         std::cout << "Logging " << (enabled ? "enabled\n" : "disabled\n");
         break;
     }
+    case AT::Debug:
+        if (!command.argument.empty() && !GSLogStream::SetDebugLoggers(command.argument)) {
+            GSLogStream::Print("Unknown debug logger or invalid list. Use 'debug' to list loggers. Selection unchanged.");
+        } else {
+            GSLogStream::Print(GSLogStream::GetDebugStatus());
+        }
+        break;
     case AT::Test:
         PostACTrackCommandAndWait(GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT);
         break;

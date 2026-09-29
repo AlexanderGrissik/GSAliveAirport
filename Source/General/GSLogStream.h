@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -14,14 +15,22 @@ namespace NS_GSLiveAirportMSFS
 class GSLogStream
 {
 public:
-    static GSLogStream Log(std::string_view seed = "") { return GSLogStream(false, std::string(seed)); }
-    static GSLogStream LogError(std::string_view seed = "") { return GSLogStream(true, std::string(seed)); }
+    enum DebugLogger : std::size_t {
+        // Add DBG_LOG_* entries here and matching names in s_debugLoggerNames.
+        DBG_LOG_COUNT
+    };
+
+    static GSLogStream Log(std::string_view seed = "") { return GSLogStream(Level::Normal, seed); }
+    static GSLogStream LogError(std::string_view seed = "") { return GSLogStream(Level::Error, seed); }
+    static GSLogStream LogDebug(DebugLogger logger, std::string_view seed = "");
+    static bool IsDebugEnabled(DebugLogger logger);
+    static bool SetDebugLoggers(std::string_view names);
+    static std::string GetDebugStatus();
     static void Print(std::string_view message);
     static void SetLoggingEnabled(bool enabled);
     [[nodiscard]] static bool LoggingEnabled() { return s_loggingEnabled.load(std::memory_order_relaxed); }
     static std::string Lower(std::string value);
 
-    GSLogStream(bool errorLevel, std::string seed);
     ~GSLogStream();
 
     GSLogStream(const GSLogStream &) = delete;
@@ -32,13 +41,13 @@ public:
     template <typename T>
     GSLogStream &operator<<(const T &value)
     {
-        m_oss << value;
+        if (m_enabled) m_oss << value;
         return *this;
     }
 
     GSLogStream &operator<<(std::ostream &(*manipulator)(std::ostream &))
     {
-        m_oss << manipulator;
+        if (m_enabled) m_oss << manipulator;
         return *this;
     }
 
@@ -54,10 +63,20 @@ public:
     }
 
 private:
+    enum class Level { Normal, Error, Debug };
+
+    GSLogStream(Level level, std::string_view seed, DebugLogger logger = DBG_LOG_COUNT);
+    bool IsEnabled() const { return m_enabled && (m_level != Level::Normal || LoggingEnabled()); }
+    static std::string_view Trim(std::string_view text);
+
+    static constexpr std::array<std::string_view, DBG_LOG_COUNT> s_debugLoggerNames{};
+    static_assert(DBG_LOG_COUNT <= 64);
+    inline static std::atomic<std::uint64_t> s_debugMask{0};
     inline static std::atomic_bool s_loggingEnabled{true};
     inline static std::mutex s_outputMutex;
 
-    bool m_errorLevel;
+    Level m_level;
+    bool m_enabled;
     std::ostringstream m_oss;
 };
 
