@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Alexander Grissik
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// See LICENSE for details
 #include "GSAnimationThread.h"
 #include "../Commands/GSCmdAnimObj.h"
 #include "../General/GSLogStream.h"

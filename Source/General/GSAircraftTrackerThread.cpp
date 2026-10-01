@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Alexander Grissik
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// See LICENSE for details
 #include "GSAircraftTrackerThread.h"
 #include "../SimObjects/GSAircraft.h"
 #include "GSDefinitions.h"
@@ -82,6 +85,7 @@ void GSAircraftTrackerThread::OnSimStop()
 
 void GSAircraftTrackerThread::RequestScan()
 {
+    GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Request Aircraft Scan");
     PostReqCommand(new GSReqScan(*this));
     m_scanInProgress = true;
     m_lastScanTime = std::chrono::steady_clock::now();
@@ -91,6 +95,7 @@ void GSAircraftTrackerThread::RequestAirportScan()
 {
     m_tempClosest.reset();
     m_tempClosestDistance = std::numeric_limits<double>::max();
+    GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Request Airport Scan");
     PostReqCommand(new GSReqScanAirport(*this));
 }
 
@@ -196,6 +201,8 @@ void GSAircraftTrackerThread::SpawnTestAircrafts()
 
 GSRequest::SendResult GSAircraftTrackerThread::GSReqScan::Process()
 {
+    GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Starting Aircraft Scan");
+
     auto id = m_simHandle.NextRequestID();
     GSRequest::SendResult rc = {
         m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObjectType, id, GSDefinitions::GSDefID_Aircraft, DiscoveryRadiusMeters, SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT), true };
@@ -247,6 +254,7 @@ bool GSAircraftTrackerThread::HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_B
 {
     if (entry.dwoutof == 0) { // Empty Scan
         m_scanInProgress = false;
+        GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Ending Aircraft Scan (Empty)");
         return true;
     }
 
@@ -276,6 +284,7 @@ bool GSAircraftTrackerThread::HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_B
     if (entry.dwoutof == entry.dwentrynumber) {
         HandleRemoved();
         m_scanInProgress = false;
+        GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Ending Aircraft Scan");
         return true;
     }
 
@@ -305,6 +314,7 @@ bool GSAircraftTrackerThread::HandleScanAirportMessage(SIMCONNECT_RECV_AIRPORT_L
             }
         }
 
+        GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Ending Airport Scan");
         return true;
     }
 

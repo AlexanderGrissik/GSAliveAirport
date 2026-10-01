@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Alexander Grissik
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// See LICENSE for details
 #pragma once
 
 #include <array>
@@ -17,6 +20,7 @@ class GSLogStream
 public:
     enum DebugLogger : std::size_t {
         // Add DBG_LOG_* entries here and matching names in s_debugLoggerNames.
+        DBG_LOG_AIRCRAFT_TRACKER,
         DBG_LOG_COUNT
     };
 
@@ -69,7 +73,7 @@ private:
     bool IsEnabled() const { return m_enabled && (m_level != Level::Normal || LoggingEnabled()); }
     static std::string_view Trim(std::string_view text);
 
-    static constexpr std::array<std::string_view, DBG_LOG_COUNT> s_debugLoggerNames{};
+    static constexpr std::array<std::string_view, DBG_LOG_COUNT> s_debugLoggerNames{"GSAircraftTrackerThread"};
     static_assert(DBG_LOG_COUNT <= 64);
     inline static std::atomic<std::uint64_t> s_debugMask{0};
     inline static std::atomic_bool s_loggingEnabled{true};
