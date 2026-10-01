@@ -49,6 +49,7 @@ public:
 
     static void ReadMsgData(void* dest, size_t dstSize, const SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
 
+    void FlushPendingRequestsWithException();
     void PostCommand(CmdPtr& cmd) { m_commands.Push(cmd); }
     void PostReqCommand(GSRequest* req);
     DWORD NextRequestID() { return m_nextRequestId++; }

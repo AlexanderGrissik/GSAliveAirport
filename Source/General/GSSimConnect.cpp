@@ -8,6 +8,7 @@
 #include <cstring>
 #include <thread>
 #include <array>
+#include <vector>
 
 using namespace std::chrono_literals;
 
@@ -173,6 +174,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
             } else {
                 GSLogStream::Log("Simulation stopped.");
                 m_simStarted = false;
+                FlushPendingRequestsWithException();
                 OnSimStop();
             }
         } else {
@@ -299,6 +301,28 @@ void GSSimConnect::PostReqCommand(GSRequest* req)
     GSCmdReq::ReqPtr reqPtr(req);
     CmdPtr cmd(new GSCmdReq(GSDefinitions::CMD_REQ_PROCESS, reqPtr));
     PostCommand(cmd);
+}
+
+void GSSimConnect::FlushPendingRequestsWithException()
+{
+    if (m_sendIDToPtr.empty()) return;
+    
+    std::vector<GSRequest*> toFlush;
+    toFlush.reserve(m_sendIDToPtr.size());
+    for (auto& [key, req] : m_sendIDToPtr) {
+        toFlush.push_back(req.get());
+    }
+    
+    SIMCONNECT_RECV_EXCEPTION exc{};
+    exc.dwID = SIMCONNECT_RECV_ID_EXCEPTION;
+    for (auto* req : toFlush) {
+        req->OnException(&exc);
+    }
+    
+    m_sendIDToPtr.clear();
+    m_reqIDToPtr.clear();
+    
+    GSLogStream::Log("GSSimConnect - SimStop: flushed ") << toFlush.size() << " pending request(s) for: " << GetDebugName();
 }
 
 } // namespace NS_GSLiveAirportMSFS
