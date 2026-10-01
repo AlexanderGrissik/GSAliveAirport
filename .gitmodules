@@ -1,3 +1,1 @@
-[submodule "external/nlohmann-json"]
-	path = external/nlohmann-json
-	url = https://github.com/nlohmann/json.git
+
