@@ -10,16 +10,16 @@
 #include "../SimObjects/GSMovementThread.h"
 #include <atomic>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
-class GSLiveAirportMSFSApp final
+class GSAliveAirportApp final
 {
 public:
-    GSLiveAirportMSFSApp(): m_aircraftTracker(m_spawner), m_spawner(m_animThread, m_mvmntThread) {}
-    ~GSLiveAirportMSFSApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
+    GSAliveAirportApp(): m_aircraftTracker(m_spawner), m_spawner(m_animThread, m_mvmntThread) {}
+    ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
 
-    GSLiveAirportMSFSApp(const GSLiveAirportMSFSApp &) = delete;
-    GSLiveAirportMSFSApp &operator=(const GSLiveAirportMSFSApp &) = delete;
+    GSAliveAirportApp(const GSAliveAirportApp &) = delete;
+    GSAliveAirportApp &operator=(const GSAliveAirportApp &) = delete;
 
     int Run();
 
@@ -36,4 +36,4 @@ private:
     GSMovementThread m_mvmntThread;
     GSConsole m_console;
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

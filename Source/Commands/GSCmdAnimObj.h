@@ -7,7 +7,7 @@
 #include "../General/GSSimConnect.h"
 #include "GSCmdReq.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCmdAnimObj : public GSCommand
@@ -37,4 +37,4 @@ private:
     GSSimConnect& m_retSimConnect;
     SIMCONNECT_OBJECT_ID m_objID{};
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

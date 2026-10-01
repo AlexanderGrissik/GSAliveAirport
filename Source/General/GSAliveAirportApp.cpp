@@ -1,18 +1,18 @@
 // Copyright (c) 2026 Alexander Grissik
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
-#include "GSLiveAirportMSFSApp.h"
+#include "GSAliveAirportApp.h"
 #include "GSLogStream.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 using namespace std::chrono_literals;
 
-int GSLiveAirportMSFSApp::Run()
+int GSAliveAirportApp::Run()
 {
     m_aircraftTracker.Start();
     m_spawner.Start();
@@ -34,7 +34,7 @@ int GSLiveAirportMSFSApp::Run()
     return 0;
 }
 
-void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
+void GSAliveAirportApp::HandleCommand(GSConsole::AppCommand command)
 {
     using AT = GSConsole::AppCommandType;
     switch (command.type) {
@@ -77,17 +77,17 @@ void GSLiveAirportMSFSApp::HandleCommand(GSConsole::AppCommand command)
     }
 }
 
-void GSLiveAirportMSFSApp::PostACTrackCommandAndWait(int cmdId) 
+void GSAliveAirportApp::PostACTrackCommandAndWait(int cmdId) 
 {
     GSCmdQueue replyQueue; 
     CmdPtr cmd = std::make_unique<GSCommand>(cmdId, replyQueue);
     m_aircraftTracker.PostCommand(cmd);
     replyQueue.Pop();
 }
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport
 
 int main()
 {
-    std::unique_ptr<NS_GSLiveAirportMSFS::GSLiveAirportMSFSApp> app(new NS_GSLiveAirportMSFS::GSLiveAirportMSFSApp());
+    std::unique_ptr<NS_GSAliveAirport::GSAliveAirportApp> app(new NS_GSAliveAirport::GSAliveAirportApp());
     return app->Run();
 }

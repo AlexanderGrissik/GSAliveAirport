@@ -6,7 +6,7 @@
 #include "GSCommand.h"
 #include "../SimObjects/GSAircraft.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCmdAircraftUpdate : public GSCommand
@@ -22,4 +22,4 @@ private:
 
     std::shared_ptr<GSAircraft> m_aircraft;
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

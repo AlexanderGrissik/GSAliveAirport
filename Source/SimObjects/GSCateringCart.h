@@ -9,7 +9,7 @@
 #include <array>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCateringCart : public GSSimObj

@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include "GSRoadsNetwork.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSAirport

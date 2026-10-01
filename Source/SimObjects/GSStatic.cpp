@@ -5,7 +5,7 @@
 #include "../General/GSGeography.h"
 #include "../General/GSCatalog.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 bool GSStatic::OnCreated()

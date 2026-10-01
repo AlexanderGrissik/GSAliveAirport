@@ -7,7 +7,7 @@
 #include "../Animation/GSAnimSingle.h"
 #include "../SimObjects/GSAircraft.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 bool GSMarshaller::OnCreated()

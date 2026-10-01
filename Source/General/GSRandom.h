@@ -5,7 +5,7 @@
 
 #include <random>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSRandom

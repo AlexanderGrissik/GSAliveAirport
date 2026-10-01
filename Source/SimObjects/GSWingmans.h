@@ -6,7 +6,7 @@
 #include "GSSimObj.h"
 #include <cstddef>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSWingmans : public GSSimObj

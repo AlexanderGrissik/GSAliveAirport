@@ -8,7 +8,7 @@
 #include "../General/GSGeography.h"
 #include "../Commands/GSCmdSimObj.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_Position{

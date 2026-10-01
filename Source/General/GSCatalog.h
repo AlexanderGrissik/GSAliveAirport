@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCatalog final : public GSSimConnect
@@ -77,4 +77,4 @@ private:
         void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
     };
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

@@ -6,7 +6,7 @@
 #include "GSCommand.h"
 #include "../General/GSRequest.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCmdReq : public GSCommand
@@ -24,4 +24,4 @@ private:
 
     ReqPtr m_Req;
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

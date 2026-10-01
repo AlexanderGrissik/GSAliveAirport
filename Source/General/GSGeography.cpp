@@ -5,7 +5,7 @@
 
 #include <cmath>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 double GSGeography::PI = std::acos(-1.0);
@@ -109,4 +109,4 @@ GSCoord GSGeography::FindReverseCircleIntersection(const GSCoord& center, double
     return { center.Long() + x, center.Lat() + y };
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

@@ -6,7 +6,7 @@
 #include "../General/GSCatalog.h"
 #include "GSStandingHuman.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 bool GSTruckFacility::OnCreated()

@@ -7,7 +7,7 @@
 #include <array>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSGroundPower : public GSSimObj

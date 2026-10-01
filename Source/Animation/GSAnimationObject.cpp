@@ -5,7 +5,7 @@
 #include "../General/GSLogStream.h"
 #include "../General/GSGeography.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_Position{

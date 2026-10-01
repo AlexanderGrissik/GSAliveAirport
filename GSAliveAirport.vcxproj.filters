@@ -48,7 +48,7 @@
     <ClInclude Include="Source\General\GSGeography.h">
       <Filter>Source\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\General\GSLiveAirportMSFSApp.h">
+    <ClInclude Include="Source\General\GSAliveAirportApp.h">
       <Filter>Source\General</Filter>
     </ClInclude>
     <ClInclude Include="Source\General\GSLogStream.h">
@@ -173,7 +173,7 @@
     <ClCompile Include="Source\General\GSGeography.cpp">
       <Filter>Source\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSLiveAirportMSFSApp.cpp">
+    <ClCompile Include="Source\General\GSAliveAirportApp.cpp">
       <Filter>Source\General</Filter>
     </ClCompile>
     <ClCompile Include="Source\General\GSLogStream.cpp">

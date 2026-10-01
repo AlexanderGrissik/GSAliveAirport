@@ -6,7 +6,7 @@
 #include "../General/GSCatalog.h"
 #include "GSStatic.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 bool GSSmallCones::OnCreated()

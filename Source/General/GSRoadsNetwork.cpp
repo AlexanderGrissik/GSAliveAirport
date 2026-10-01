@@ -10,7 +10,7 @@
 #include <random>
 #include <unordered_map>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 void GSRoadsNetwork::AddNode(DWORD id, const GSCoord& loc, float heading, GSRoadsNetwork::RoadNodeType tp, bool hasJetway)

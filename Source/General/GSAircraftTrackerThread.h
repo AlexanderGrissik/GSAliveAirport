@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSAircraftTrackerThread final : public GSSimConnect
@@ -99,4 +99,4 @@ public:
         int m_type;
     };
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

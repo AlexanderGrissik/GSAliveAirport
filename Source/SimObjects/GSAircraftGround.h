@@ -10,7 +10,7 @@
 #include <list>
 #include <memory>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSAircraftGround : public GSSimObjUpdate

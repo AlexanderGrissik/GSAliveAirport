@@ -4,7 +4,7 @@
 #include "GSAnimBFLOT.h"
 #include "../General/GSLogStream.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_AnimWagonBFLOT{

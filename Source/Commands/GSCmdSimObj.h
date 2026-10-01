@@ -6,7 +6,7 @@
 #include "../SimObjects/GSSimObj.h"
 #include "../General/GSSimConnect.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCmdSimObj : public GSCommand
@@ -23,4 +23,4 @@ private:
     GSSimObj& m_simObj;
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

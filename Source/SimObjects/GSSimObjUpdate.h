@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Alexander Grissik
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSSimObj;

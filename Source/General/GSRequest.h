@@ -5,7 +5,7 @@
 
 #include "GSDefinitions.h"
 
-namespace NS_GSLiveAirportMSFS {
+namespace NS_GSAliveAirport {
 
 class GSSimConnect;
 

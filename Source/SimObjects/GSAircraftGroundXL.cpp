@@ -11,7 +11,7 @@
 #include "GSMarshaller.h"
 #include "GSWingmans.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 void GSAircraftGroundXL::BuildObjs()

@@ -5,7 +5,7 @@
 
 #include "GSSimObj.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSMarshaller : public GSSimObj

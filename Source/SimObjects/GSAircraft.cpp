@@ -10,7 +10,7 @@
 #include <cctype>
 #include <cmath>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 
@@ -233,4 +233,4 @@ void GSAircraft::Print() const
     GSLogStream::Log() << "   interactivePoints: " << validPoints << " valid";
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

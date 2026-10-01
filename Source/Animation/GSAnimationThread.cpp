@@ -8,7 +8,7 @@
 #include "GSAnimBFLOT.h"
 #include "GSAnimSingle.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 using namespace std::chrono_literals;
 

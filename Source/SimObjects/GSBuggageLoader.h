@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSBuggageLoader : public GSSimObj

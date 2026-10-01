@@ -6,7 +6,7 @@
 #include "GSSimObj.h"
 #include "../General/GSCoord.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSStandingHuman : public GSSimObj

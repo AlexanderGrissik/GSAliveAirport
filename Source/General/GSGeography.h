@@ -7,7 +7,7 @@
 
 #include "GSCoord.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSGeography
@@ -38,4 +38,4 @@ public:
         const GSCoord& center, double radiusMeters, const GSCoord& pnt, double headingDeg);
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

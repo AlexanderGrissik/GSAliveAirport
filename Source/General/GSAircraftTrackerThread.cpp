@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 using namespace std::chrono_literals;
 
@@ -467,4 +467,4 @@ void GSAircraftTrackerThread::GSReqSpawnAircraft::OnException(SIMCONNECT_RECV_EX
     GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnException: ") << message->dwException << ", " << message->dwIndex;
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

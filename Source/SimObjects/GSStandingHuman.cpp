@@ -6,7 +6,7 @@
 #include "../General/GSCatalog.h"
 #include "../SimObjects/GSAircraft.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 bool GSStandingHuman::OnCreated()

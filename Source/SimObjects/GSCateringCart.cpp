@@ -5,7 +5,7 @@
 #include "../General/GSGeography.h"
 #include "../SimObjects/GSAircraft.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_CateringTruckStateGet {

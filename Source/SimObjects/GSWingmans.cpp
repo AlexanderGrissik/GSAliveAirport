@@ -7,7 +7,7 @@
 #include "GSStatic.h"
 #include "../Animation/GSAnimSingle.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 bool GSWingmans::OnCreated()

@@ -7,7 +7,7 @@
 #include "../General/GSSimConnect.h"
 #include "../General/GSCoord.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSAnimationObject

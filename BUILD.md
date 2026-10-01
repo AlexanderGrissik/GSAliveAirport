@@ -1,4 +1,4 @@
-# Building GSLiveAirportMSFS
+# Building GSAliveAirport
 
 ## Prerequisites
 
@@ -23,23 +23,23 @@ SimConnect SDK/
 Open **PowerShell** in the project root and run:
 
 ```powershell
-& 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSLiveAirportMSFS.vcxproj /t:Build /p:Configuration=Debug /p:Platform=x64 /m /v:minimal
+& 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSAliveAirport.vcxproj /t:Build /p:Configuration=Debug /p:Platform=x64 /m /v:minimal
 ```
 
-Output: `x64\Debug\GSLiveAirportMSFS.exe`
+Output: `x64\Debug\GSAliveAirport.exe`
 
 ## Build (Release)
 
 ```powershell
-& 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSLiveAirportMSFS.vcxproj /t:Build /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+& 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSAliveAirport.vcxproj /t:Build /p:Configuration=Release /p:Platform=x64 /m /v:minimal
 ```
 
-Output: `x64\Release\GSLiveAirportMSFS.exe`
+Output: `x64\Release\GSAliveAirport.exe`
 
 ## Single-file compile (check for errors in one `.cpp`)
 
 Compiles only the specified source file without linking. Replace the path as needed.
 
 ```powershell
-$log = & 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSLiveAirportMSFS.vcxproj /t:ClCompile /p:Configuration=Debug /p:Platform=x64 /p:SelectedFiles=Source\General\GSSimConnect.cpp /m /v:minimal 2>&1; $log | Select-String '\berror\b' | Select-Object -First 1
+$log = & 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' .\GSAliveAirport.vcxproj /t:ClCompile /p:Configuration=Debug /p:Platform=x64 /p:SelectedFiles=Source\General\GSSimConnect.cpp /m /v:minimal 2>&1; $log | Select-String '\berror\b' | Select-Object -First 1
 ```

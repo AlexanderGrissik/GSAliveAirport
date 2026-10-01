@@ -22,7 +22,7 @@
 
 using namespace std::chrono_literals;
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 const double GSSpawnerThread::s_SpawnDistMeters = 1000.0;
@@ -309,4 +309,4 @@ void GSSpawnerThread::HelperPrepare(size_t sz)
     m_groundHelper.clear();
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

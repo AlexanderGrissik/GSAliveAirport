@@ -7,7 +7,7 @@
 #include "GSStatic.h"
 #include "../SimObjects/GSAircraft.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 bool GSLinerCones::OnCreated()

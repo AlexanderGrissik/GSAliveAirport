@@ -12,7 +12,7 @@
 
 using namespace std::chrono_literals;
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 template <typename T>
@@ -120,7 +120,7 @@ void GSSimConnect::RunDispatch(std::stop_token stopToken)
 void GSSimConnect::Connect()
 {
     if (!m_handle) {
-        if (FAILED(SimConnect_Open(&m_handle, "GSLiveAirportMSFS", nullptr, 0, nullptr, 0))) {
+        if (FAILED(SimConnect_Open(&m_handle, "GSAliveAirport", nullptr, 0, nullptr, 0))) {
             m_handle = nullptr;
         }
 
@@ -325,4 +325,4 @@ void GSSimConnect::FlushPendingRequestsWithException()
     GSLogStream::Log("GSSimConnect - SimStop: flushed ") << toFlush.size() << " pending request(s) for: " << GetDebugName();
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

@@ -58,7 +58,7 @@ Any class that is needed but is **not** the root class of its `.h` file must eit
 - Non-static member variables must begin with `m_` (e.g., `m_speed`).
 - Methods: PascalCase (e.g., `GetSpeed`).
 - Class names must begin with `GS` (e.g., `GSAircraft`, `GSGeography`).
-- Namespaces: `NS_` prefix (e.g., `NS_GSLiveAirportMSFS`).
+- Namespaces: `NS_` prefix (e.g., `NS_GSAliveAirport`).
 
 ## 7. One-Liner Methods
 

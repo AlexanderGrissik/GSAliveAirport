@@ -5,7 +5,7 @@
 #include <algorithm>
 #include "../General/GSLogStream.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 GSAircraftGround::GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport):

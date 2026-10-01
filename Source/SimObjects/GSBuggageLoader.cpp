@@ -10,7 +10,7 @@
 #include "../Animation/GSAnimSingle.h"
 #include <algorithm>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_BuggageLoaderExtStateGet{

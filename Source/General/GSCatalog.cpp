@@ -7,7 +7,7 @@
 #include <random>
 #include <regex>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 void GSCatalog::LoadCatalog()

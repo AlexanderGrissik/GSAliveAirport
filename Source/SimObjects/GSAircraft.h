@@ -22,7 +22,7 @@
 #include <string>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSAircraft
@@ -147,4 +147,4 @@ private:
     DWORD objectID{};
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

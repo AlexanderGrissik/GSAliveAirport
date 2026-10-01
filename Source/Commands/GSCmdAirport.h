@@ -7,7 +7,7 @@
 #include "../General/GSAirport.h"
 #include <memory>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCmdAirport : public GSCommand
@@ -24,4 +24,4 @@ private:
     std::shared_ptr<GSAirport> m_airport;
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

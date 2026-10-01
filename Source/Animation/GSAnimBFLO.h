@@ -5,7 +5,7 @@
 
 #include "GSAnimationObject.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSAnimBFLO : public GSAnimationObject

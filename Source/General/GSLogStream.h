@@ -12,7 +12,7 @@
 #include <string>
 #include <string_view>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSLogStream
@@ -84,4 +84,4 @@ private:
     std::ostringstream m_oss;
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

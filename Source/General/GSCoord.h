@@ -3,7 +3,7 @@
 // See LICENSE for details
 #pragma once
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCoord
@@ -29,4 +29,4 @@ private:
     double m_latitude{};
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

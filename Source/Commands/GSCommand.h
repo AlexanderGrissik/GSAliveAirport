@@ -6,7 +6,7 @@
 #include "../General/GSQuickQueue.h"
 #include <memory>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSCommand;
@@ -34,7 +34,7 @@ private:
     int m_commandID = 0;
     GSCmdQueue* m_repQueue = nullptr;
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport
 
 
 

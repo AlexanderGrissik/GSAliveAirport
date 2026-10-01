@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSSimConnect
@@ -107,4 +107,4 @@ void GSSimConnect::InvokeAddFacilityDatums(const std::array<const char*, SZ>& ar
     }
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

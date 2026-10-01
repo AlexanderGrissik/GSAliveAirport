@@ -10,7 +10,7 @@
 #include <string>
 #include <string_view>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 class GSConsole final
 {
@@ -47,4 +47,4 @@ private:
     std::string m_lastCommand;
     std::size_t m_cursor{};
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

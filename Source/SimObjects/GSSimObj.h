@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSSimObj : public GSSimObjUpdate

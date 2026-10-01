@@ -7,7 +7,7 @@
 #include "GSSmallCones.h"
 #include "GSWingmans.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 void GSAircraftGroundSmall::BuildObjs()

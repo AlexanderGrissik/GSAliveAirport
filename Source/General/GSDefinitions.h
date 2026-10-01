@@ -13,7 +13,7 @@
 
 #define VD(x) (void)(x)
 
-namespace NS_GSLiveAirportMSFS {
+namespace NS_GSAliveAirport {
 
 class GSDefinitions
 {
@@ -85,4 +85,4 @@ public:
     };
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

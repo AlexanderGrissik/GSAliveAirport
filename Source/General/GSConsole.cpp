@@ -13,7 +13,7 @@
 #include <sstream>
 #include <utility>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 void GSConsole::Pump(const std::function<void(AppCommand)> &handler)
@@ -135,4 +135,4 @@ GSConsole::AppCommand GSConsole::GetCommandWithArg(std::istringstream &input, Ap
     return cmd;
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

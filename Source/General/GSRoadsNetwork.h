@@ -11,7 +11,7 @@
 #include <optional>
 #include <list>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSRoadsNetwork

@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSSpawnerThread final : public GSSimConnect
@@ -71,4 +71,4 @@ private:
     GSSimConnect& m_animThread;
     GSSimConnect& m_mvmntThread;
 };
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

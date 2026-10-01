@@ -7,7 +7,7 @@
 #include <ctime>
 #include <iostream>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 GSLogStream::GSLogStream(Level level, std::string_view seed, DebugLogger logger)
@@ -121,4 +121,4 @@ std::string GSLogStream::Lower(std::string value)
     return value;
 }
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

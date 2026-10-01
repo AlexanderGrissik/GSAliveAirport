@@ -9,7 +9,7 @@
 #include <cstring>
 #include <iterator>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_AirportInfo{

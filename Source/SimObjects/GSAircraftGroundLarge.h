@@ -5,7 +5,7 @@
 
 #include "GSAircraftGround.h"
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSAircraftGroundLarge : public GSAircraftGround
@@ -16,4 +16,4 @@ public:
     void BuildObjs() override;
 };
 
-} // namespace NS_GSLiveAirportMSFS
+} // namespace NS_GSAliveAirport

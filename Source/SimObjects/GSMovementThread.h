@@ -12,7 +12,7 @@
 #include <thread>
 #include <unordered_map>
 
-namespace NS_GSLiveAirportMSFS
+namespace NS_GSAliveAirport
 {
 
 class GSMovementThread final : public GSSimConnect
