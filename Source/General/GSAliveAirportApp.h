@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Alexander Grissik
+﻿// Copyright (c) 2026 Alexander Grissik
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #pragma once
@@ -15,6 +15,7 @@ namespace NS_GSAliveAirport
 class GSAliveAirportApp final
 {
 public:
+    static constexpr const char* s_Version = "1.0.1";
     GSAliveAirportApp(): m_aircraftTracker(m_spawner), m_spawner(m_animThread, m_mvmntThread) {}
     ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
 

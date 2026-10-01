@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Alexander Grissik
+﻿// Copyright (c) 2026 Alexander Grissik
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAliveAirportApp.h"
@@ -19,8 +19,10 @@ int GSAliveAirportApp::Run()
     m_animThread.Start();
     m_mvmntThread.Start();
 
-    std::cout << "Ground Services Live Airport for MSFS 2024\n"
-              << "Version: 1.0\n"
+    std::cout << "=================================================\n"
+              << "GSAliveAirport - Alive Airport Ground Services\n"
+              << "For MSFS24. Version: " << s_Version << "\n"
+              << "=================================================\n"
               << "Type 'help' for commands.\n";
 
     GSConsole::PrintPrompt();
