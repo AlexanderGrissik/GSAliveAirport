@@ -21,6 +21,7 @@ public:
     enum DebugLogger : std::size_t {
         // Add DBG_LOG_* entries here and matching names in s_debugLoggerNames.
         DBG_LOG_AIRCRAFT_TRACKER,
+        DBG_LOG_BUGGAGE_LOADER,
         DBG_LOG_COUNT
     };
 
@@ -73,7 +74,7 @@ private:
     bool IsEnabled() const { return m_enabled && (m_level != Level::Normal || LoggingEnabled()); }
     static std::string_view Trim(std::string_view text);
 
-    static constexpr std::array<std::string_view, DBG_LOG_COUNT> s_debugLoggerNames{"GSAircraftTrackerThread"};
+    static constexpr std::array<std::string_view, DBG_LOG_COUNT> s_debugLoggerNames{"GSAircraftTrackerThread","GSBuggageLoader"};
     static_assert(DBG_LOG_COUNT <= 64);
     inline static std::atomic<std::uint64_t> s_debugMask{0};
     inline static std::atomic_bool s_loggingEnabled{true};

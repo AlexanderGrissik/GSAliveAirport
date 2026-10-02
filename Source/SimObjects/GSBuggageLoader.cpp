@@ -43,9 +43,11 @@ void GSBuggageLoader::OnArrived()
 
 void GSBuggageLoader::OnDespawning()
 {
-    m_simHandle.PostReqCommand(new GSReqTxEventEx1(
+    m_simHandle.PostReqIdentCommand(new GSReqTxEventEx1(
         m_simHandle, *this, GSDefinitions::GSDefID_CloseDoors,
-        m_aircraft.GetObjID(), m_doorIdx + 1, 0));
+        m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        [](SIMCONNECT_RECV_EXCEPTION* message) {
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_CloseDoors, ") << message->dwException; });
 }
 
 bool GSBuggageLoader::PreSpawn()
@@ -99,7 +101,10 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
 
 void GSBuggageLoader::SetFinalPositionAndStatePost()
 {
-    m_simHandle.PostReqCommand(new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0));
+    m_simHandle.PostReqIdentCommand(
+        new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        [](SIMCONNECT_RECV_EXCEPTION* message) {
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_OpenDoors, ") << message->dwException; });
 
     Freeze();
 

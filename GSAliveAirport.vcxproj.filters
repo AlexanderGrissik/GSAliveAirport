@@ -159,6 +159,9 @@
     <ClInclude Include="Source\SimObjects\GSGroundPower.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Commands\GSCmdReqIdent.h">
+      <Filter>Source\Commands</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp">

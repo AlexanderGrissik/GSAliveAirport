@@ -113,7 +113,7 @@ public:
     DWORD GetObjID() const { return objectID; }
     GSCoord GetLongLat() const { return {m_rawData.longitude,m_rawData.latitude}; }
     bool IsTaxing() const { return m_trafficState == "STATE_SIMPLE_TAXI"; }
-    bool IsSleep() const { return m_trafficState == "STATE_SLEEP"; }
+    bool HasParking() const { return !m_parkingState.empty(); }
     bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
     void SetAirport(const GSAirport* ap) { m_airport = ap; }
     void SetParking(const GSRoadsNetwork::RoadNode* prkNode) { m_parkingNode = prkNode; }
@@ -143,6 +143,7 @@ private:
 
     AircraftSizeCategory m_category;
     std::string m_trafficState;
+    std::string m_parkingState;
     const GSAirport* m_airport;
     const GSRoadsNetwork::RoadNode* m_parkingNode;
     DWORD objectID{};

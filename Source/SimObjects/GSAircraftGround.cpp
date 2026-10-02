@@ -30,7 +30,7 @@ void GSAircraftGround::Spawn()
 
     m_spawnState = SpawnState::SPAWNING;
 
-    if (!m_aircraft.IsSleep()) {
+    if (!m_aircraft.HasParking()) {
         BuildObjs(true);
     } else if (GSRandom::RandSizeT(0, 1) == 0) {
         BuildObjs(false);

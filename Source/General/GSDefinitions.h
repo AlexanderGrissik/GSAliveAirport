@@ -49,6 +49,7 @@ public:
     enum ECommands
     {
         CMD_REQ_PROCESS = 0,
+        CMD_REQ_PROCESS_IDENT,
         CMD_PRINT_AIRCRAFT_ALL,
         CMD_PRINT_AIRCRAFT_1KM,
         CMD_PRINT_AIRCRAFT_PARKED,

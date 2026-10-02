@@ -212,14 +212,14 @@ bool GSSpawnerThread::SpawnCond(const GSAircraft& aircraft)
 {
     const auto& aircraftData = aircraft.GetRawData();
     bool baseCond = (GSGeography::DistanceMeters(m_userPos, aircraft.GetLongLat()) < s_SpawnDistMeters) && (aircraftData.groundSpeedKnots < 1.0);
-    bool defCond = aircraft.IsSleep();
+    bool defCond = aircraft.HasParking();
     return (baseCond && (defCond || (aircraftData.lightNav && !aircraft.IsTaxing())));
 }
 
 bool GSSpawnerThread::DespawnCond(const GSAircraft& aircraft)
 {
     const auto& aircraftData = aircraft.GetRawData();
-    return ((!aircraftData.lightNav && !aircraft.IsSleep()) || (aircraftData.groundSpeedKnots > 2.0) || aircraft.IsTaxing());
+    return ((!aircraftData.lightNav && !aircraft.HasParking()) || (aircraftData.groundSpeedKnots > 2.0) || aircraft.IsTaxing());
 }
 
 void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd, const GSAircraft& aircraftUpdated)

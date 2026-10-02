@@ -74,6 +74,7 @@ void GSAircraft::CopyDynInfo(const GSAircraft& another)
 {
     memcpy(&m_rawData, &another.m_rawData, AIRCRAFT_WIREDATA_DYNSIZE);
     m_trafficState = m_rawData.trafficState.data();
+    m_parkingState = m_rawData.assignedParking.data();
 }
 
 void GSAircraft::LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry)
@@ -81,6 +82,7 @@ void GSAircraft::LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &e
     GSSimConnect::ReadMsgData(&m_rawData, AIRCRAFT_WIREDATA_DYNSIZE, entry);
     objectID = entry.dwObjectID;
     m_trafficState = m_rawData.trafficState.data();
+    m_parkingState = m_rawData.assignedParking.data();
 }
 
 void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry)

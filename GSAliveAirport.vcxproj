@@ -20,6 +20,7 @@
     <ClInclude Include="Source\Commands\GSCmdAirport.h" />
     <ClInclude Include="Source\Commands\GSCmdAnimObj.h" />
     <ClInclude Include="Source\Commands\GSCmdReq.h" />
+    <ClInclude Include="Source\Commands\GSCmdReqIdent.h" />
     <ClInclude Include="Source\Commands\GSCmdSimObj.h" />
     <ClInclude Include="Source\Commands\GSCommand.h" />
     <ClInclude Include="Source\General\GSAircraftTrackerThread.h" />
