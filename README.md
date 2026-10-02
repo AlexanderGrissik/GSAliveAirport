@@ -17,12 +17,11 @@ The app is a **non-intrusive observer**: it does not control your aircraft, modi
 
 ## Tested with
 
-- **SayIntentions** injected traffic
+- **MSFS24** injected parking traffic
+- **SayIntentions** injected parking traffic
 - **GSX Pro** airport services
 
 ## Prerequisites
-
-To **run** the released executable:
 
 | Requirement | Details |
 |---|---|
@@ -34,11 +33,12 @@ To **run** the released executable:
 
 ## How to run
 
-1. Copy `GSAliveAirport.exe` **and** `SimConnect.dll` into the same folder.
-   `SimConnect.dll` is part of the MSFS 2024 SDK and **must** sit next to the executable — the app loads it from the working directory at startup.
-2. Make sure **MSFS 2024** is launched and you are in a session (on the ground or flying).
-3. Run `GSAliveAirport.exe` from that folder (double-click or from a terminal).
-4. The app prints a prompt. Type `help` for the list of console commands.
+1. Extract `GSAliveAirport.exe` and `SimConnect.dll` from Release Archive into any folder.
+2. Run `GSAliveAirport.exe`. The application waits for MSFS24 session and a flight.
+
+- The application automatically detects the user aircraft and the closest airport to the user aircraft.
+- The application automatically detects parking traffic and spawns/despawns ground service for it.
+- Type `help` for the list of console commands - Mainly for debugging.
 
 ```
 GSAliveAirport.exe        ← the application
