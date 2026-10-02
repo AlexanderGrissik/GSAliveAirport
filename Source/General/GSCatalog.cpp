@@ -97,9 +97,7 @@ const std::string& GSCatalog::GetEntry(EntiresVec& entires)
     if (entires.empty())
         return m_empty;
 
-    std::uniform_int_distribution<size_t> dist(0, entires.size() - 1);
-
-    return entires[dist(GSRandom::Engine())]->first;
+    return entires[GSRandom::RandSizeT(0, entires.size() - 1)]->first;
 }
 
 GSRequest::SendResult GSCatalog::GSCatalogReq::Process()

@@ -4,6 +4,7 @@
 #include "GSAircraftGround.h"
 #include <algorithm>
 #include "../General/GSLogStream.h"
+#include "../General/GSRandom.h"
 
 namespace NS_GSAliveAirport
 {
@@ -28,7 +29,12 @@ void GSAircraftGround::Spawn()
     }
 
     m_spawnState = SpawnState::SPAWNING;
-    BuildObjs();
+
+    if (!m_aircraft.IsSleep()) {
+        BuildObjs(true);
+    } else if (GSRandom::RandSizeT(0, 1) == 0) {
+        BuildObjs(false);
+    }
 
     std::erase_if(m_objs, [](const auto& item) {
         return !item->PreSpawn(); // remove items that do not match

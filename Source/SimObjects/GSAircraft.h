@@ -113,6 +113,7 @@ public:
     DWORD GetObjID() const { return objectID; }
     GSCoord GetLongLat() const { return {m_rawData.longitude,m_rawData.latitude}; }
     bool IsTaxing() const { return m_trafficState == "STATE_SIMPLE_TAXI"; }
+    bool IsSleep() const { return m_trafficState == "STATE_SLEEP"; }
     bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
     void SetAirport(const GSAirport* ap) { m_airport = ap; }
     void SetParking(const GSRoadsNetwork::RoadNode* prkNode) { m_parkingNode = prkNode; }

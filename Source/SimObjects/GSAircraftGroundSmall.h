@@ -13,7 +13,7 @@ class GSAircraftGroundSmall : public GSAircraftGround
 public:
     using GSAircraftGround::GSAircraftGround;
 
-    void BuildObjs() override;
+    void BuildObjs(bool full) override;
 };
 
 } // namespace NS_GSAliveAirport

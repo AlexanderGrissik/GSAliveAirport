@@ -85,8 +85,7 @@ std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetRandomVehicleP
 		return std::nullopt;
 	}
 
-	std::uniform_int_distribution<std::size_t> distribution(0, m_vehicleParkings.size() - 1);
-	return m_vehicleParkings[distribution(GSRandom::Engine())];
+	return m_vehicleParkings[GSRandom::RandSizeT(0, m_vehicleParkings.size() - 1)];
 }
 
 std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetRandomNode() const
@@ -95,8 +94,7 @@ std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetRandomNode() c
 		return std::nullopt;
 	}
 
-	std::uniform_int_distribution<std::size_t> distribution(0, m_allNodes.size() - 1);
-	return m_allNodes[distribution(GSRandom::Engine())];
+	return m_allNodes[GSRandom::RandSizeT(0, m_allNodes.size() - 1)];
 }
 
 void GSRoadsNetwork::MergeNetwork(GSRoadsNetwork& network)

@@ -28,7 +28,7 @@ public:
     GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport);
     virtual ~GSAircraftGround() = default;
 
-    virtual void BuildObjs() = 0;
+    virtual void BuildObjs(bool full) = 0;
 
     void OnSpawned(bool ok, GSSimObj& obj) override;
     void OnDespawned() override;
