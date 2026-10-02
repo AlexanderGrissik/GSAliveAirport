@@ -15,7 +15,7 @@ namespace NS_GSAliveAirport
 class GSAliveAirportApp final
 {
 public:
-    static constexpr const char* s_Version = "0.4.0";
+    static constexpr const char* s_Version = "0.5.0";
     GSAliveAirportApp(): m_aircraftTracker(m_spawner), m_spawner(m_animThread, m_mvmntThread) {}
     ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
 
