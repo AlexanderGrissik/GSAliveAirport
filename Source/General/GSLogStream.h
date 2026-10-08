@@ -7,6 +7,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -32,6 +33,7 @@ public:
     static bool SetDebugLoggers(std::string_view names);
     static std::string GetDebugStatus();
     static void Print(std::string_view message);
+    static void SetSink(std::function<void(std::string_view)> sink);
     static void SetLoggingEnabled(bool enabled);
     [[nodiscard]] static bool LoggingEnabled() { return s_loggingEnabled.load(std::memory_order_relaxed); }
     static std::string Lower(std::string value);
@@ -79,6 +81,7 @@ private:
     inline static std::atomic<std::uint64_t> s_debugMask{0};
     inline static std::atomic_bool s_loggingEnabled{true};
     inline static std::mutex s_outputMutex;
+    inline static std::function<void(std::string_view)> s_sink;
 
     Level m_level;
     bool m_enabled;

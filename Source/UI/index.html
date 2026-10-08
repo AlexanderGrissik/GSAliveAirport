@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:;" />
+    <title>GSAliveAirport</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="app">
+        <header class="topbar">
+            <div class="brand">
+                <div class="logo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>GSAliveAirport</h1>
+                    <p>Alive Airport Ground Services &middot; MSFS 2024</p>
+                </div>
+                <span class="version-chip" id="version-chip">v0.5.0</span>
+            </div>
+            <div class="topbar-status">
+                <span class="status-pill" id="status-pill">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Starting&hellip;</span>
+                </span>
+            </div>
+        </header>
+
+        <nav class="toolbar">
+            <div class="toolbar-group">
+                <span class="group-label">Aircraft</span>
+                <button type="button" class="btn" data-command="tracked" title="Print all detected aircrafts">Tracked</button>
+                <button type="button" class="btn" data-command="tracked_1km" title="Print detected aircrafts currently within 1 km">Tracked &le;1 km</button>
+                <button type="button" class="btn" data-command="parked" title="Print detected parked aircrafts">Parked</button>
+                <button type="button" class="btn accent" data-command="test" title="Spawn all sizes of parked aircrafts once near the user">Spawn test</button>
+            </div>
+            <div class="toolbar-group">
+                <span class="group-label">Logging</span>
+                <button type="button" class="btn toggle on" id="btn-log" aria-pressed="true" title="Toggle background event/periodic logging">
+                    <span class="toggle-indicator" aria-hidden="true"></span>Log
+                </button>
+                <div class="debug-field">
+                    <input type="text" id="debug-input" placeholder="debug loggers: all | off | GSAircraftTrackerThread, GSBuggageLoader" spellcheck="false" />
+                    <button type="button" class="btn" id="btn-debug" title="Show debug logger state, or enable the named loggers">Apply</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="content">
+            <section class="panel log-panel">
+                <div class="panel-head">
+                    <h2>Live log</h2>
+                    <div class="panel-actions">
+                        <span class="log-count" id="log-count"></span>
+                        <button type="button" class="btn small" id="btn-clear">Clear</button>
+                    </div>
+                </div>
+                <div class="log" id="log">
+                    <div class="log-line placeholder" id="log-placeholder">Waiting for the first message&hellip;</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

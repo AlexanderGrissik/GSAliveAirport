@@ -6,6 +6,7 @@
 #include <cctype>
 #include <ctime>
 #include <iostream>
+#include <utility>
 
 namespace NS_GSAliveAirport
 {
@@ -99,12 +100,22 @@ GSLogStream::~GSLogStream()
     }
 
     std::cout << prefix << ' ' << text;
+
+    if (s_sink) s_sink(text);
 }
 
 void GSLogStream::Print(std::string_view message)
 {
     std::scoped_lock lock(s_outputMutex);
     std::cout << message << '\n';
+
+    if (s_sink) s_sink(message);
+}
+
+void GSLogStream::SetSink(std::function<void(std::string_view)> sink)
+{
+    std::scoped_lock lock(s_outputMutex);
+    s_sink = std::move(sink);
 }
 
 void GSLogStream::SetLoggingEnabled(bool enabled)

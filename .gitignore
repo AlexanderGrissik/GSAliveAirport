@@ -5,3 +5,5 @@ x64/
 *.suo
 *.VC.db
 *.VC.opendb
+obj/
+Packages/

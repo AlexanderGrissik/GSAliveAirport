@@ -11,6 +11,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <!-- WebView2 SDK (pinned version). Restored into the repo-local, git-ignored "Packages"
+         folder (see RestorePackagesPath below). Its build\native MSBuild targets are
+         imported explicitly at the bottom of this file (native C++ flavor). -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+  <PropertyGroup>
+    <RestorePackagesPath>$(ProjectDir)Packages</RestorePackagesPath>
+    <!-- Statically link the WebView2 loader into the exe (no WebView2Loader.dll to ship). -->
+    <WebView2LoaderPreference>Static</WebView2LoaderPreference>
+    <!-- Compute the NuGet restore graph in a single evaluation. Avoids an MSB4011
+         duplicate-import warning (the package's restore-only buildTransitive targets vs.
+         the explicit build\native targets import below). -->
+    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+  </PropertyGroup>
+  <ItemGroup>
     <ClInclude Include="Source\Animation\GSAnimationObject.h" />
     <ClInclude Include="Source\Animation\GSAnimationThread.h" />
     <ClInclude Include="Source\Animation\GSAnimBFLO.h" />
@@ -26,7 +41,7 @@
     <ClInclude Include="Source\General\GSAircraftTrackerThread.h" />
     <ClInclude Include="Source\General\GSAirport.h" />
     <ClInclude Include="Source\General\GSCatalog.h" />
-    <ClInclude Include="Source\General\GSConsole.h" />
+
     <ClInclude Include="Source\General\GSCoord.h" />
     <ClInclude Include="Source\General\GSDefinitions.h" />
     <ClInclude Include="Source\General\GSGeography.h" />
@@ -38,6 +53,7 @@
     <ClInclude Include="Source\General\GSRoadsNetwork.h" />
     <ClInclude Include="Source\General\GSSimConnect.h" />
     <ClInclude Include="Source\General\GSSpawnerThread.h" />
+    <ClInclude Include="Source\UI\GSAliveUI.h" />
     <ClInclude Include="Source\SimObjects\GSAircraft.h" />
     <ClInclude Include="Source\SimObjects\GSAircraftGround.h" />
     <ClInclude Include="Source\SimObjects\GSAircraftGroundLarge.h" />
@@ -69,7 +85,7 @@
     <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp" />
     <ClCompile Include="Source\General\GSAirport.cpp" />
     <ClCompile Include="Source\General\GSCatalog.cpp" />
-    <ClCompile Include="Source\General\GSConsole.cpp" />
+
     <ClCompile Include="Source\General\GSGeography.cpp" />
     <ClCompile Include="Source\General\GSAliveAirportApp.cpp" />
     <ClCompile Include="Source\General\GSLogStream.cpp" />
@@ -97,6 +113,13 @@
     <ClCompile Include="Source\SimObjects\GSStatic.cpp" />
     <ClCompile Include="Source\SimObjects\GSTruckFacility.cpp" />
     <ClCompile Include="Source\SimObjects\GSWingmans.cpp" />
+    <ClCompile Include="Source\UI\GSAliveUI.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\UI\CopyUI.cmd" />
+    <None Include="Source\UI\index.html" />
+    <None Include="Source\UI\style.css" />
+    <None Include="Source\UI\app.js" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -146,19 +169,19 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(MSFS2024_SDK)\SimConnect SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSFS2024_SDK)\SimConnect SDK\include;$(SDKIncludePath)\winrt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SimConnect.lib;msimg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SimConnect.lib;msimg32.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSFS2024_SDK)\SimConnect SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(MSFS2024_SDK)\SimConnect SDK\lib\SimConnect.dll" "$(OutDir)"</Command>
+      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd" "$(ProjectDir)x64\Debug" "VCEndSwallow"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -168,23 +191,27 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(MSFS2024_SDK)\SimConnect SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSFS2024_SDK)\SimConnect SDK\include;$(SDKIncludePath)\winrt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SimConnect.lib;msimg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SimConnect.lib;msimg32.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSFS2024_SDK)\SimConnect SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(MSFS2024_SDK)\SimConnect SDK\lib\SimConnect.dll" "$(OutDir)"</Command>
+      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd" "$(ProjectDir)x64\Release" "VCEndSwallow"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionTargets">
+    <!-- WebView2 SDK build targets (include/lib wiring, static loader selection).
+         Only active once the NuGet package has been restored into "Packages". -->
+    <Import Project="$(RestorePackagesPath)\microsoft.web.webview2\1.0.4258.31\build\native\Microsoft.Web.WebView2.targets" Condition="Exists('$(RestorePackagesPath)\microsoft.web.webview2\1.0.4258.31\build\native\Microsoft.Web.WebView2.targets')" />
+  </ImportGroup>
 </Project>

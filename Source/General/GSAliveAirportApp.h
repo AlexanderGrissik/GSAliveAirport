@@ -4,11 +4,13 @@
 #pragma once
 
 #include "GSAircraftTrackerThread.h"
-#include "GSConsole.h"
 #include "GSSpawnerThread.h"
 #include "../Animation/GSAnimationThread.h"
 #include "../SimObjects/GSMovementThread.h"
-#include <atomic>
+#include "../UI/GSAliveUI.h"
+
+#include <string>
+#include <string_view>
 
 namespace NS_GSAliveAirport
 {
@@ -24,17 +26,28 @@ public:
 
     int Run();
 
-    void PostACTrackCommandAndWait(int cmdId);
+    void PostACTrackCommand(int cmdId);
 
 private:
 
-    void HandleCommand(GSConsole::AppCommand command);
+    enum class AppCommandType
+    {
+        None, Tracked, Tracked_1km, Parked, Log, Debug, Test,
+    };
 
-    std::atomic_bool m_quit{false};
+    struct AppCommand
+    {
+        AppCommandType type{AppCommandType::None};
+        std::string argument;
+    };
+
+    void HandleCommand(AppCommand command);
+    static AppCommand ParseCommand(std::string_view line);
+
     GSAircraftTrackerThread m_aircraftTracker;
     GSAnimationThread m_animThread;
     GSSpawnerThread m_spawner;
     GSMovementThread m_mvmntThread;
-    GSConsole m_console;
+    GSAliveUI m_ui;
 };
 } // namespace NS_GSAliveAirport

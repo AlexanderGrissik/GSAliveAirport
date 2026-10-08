@@ -13,6 +13,7 @@ No global methods or global variables outside of a class. Everything must be a m
 ### 2.1 Exceptions
 
 - `main()` — allowed as a free function.
+- `WinMain()` — allowed as a free function (Windows GUI subsystem entry point, required by the CRT).
 - Any other exception **must** be explicitly approved by the user and documented in this section.
 
 ## 3. Header-Only Files

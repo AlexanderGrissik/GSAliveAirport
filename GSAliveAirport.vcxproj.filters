@@ -16,6 +16,9 @@
     <Filter Include="Source\Animation">
       <UniqueIdentifier>{b3fb47c2-5913-4188-83a5-514ff77cf730}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\UI">
+      <UniqueIdentifier>{D3A6F0C2-9E41-4B7A-8C2D-5E1F9B3A6D20}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Commands\GSCmdAircraftUpdate.h">
@@ -34,9 +37,6 @@
       <Filter>Source\General</Filter>
     </ClInclude>
     <ClInclude Include="Source\General\GSCatalog.h">
-      <Filter>Source\General</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\General\GSConsole.h">
       <Filter>Source\General</Filter>
     </ClInclude>
     <ClInclude Include="Source\General\GSCoord.h">
@@ -170,9 +170,6 @@
     <ClCompile Include="Source\General\GSCatalog.cpp">
       <Filter>Source\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSConsole.cpp">
-      <Filter>Source\General</Filter>
-    </ClCompile>
     <ClCompile Include="Source\General\GSGeography.cpp">
       <Filter>Source\General</Filter>
     </ClCompile>
@@ -272,5 +269,25 @@
     <ClCompile Include="Source\SimObjects\GSGroundPower.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\UI\GSAliveUI.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\UI\GSAliveUI.cpp">
+      <Filter>Source\UI</Filter>
+    </ClCompile>
+    <None Include="Source\UI\CopyUI.cmd">
+      <Filter>Source\UI</Filter>
+    </None>
+    <None Include="Source\UI\index.html">
+      <Filter>Source\UI</Filter>
+    </None>
+    <None Include="Source\UI\style.css">
+      <Filter>Source\UI</Filter>
+    </None>
+    <None Include="Source\UI\app.js">
+      <Filter>Source\UI</Filter>
+    </None>
   </ItemGroup>
 </Project>

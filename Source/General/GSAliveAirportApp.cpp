@@ -3,64 +3,80 @@
 // See LICENSE for details
 #include "GSAliveAirportApp.h"
 #include "GSLogStream.h"
-#include <chrono>
-#include <iostream>
-#include <thread>
+
+#include <sstream>
 #include <utility>
 
 namespace NS_GSAliveAirport
 {
-using namespace std::chrono_literals;
-
 int GSAliveAirportApp::Run()
 {
+    GSLogStream::SetSink([this](std::string_view text) { m_ui.AppendLog(text); });
+
+    if (!m_ui.Initialize([this](std::string_view commandLine) { HandleCommand(ParseCommand(commandLine)); })) {
+        MessageBoxW(nullptr, L"Unable to create the application window.", L"GSAliveAirport", MB_OK | MB_ICONERROR);
+        return 1;
+    }
+
     m_aircraftTracker.Start();
     m_spawner.Start();
     m_animThread.Start();
     m_mvmntThread.Start();
 
-    std::cout << "=================================================\n"
-              << "GSAliveAirport - Alive Airport Ground Services\n"
-              << "For MSFS24. Version: " << s_Version << "\n"
-              << "=================================================\n"
-              << "Type 'help' for commands.\n";
+    GSLogStream::Print("=================================================");
+    GSLogStream::Print("GSAliveAirport - Alive Airport Ground Services");
+    GSLogStream::Print(std::string("For MSFS24. Version: ") + s_Version);
+    GSLogStream::Print("=================================================");
 
-    GSConsole::PrintPrompt();
-    while (!m_quit.load()) {
-        m_console.Pump([this](GSConsole::AppCommand command) {
-            HandleCommand(std::move(command));
-            if (!m_quit.load()) GSConsole::PrintPrompt();
-        });
-        std::this_thread::sleep_for(50ms);
+    MSG message{};
+    while (GetMessage(&message, nullptr, 0, 0) > 0) {
+        TranslateMessage(&message);
+        DispatchMessage(&message);
     }
-    return 0;
+
+    m_ui.Shutdown();
+    return static_cast<int>(message.wParam);
 }
 
-void GSAliveAirportApp::HandleCommand(GSConsole::AppCommand command)
+GSAliveAirportApp::AppCommand GSAliveAirportApp::ParseCommand(std::string_view line)
 {
-    using AT = GSConsole::AppCommandType;
+    std::istringstream input{std::string(line)};
+    std::string command;
+    input >> command;
+    command = GSLogStream::Lower(std::move(command));
+    if (command.empty()) return {};
+    if (command == "tracked") return {AppCommandType::Tracked};
+    if (command == "tracked_1km") return {AppCommandType::Tracked_1km};
+    if (command == "parked") return {AppCommandType::Parked};
+    if (command == "log") return {AppCommandType::Log};
+    if (command == "debug") {
+        AppCommand debug{AppCommandType::Debug};
+        std::getline(input >> std::ws, debug.argument);
+        return debug;
+    }
+    if (command == "test") return {AppCommandType::Test};
+    return {};
+}
+
+void GSAliveAirportApp::HandleCommand(AppCommand command)
+{
+    using AT = AppCommandType;
     switch (command.type) {
     case AT::None:
         break;
-    case AT::Quit:
-        m_quit.store(true);
-        break;
-    case AT::Help:
-        GSConsole::PrintHelp();
-        break;
     case AT::Tracked:
-        PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_ALL);
+        PostACTrackCommand(GSDefinitions::CMD_PRINT_AIRCRAFT_ALL);
         break;
     case AT::Tracked_1km:
-        PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_1KM);
+        PostACTrackCommand(GSDefinitions::CMD_PRINT_AIRCRAFT_1KM);
         break;
     case AT::Parked:
-        PostACTrackCommandAndWait(GSDefinitions::CMD_PRINT_AIRCRAFT_PARKED);
+        PostACTrackCommand(GSDefinitions::CMD_PRINT_AIRCRAFT_PARKED);
         break;
     case AT::Log: {
         const bool enabled = !GSLogStream::LoggingEnabled();
         GSLogStream::SetLoggingEnabled(enabled);
-        std::cout << "Logging " << (enabled ? "enabled\n" : "disabled\n");
+        GSLogStream::Print(enabled ? "Logging enabled" : "Logging disabled");
         break;
     }
     case AT::Debug:
@@ -71,25 +87,28 @@ void GSAliveAirportApp::HandleCommand(GSConsole::AppCommand command)
         }
         break;
     case AT::Test:
-        PostACTrackCommandAndWait(GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT);
-        break;
-    case AT::Unknown:
-        std::cout << "Unknown command or invalid arguments. Type 'help'";
+        PostACTrackCommand(GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT);
         break;
     }
 }
 
-void GSAliveAirportApp::PostACTrackCommandAndWait(int cmdId) 
+void GSAliveAirportApp::PostACTrackCommand(int cmdId)
 {
-    GSCmdQueue replyQueue; 
-    CmdPtr cmd = std::make_unique<GSCommand>(cmdId, replyQueue);
+    // Results arrive through the log sink; never wait for a worker on the UI thread.
+    CmdPtr cmd = std::make_unique<GSCommand>(cmdId);
     m_aircraftTracker.PostCommand(cmd);
-    replyQueue.Pop();
 }
 } // namespace NS_GSAliveAirport
 
-int main()
+int WINAPI WinMain(HINSTANCE, HINSTANCE, PSTR, int)
 {
-    std::unique_ptr<NS_GSAliveAirport::GSAliveAirportApp> app(new NS_GSAliveAirport::GSAliveAirportApp());
-    return app->Run();
+    const HRESULT RESULT = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (FAILED(RESULT)) {
+        MessageBoxW(nullptr, L"Unable to initialize COM", L"GSAliveAirport", MB_OK | MB_ICONERROR);
+        return 1;
+    }
+    NS_GSAliveAirport::GSAliveAirportApp app;
+    int rc = app.Run();
+    CoUninitialize();
+    return rc;
 }
