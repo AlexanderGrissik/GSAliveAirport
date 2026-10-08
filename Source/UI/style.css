@@ -1,4 +1,4 @@
-/* GSAliveAirport UI — dark night-flight theme */
+﻿/* GSAliveAirport UI â€” dark night-flight theme */
 :root {
     --bg: #0a1017;
     --bg-gradient-top: #0e1722;
@@ -46,18 +46,18 @@ html, body {
 /* ---------------- Top bar ---------------- */
 .topbar {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
-    padding: 14px 20px 12px;
+    padding: 8px 40px 8px 80px;
     border-bottom: 1px solid var(--border);
 }
 
-.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand { display: flex; align-items: flex-end; gap: 14px; min-width: 0; }
 
 .brand-logo {
-    height: 38px;
-    max-width: 340px;
+    height: 48px;
+    max-width: 380px;
     object-fit: contain;
     display: block;
     flex-shrink: 0;
@@ -67,11 +67,11 @@ html, body {
 
 
 .version-chip {
-    margin-left: 6px;
     padding: 3px 10px;
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
     color: var(--accent);
     background: var(--accent-soft);
     border: 1px solid rgba(76, 194, 255, 0.3);
@@ -102,6 +102,10 @@ html, body {
 .status-pill.connected .status-dot { background: var(--ok); box-shadow: 0 0 10px rgba(52, 211, 153, 0.9); }
 .status-pill.disconnected { color: var(--text); }
 .status-pill.disconnected .status-dot { background: var(--danger); box-shadow: 0 0 8px rgba(255, 93, 93, 0.8); }
+
+.topbar-status {
+    margin-left: auto;
+}
 
 /* ---------------- Toolbar ---------------- */
 .toolbar {
@@ -375,5 +379,9 @@ html, body {
     .toolbar-right { margin-left: 0; }
     .debug-field input { width: 200px; }
    }
+
+@media (max-width: 600px) {
+    .topbar { padding-inline: 20px; flex-wrap: wrap; }
+}
 
 

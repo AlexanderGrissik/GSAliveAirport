@@ -215,8 +215,8 @@ HWND GSAliveUI::CreateHostWindow()
 {
     const int DESKTOP_WIDTH = GetSystemMetrics(SM_CXSCREEN);
     const int DESKTOP_HEIGHT = GetSystemMetrics(SM_CYSCREEN);
-    const int WIDTH = 1180;
-    const int HEIGHT = 740;
+    const int WIDTH = 1920;
+    const int HEIGHT = 1080;
     return CreateWindowExW(0, s_WindowClassName, L"GSAliveAirport", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, (DESKTOP_WIDTH - WIDTH) / 2, (DESKTOP_HEIGHT - HEIGHT) / 2, WIDTH, HEIGHT, nullptr, nullptr, GetModuleHandleW(nullptr), this);
 }
 

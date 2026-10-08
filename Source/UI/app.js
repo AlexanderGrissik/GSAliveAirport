@@ -58,7 +58,7 @@ function updateStatus(text) {
     statusPill.classList.remove("disconnected");
     statusText.textContent = "Waiting for MSFS 2024…";
     const versionMatch = text.match(/Version:\s*([0-9][0-9.]*[0-9])/);
-    if (versionMatch) versionChip.textContent = "v" + versionMatch[1];
+    if (versionMatch) versionChip.textContent = versionMatch[1];
     return;
   }
   if (/Connected to MSFS/.test(text)) {
