@@ -43,6 +43,7 @@ private:
 
     void HandleCommand(AppCommand command);
     static AppCommand ParseCommand(std::string_view line);
+    void SendSampleAircraft();
 
     GSAircraftTrackerThread m_aircraftTracker;
     GSAnimationThread m_animThread;

@@ -321,6 +321,122 @@ html, body {
 .log-line.placeholder { color: var(--text-dim); font-style: italic; }
 .log-line.error { color: #ffb4b4; }
 .log-line.ok { color: #b6f2d9; }
+/* ---------------- Aircrafts list ---------------- */
+.page-empty.hidden { display: none; }
+
+.aircraft-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 20px;
+    scrollbar-color: rgba(140, 175, 215, 0.3) transparent;
+}
+
+#page-aircrafts .aircraft-list:empty { display: none; }
+
+.aircraft-list::-webkit-scrollbar { width: 10px; }
+.aircraft-list::-webkit-scrollbar-thumb { background: rgba(140, 175, 215, 0.25); border-radius: 6px; }
+.aircraft-list::-webkit-scrollbar-thumb:hover { background: rgba(140, 175, 215, 0.4); }
+
+#page-aircrafts .page-empty { display: grid; place-items: center; }
+
+.ac-card {
+    flex-shrink: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.ac-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 14px;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(20, 32, 46, 0.6);
+}
+
+.ac-head:hover { background: rgba(20, 32, 46, 0.9); }
+
+.ac-chev {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--text-dim);
+    transition: transform 0.15s ease;
+}
+
+.ac-card.collapsed .ac-chev { transform: rotate(-90deg); }
+
+.ac-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid rgba(76, 194, 255, 0.3);
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.ac-name { display: flex; flex-direction: row; align-items: baseline; gap: 8px; min-width: 0; }
+.ac-name-atc { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.ac-name-model { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+
+.ac-svc {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-dim);
+    background: rgba(142, 163, 186, 0.14);
+    border: 1px solid rgba(142, 163, 186, 0.3);
+}
+
+.ac-svc.inplace { color: #052018; background: var(--ok); border-color: var(--ok); }
+.ac-svc.spawning { color: #041f2e; background: var(--accent); border-color: var(--accent); }
+
+.ac-body { padding: 12px 14px; border-top: 1px solid var(--border); overflow-x: auto; }
+.ac-card.collapsed .ac-body { display: none; }
+
+.ac-groups {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.25fr) minmax(170px, 1.25fr) minmax(120px, 0.95fr) minmax(110px, 0.85fr) minmax(180px, 1.15fr);
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: 12px 18px;
+}
+
+.ac-group { display: grid; grid-template-columns: max-content auto; column-gap: 24px; grid-auto-rows: 18px; }
+
+/* Keep the six sections on one row; points reserve room for full coordinates. */
+.ac-group { min-width: 0; }
+.ac-g-points { grid-template-columns: max-content max-content; column-gap: 14px; }
+.ac-g-points .ac-field .v { overflow: visible; text-overflow: clip; }
+
+.ac-group h3 {
+    grid-column: 1 / -1;
+    margin: 0;
+    line-height: 18px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-dim);
+}
+
+.ac-field { display: contents; font-size: 12.5px; line-height: 18px; }
+.ac-field .k { color: var(--text-dim); white-space: nowrap; }
+.ac-field .v { font-family: var(--mono); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 /* ---------------- Modals ---------------- */
 .modal-backdrop {

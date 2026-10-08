@@ -57,6 +57,7 @@
     <ClInclude Include="Source\General\GSSimConnect.h" />
     <ClInclude Include="Source\General\GSSpawnerThread.h" />
     <ClInclude Include="Source\UI\GSAliveUI.h" />
+    <ClInclude Include="Source\UI\GSAliveUIAPI.h" />
     <ClInclude Include="Source\SimObjects\GSAircraft.h" />
     <ClInclude Include="Source\SimObjects\GSAircraftGround.h" />
     <ClInclude Include="Source\SimObjects\GSAircraftGroundLarge.h" />
@@ -117,6 +118,7 @@
     <ClCompile Include="Source\SimObjects\GSTruckFacility.cpp" />
     <ClCompile Include="Source\SimObjects\GSWingmans.cpp" />
     <ClCompile Include="Source\UI\GSAliveUI.cpp" />
+    <ClCompile Include="Source\UI\GSAliveUIAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\UI\CopyUI.cmd" />

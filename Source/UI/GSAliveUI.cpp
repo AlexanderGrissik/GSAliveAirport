@@ -174,6 +174,11 @@ void GSAliveUI::Shutdown()
         m_logQueue.clear();
     }
 
+    {
+        std::scoped_lock lock(m_uiMutex);
+        m_uiQueue.clear();
+    }
+
     if (const HWND WINDOW = m_hwnd.exchange(nullptr); WINDOW != nullptr) DestroyWindow(WINDOW);
     m_commandHandler = nullptr;
 }
@@ -194,6 +199,15 @@ void GSAliveUI::AppendLog(std::string_view text)
         m_logQueue.push_back(TrimTrailingNewline(text));
     }
     if (m_alive.load() && m_hwnd != nullptr) PostMessageW(m_hwnd, s_WM_APP_LOG, 0, 0);
+}
+
+void GSAliveUI::PostMessageUI(const std::string &str)
+{
+    {
+        std::scoped_lock lock(m_uiMutex);
+        m_uiQueue.push_back(TrimTrailingNewline(str));
+    }
+    if (m_alive.load() && m_hwnd != nullptr) PostMessageW(m_hwnd, s_WM_APP_UI, 0, 0);
 }
 
 bool GSAliveUI::RegisterWindowClass()
@@ -259,6 +273,27 @@ void GSAliveUI::FlushLogQueue()
     if (FAILED(RESULT)) ReportError(L"Sending UI log messages", RESULT);
 }
 
+void GSAliveUI::FlushUiQueue()
+{
+    if (!m_pageReady || !m_webView) return;
+    std::deque<std::string> lines;
+    {
+        std::scoped_lock lock(m_uiMutex);
+        lines.swap(m_uiQueue);
+    }
+    if (lines.empty()) return;
+
+    // Structured UI messages: lines joined with newlines (the page routes them by JSON op).
+    std::wstring payload;
+    for (const std::string &line : lines)
+    {
+        if (!payload.empty()) payload += L'\n';
+        payload += ToWideUtf8(line);
+    }
+    const HRESULT RESULT = m_webView->PostWebMessageAsString(payload.c_str());
+    if (FAILED(RESULT)) ReportError(L"Sending UI messages", RESULT);
+}
+
 void GSAliveUI::HandleWebMessage(std::wstring_view text)
 {
     if (!m_alive.load() || m_failed) return;
@@ -268,6 +303,7 @@ void GSAliveUI::HandleWebMessage(std::wstring_view text)
         if (m_hwnd != nullptr) KillTimer(m_hwnd, s_InitTimer);
         LogDiagnostic(L"page-ready");
         if (m_hwnd != nullptr) PostMessageW(m_hwnd, s_WM_APP_LOG, 0, 0);
+        if (m_hwnd != nullptr) PostMessageW(m_hwnd, s_WM_APP_UI, 0, 0);
         return;
     }
     if (!m_pageReady) return;
@@ -301,6 +337,9 @@ LRESULT GSAliveUI::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 
     case s_WM_APP_LOG:
         FlushLogQueue();
+        return 0;
+    case s_WM_APP_UI:
+        FlushUiQueue();
         return 0;
     case s_WM_APP_ERROR:
         MessageBoxW(hwnd, m_errorMessage.c_str(), L"GSAliveAirport - UI error", MB_OK | MB_ICONERROR);

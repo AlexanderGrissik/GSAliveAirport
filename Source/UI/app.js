@@ -117,12 +117,123 @@ navButtons.forEach((button) => {
   });
 });
 
+/* ---- Aircrafts list (populated by the host via GSAirportUI) ---- */
+const aircraftList = document.getElementById("aircraft-list");
+const aircraftsEmpty = document.getElementById("aircrafts-empty");
+const SVC_RANK = { inplace: 0, spawning: 1, none: 2 };
+const aircrafts = new Map(); // id -> { data, service, collapsed, el }
+
+function svcClass(s) { return s === "inplace" ? "inplace" : s === "spawning" ? "spawning" : ""; }
+function fmt(v) { return v === null || v === undefined || v === "" ? "\u2014" : String(v); }
+
+function fieldRow(label, value) {
+  const row = document.createElement("div"); row.className = "ac-field";
+  const k = document.createElement("span"); k.className = "k"; k.textContent = label;
+  const v = document.createElement("span"); v.className = "v"; v.textContent = fmt(value);
+  row.append(k, v); return row;
+}
+
+function groupBlock(title, rows) {
+  const g = document.createElement("div"); g.className = "ac-group";
+  const h = document.createElement("h3"); h.textContent = title; g.appendChild(h);
+  rows.forEach(([label, value]) => g.appendChild(fieldRow(label, value)));
+  return g;
+}
+
+function buildBody(rec) {
+  const d = rec.data;
+  const groups = document.createElement("div"); groups.className = "ac-groups";
+  groups.appendChild(groupBlock("Identity", [["ID", d.id], ["ATC", d.atc], ["Airline", d.airline], ["Flight", d.flight], ["Model", d.title], ["Size", d.category]]));
+  groups.appendChild(groupBlock("Position", [["Latitude", d.lat], ["Longitude", d.lon], ["Altitude (ft)", d.altFt], ["Ground alt (ft)", d.gndAltFt], ["Heading (deg)", d.hdgDeg], ["Gnd speed (kt)", d.gndSpdKt]]));
+  const routeGroup = groupBlock("Route", [["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Current", d.curr], ["Parking", d.parking], ["State", d.state], ["ETD (s)", d.etdSec], ["ETA (s)", d.etaSec]]);
+  routeGroup.classList.add("ac-g-route");
+  groups.appendChild(routeGroup);
+  groups.appendChild(groupBlock("Systems", [["Beacon", d.beacon], ["Nav", d.nav], ["Taxi", d.taxi], ["Park brake", d.parkBrake], ["On ground", d.onGround]]));
+  groups.appendChild(groupBlock("Aircraft", [["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback attached", d.pushbackAttached], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ]]));
+  if (Array.isArray(d.interactivePoints) && d.interactivePoints.length > 0) {
+    const pointsGroup = groupBlock("Interactive points (" + d.interactivePoints.length + ")",
+      d.interactivePoints.map((p, i) => [(i + 1) + ". " + fmt(p.type), p.x + ", " + p.y + ", " + p.z, fmt(p.hdg)]));
+    pointsGroup.classList.add("ac-g-points");
+    groups.appendChild(pointsGroup);
+  }
+  const body = document.createElement("div"); body.className = "ac-body"; body.appendChild(groups);
+  return body;
+}
+
+function buildCard(rec) {
+  const d = rec.data;
+  const card = document.createElement("div"); card.className = "ac-card"; card.dataset.id = String(d.id);
+  const head = document.createElement("div"); head.className = "ac-head";
+  const chev = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  chev.setAttribute("class", "ac-chev"); chev.setAttribute("viewBox", "0 0 24 24");
+  chev.setAttribute("fill", "none"); chev.setAttribute("stroke", "currentColor");
+  chev.setAttribute("stroke-width", "2.5"); chev.setAttribute("stroke-linecap", "round"); chev.setAttribute("stroke-linejoin", "round");
+  const pth = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  pth.setAttribute("d", "M6 9l6 6 6-6"); chev.appendChild(pth);
+  const idChip = document.createElement("span"); idChip.className = "ac-id"; idChip.textContent = "#" + d.id;
+  const name = document.createElement("span"); name.className = "ac-name";
+  const atc = document.createElement("span"); atc.className = "ac-name-atc";
+  atc.textContent = d.atc || d.flight || d.title || "\u2014"; name.appendChild(atc);
+  if (d.title) { const model = document.createElement("span"); model.className = "ac-name-model"; model.textContent = d.title; name.appendChild(model); }
+  const svc = document.createElement("span"); svc.className = "ac-svc " + svcClass(rec.service); svc.textContent = "Ground Services";
+  head.append(chev, idChip, name, svc);
+  card.append(head, buildBody(rec));
+  head.addEventListener("click", () => { rec.collapsed = !rec.collapsed; card.classList.toggle("collapsed", rec.collapsed); });
+  if (rec.collapsed) card.classList.add("collapsed");
+  return card;
+}
+
+function syncEmpty() { aircraftsEmpty.classList.toggle("hidden", aircrafts.size > 0); }
+
+function upsertAircraft(payload) {
+  const id = payload.id;
+  if (id === undefined || id === null) return;
+  let rec = aircrafts.get(id);
+  if (!rec) { rec = { data: {}, service: "none", collapsed: false, el: null }; aircrafts.set(id, rec); }
+  Object.assign(rec.data, payload); rec.data.id = id;
+  if (typeof payload.service === "string" && payload.service in SVC_RANK) rec.service = payload.service;
+  const el = buildCard(rec);
+  if (rec.el && rec.el.parentNode) rec.el.replaceWith(el); else aircraftList.appendChild(el);
+  rec.el = el;
+  const ordered = Array.from(aircrafts.values()).sort((a, b) => {
+    const r = SVC_RANK[a.service] - SVC_RANK[b.service];
+    return r !== 0 ? r : a.data.id - b.data.id;
+  });
+  ordered.forEach((x) => aircraftList.appendChild(x.el));
+  syncEmpty();
+}
+
+window.GSAirportUI = {
+  addAircraft: (payload) => upsertAircraft(payload),
+  updateAircraft: (payload) => upsertAircraft(payload),
+  removeAircraft: (id) => {
+    const rec = aircrafts.get(id);
+    if (!rec) return;
+    if (rec.el && rec.el.parentNode) rec.el.remove();
+    aircrafts.delete(id);
+    syncEmpty();
+  },
+};
+
+function routeUiMessage(line) {
+  if (line.charCodeAt(0) !== 123) return false;
+  let msg;
+  try { msg = JSON.parse(line); } catch (e) { return false; }
+  if (!msg || typeof msg !== "object" || typeof msg.op !== "string") return false;
+  if (msg.op === "aircraft.add") { window.GSAirportUI.addAircraft(msg); return true; }
+  if (msg.op === "aircraft.update") { window.GSAirportUI.updateAircraft(msg); return true; }
+  if (msg.op === "aircraft.remove") { window.GSAirportUI.removeAircraft(msg.id); return true; }
+  return false;
+}
+
 /* ---- WebView → JS messages ---- */
 if (window.chrome && window.chrome.webview) {
   window.chrome.webview.addEventListener("message", (event) => {
     if (typeof event.data !== "string") return;
     for (const line of event.data.split("\n")) {
-      if (line) appendLogLine(line);
+      if (!line) continue;
+      if (routeUiMessage(line)) continue;
+      appendLogLine(line);
     }
   });
   // Tell the host it is safe to flush startup logs only after the listener exists.

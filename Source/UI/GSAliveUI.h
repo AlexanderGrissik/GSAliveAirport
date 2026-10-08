@@ -40,6 +40,7 @@ public:
     bool Initialize(const CommandHandler &commandHandler);
     void Shutdown();
     void AppendLog(std::string_view text);
+    void PostMessageUI(const std::string &str);
     void RequestClose() { if (m_hwnd != nullptr) PostMessageW(m_hwnd, WM_CLOSE, 0, 0); }
 
 private:
@@ -47,6 +48,7 @@ private:
 
     static constexpr UINT s_WM_APP_LOG = WM_APP + 2;
     static constexpr UINT s_WM_APP_ERROR = WM_APP + 3;
+    static constexpr UINT s_WM_APP_UI = WM_APP + 4;
     static constexpr UINT_PTR s_InitTimer = 1;
     static constexpr DWORD s_InitTimeoutMs = 60'000;
 
@@ -59,6 +61,7 @@ private:
     void SetWebViewBounds();
     std::wstring GetModuleDirectory() const;
     void FlushLogQueue();
+    void FlushUiQueue();
     void HandleWebMessage(std::wstring_view text);
     void DeleteProfileFolder();
     static std::wstring GetProfileFolder();
@@ -87,5 +90,7 @@ private:
     std::wstring m_errorMessage;
     std::mutex m_logMutex;
     std::deque<std::string> m_logQueue;
+    std::mutex m_uiMutex;
+    std::deque<std::string> m_uiQueue;
 };
 } // namespace NS_GSAliveAirport

@@ -53,16 +53,8 @@
 
             <main class="content">
                 <section class="page active" id="page-aircrafts">
-                    <div class="toolbar">
-                        <div class="toolbar-group">
-                            <span class="group-label">Aircraft</span>
-                            <button type="button" class="btn" data-command="tracked" title="Print all detected aircrafts">Tracked</button>
-                            <button type="button" class="btn" data-command="tracked_1km" title="Print detected aircrafts currently within 1 km">Tracked &le;1 km</button>
-                            <button type="button" class="btn" data-command="parked" title="Print detected parked aircrafts">Parked</button>
-                            <button type="button" class="btn accent" data-command="test" title="Spawn all sizes of parked aircrafts once near the user">Spawn test</button>
-                        </div>
-                    </div>
-                    <p class="page-empty">Command output appears in the live log &mdash; open the Log page to follow it.</p>
+                    <div class="aircraft-list" id="aircraft-list"></div>
+                    <p class="page-empty" id="aircrafts-empty">No aircraft &mdash; waiting for data&hellip;</p>
                 </section>
 
                 <section class="page" id="page-log">
@@ -93,6 +85,12 @@
                 </section>
 
                 <section class="page" id="page-debug">
+                    <div class="toolbar">
+                        <div class="toolbar-group">
+                            <span class="group-label">Debug</span>
+                            <button type="button" class="btn accent" data-command="test" title="Spawn all sizes of parked aircrafts once near the user">Spawn test</button>
+                        </div>
+                    </div>
                     <p class="page-empty">Debug page &mdash; coming soon.</p>
                 </section>
 

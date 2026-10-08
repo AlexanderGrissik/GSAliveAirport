@@ -274,7 +274,13 @@
     <ClInclude Include="Source\UI\GSAliveUI.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\UI\GSAliveUIAPI.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
     <ClCompile Include="Source\UI\GSAliveUI.cpp">
+      <Filter>Source\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\UI\GSAliveUIAPI.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <None Include="Source\UI\CopyUI.cmd">
