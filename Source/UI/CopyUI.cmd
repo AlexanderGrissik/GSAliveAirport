@@ -10,4 +10,5 @@ set "OutDir=%~1\"
 copy /Y "%~dp0index.html" "%OutDir%" >nul || exit /b 1
 copy /Y "%~dp0style.css" "%OutDir%" >nul || exit /b 1
 copy /Y "%~dp0app.js" "%OutDir%" >nul || exit /b 1
+copy /Y "%~dp0Logo.png" "%OutDir%" >nul || exit /b 1
 exit /b 0

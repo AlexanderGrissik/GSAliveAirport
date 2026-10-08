@@ -15,6 +15,9 @@
          folder (see RestorePackagesPath below). Its build\native MSBuild targets are
          imported explicitly at the bottom of this file (native C++ flavor). -->
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+    <!-- VS 2026 (v180) C++ targets renamed the .rc item type from RC to ResourceCompile;
+         the legacy <RC> item is silently ignored there. -->
+    <ResourceCompile Include="App.rc" />
   </ItemGroup>
   <PropertyGroup>
     <RestorePackagesPath>$(ProjectDir)Packages</RestorePackagesPath>

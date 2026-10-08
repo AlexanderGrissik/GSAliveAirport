@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
     <title>GSAliveAirport</title>
     <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,15 +11,7 @@
     <div class="app">
         <header class="topbar">
             <div class="brand">
-                <div class="logo" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
-                    </svg>
-                </div>
-                <div class="brand-text">
-                    <h1>GSAliveAirport</h1>
-                    <p>Alive Airport Ground Services &middot; MSFS 2024</p>
-                </div>
+                <img class="brand-logo" src="Logo.png" alt="GSAliveAirport" />
                 <span class="version-chip" id="version-chip">v0.5.0</span>
             </div>
             <div class="topbar-status">
@@ -30,40 +22,85 @@
             </div>
         </header>
 
-        <nav class="toolbar">
-            <div class="toolbar-group">
-                <span class="group-label">Aircraft</span>
-                <button type="button" class="btn" data-command="tracked" title="Print all detected aircrafts">Tracked</button>
-                <button type="button" class="btn" data-command="tracked_1km" title="Print detected aircrafts currently within 1 km">Tracked &le;1 km</button>
-                <button type="button" class="btn" data-command="parked" title="Print detected parked aircrafts">Parked</button>
-                <button type="button" class="btn accent" data-command="test" title="Spawn all sizes of parked aircrafts once near the user">Spawn test</button>
-            </div>
-            <div class="toolbar-group">
-                <span class="group-label">Logging</span>
-                <button type="button" class="btn toggle on" id="btn-log" aria-pressed="true" title="Toggle background event/periodic logging">
-                    <span class="toggle-indicator" aria-hidden="true"></span>Log
+        <div class="workspace">
+            <nav class="sidebar" aria-label="Pages">
+                <button type="button" class="nav-btn active" data-page="aircrafts" title="Aircrafts" aria-label="Aircrafts">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4z" />
+                    </svg>
                 </button>
-                <div class="debug-field">
-                    <input type="text" id="debug-input" placeholder="debug loggers: all | off | GSAircraftTrackerThread, GSBuggageLoader" spellcheck="false" />
-                    <button type="button" class="btn" id="btn-debug" title="Show debug logger state, or enable the named loggers">Apply</button>
-                </div>
-            </div>
-        </nav>
+                <button type="button" class="nav-btn" data-page="log" title="Log" aria-label="Log">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h10" />
+                    </svg>
+                </button>
+                <button type="button" class="nav-btn" data-page="debug" title="Debug" aria-label="Debug">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 9.5V8a3 3 0 0 1 6 0v1.5" />
+                        <rect x="9" y="9.5" width="6" height="9.5" rx="3" />
+                        <path d="M9.5 6 8 4.5" /><path d="M14.5 6 16 4.5" />
+                        <path d="M9 12H5" /><path d="M9 15.5H4" /><path d="M10 19l-2 2" />
+                        <path d="M15 12h4" /><path d="M15 15.5h5" /><path d="M14 19l2 2" />
+                    </svg>
+                </button>
+                <button type="button" class="nav-btn" data-page="settings" title="Settings" aria-label="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                </button>
+            </nav>
 
-        <main class="content">
-            <section class="panel log-panel">
-                <div class="panel-head">
-                    <h2>Live log</h2>
-                    <div class="panel-actions">
-                        <span class="log-count" id="log-count"></span>
-                        <button type="button" class="btn small" id="btn-clear">Clear</button>
+            <main class="content">
+                <section class="page active" id="page-aircrafts">
+                    <div class="toolbar">
+                        <div class="toolbar-group">
+                            <span class="group-label">Aircraft</span>
+                            <button type="button" class="btn" data-command="tracked" title="Print all detected aircrafts">Tracked</button>
+                            <button type="button" class="btn" data-command="tracked_1km" title="Print detected aircrafts currently within 1 km">Tracked &le;1 km</button>
+                            <button type="button" class="btn" data-command="parked" title="Print detected parked aircrafts">Parked</button>
+                            <button type="button" class="btn accent" data-command="test" title="Spawn all sizes of parked aircrafts once near the user">Spawn test</button>
+                        </div>
                     </div>
-                </div>
-                <div class="log" id="log">
-                    <div class="log-line placeholder" id="log-placeholder">Waiting for the first message&hellip;</div>
-                </div>
-            </section>
-        </main>
+                    <p class="page-empty">Command output appears in the live log &mdash; open the Log page to follow it.</p>
+                </section>
+
+                <section class="page" id="page-log">
+                    <div class="toolbar">
+                        <div class="toolbar-group">
+                            <span class="group-label">Logging</span>
+                            <button type="button" class="btn toggle on" id="btn-log" aria-pressed="true" title="Toggle background event/periodic logging">
+                                <span class="toggle-indicator" aria-hidden="true"></span>Log
+                            </button>
+                            <div class="debug-field">
+                                <input type="text" id="debug-input" placeholder="debug loggers: all | off | GSAircraftTrackerThread, GSBuggageLoader" spellcheck="false" />
+                                <button type="button" class="btn" id="btn-debug" title="Show debug logger state, or enable the named loggers">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+                    <section class="panel log-panel">
+                        <div class="panel-head">
+                            <h2>Live log</h2>
+                            <div class="panel-actions">
+                                <span class="log-count" id="log-count"></span>
+                                <button type="button" class="btn small" id="btn-clear">Clear</button>
+                            </div>
+                        </div>
+                        <div class="log" id="log">
+                            <div class="log-line placeholder" id="log-placeholder">Waiting for the first message&hellip;</div>
+                        </div>
+                    </section>
+                </section>
+
+                <section class="page" id="page-debug">
+                    <p class="page-empty">Debug page &mdash; coming soon.</p>
+                </section>
+
+                <section class="page" id="page-settings">
+                    <p class="page-empty">Settings page &mdash; coming soon.</p>
+                </section>
+            </main>
+        </div>
     </div>
 
     <script src="app.js"></script>

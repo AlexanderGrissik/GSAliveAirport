@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAliveUI.h"
+#include "resources.h"
 #include <chrono>
 #include <cwchar>
 #include <fstream>
@@ -203,6 +204,8 @@ bool GSAliveUI::RegisterWindowClass()
     windowClass.lpfnWndProc = WndProcThunk;
     windowClass.hInstance = GetModuleHandleW(nullptr);
     windowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+    windowClass.hIcon = static_cast<HICON>(LoadImageW(windowClass.hInstance, MAKEINTRESOURCEW(IDR_APP_ICON), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE));
+    windowClass.hIconSm = static_cast<HICON>(LoadImageW(windowClass.hInstance, MAKEINTRESOURCEW(IDR_APP_ICON), IMAGE_ICON, 16, 16, LR_DEFAULTSIZE));
     windowClass.lpszClassName = s_WindowClassName;
     const ATOM atom = RegisterClassExW(&windowClass);
     return atom != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS;

@@ -106,6 +106,17 @@ document.getElementById("btn-clear").addEventListener("click", () => {
   updateLogCount();
 });
 
+/* ---- Left rail navigation ---- */
+const navButtons = Array.from(document.querySelectorAll(".sidebar .nav-btn"));
+const pages = Array.from(document.querySelectorAll(".content .page"));
+navButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const name = button.dataset.page;
+    navButtons.forEach((b) => b.classList.toggle("active", b === button));
+    pages.forEach((page) => page.classList.toggle("active", page.id === "page-" + name));
+  });
+});
+
 /* ---- WebView → JS messages ---- */
 if (window.chrome && window.chrome.webview) {
   window.chrome.webview.addEventListener("message", (event) => {

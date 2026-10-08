@@ -289,5 +289,9 @@
     <None Include="Source\UI\app.js">
       <Filter>Source\UI</Filter>
     </None>
+    <None Include="Source\UI\Logo.png">
+      <Filter>Source\UI</Filter>
+    </None>
+    <ResourceCompile Include="App.rc" />
   </ItemGroup>
 </Project>

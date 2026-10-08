@@ -1,0 +1,3 @@
+#include "Source\\UI\\resources.h"
+
+IDR_APP_ICON ICON "Source\\UI\\Logo.ico"
