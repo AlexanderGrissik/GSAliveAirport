@@ -19,6 +19,8 @@ public:
     // Dynamic fields only (position, route, systems). Static fields from AddAircraft are not resent.
     static std::string UpdateAircraft(const GSAircraft &ac, const std::string &service);
     static std::string RemoveAircraft(std::uint32_t id);
+    // Compact snapshot for the dedicated user-aircraft pane: id + position fields + on-ground.
+    static std::string SetUserAircraft(const GSAircraft &ac);
 
 private:
 

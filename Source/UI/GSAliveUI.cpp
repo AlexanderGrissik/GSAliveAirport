@@ -352,7 +352,10 @@ LRESULT GSAliveUI::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
         if (wParam != SIZE_MINIMIZED) SetWebViewBounds();
         return 0;
     case WM_CLOSE:
+        // Release WebView2 before the host window goes away, then let
+        // WM_DESTROY -> PostQuitMessage end the message loop and exit.
         Shutdown();
+        DestroyWindow(hwnd);
         return 0;
     case WM_DESTROY:
         m_hwnd = nullptr;
@@ -385,53 +388,6 @@ std::wstring GSAliveUI::GetProfileFolder()
     wchar_t localAppData[MAX_PATH]{};
     if (GetEnvironmentVariableW(L"LOCALAPPDATA", localAppData, MAX_PATH) == 0) return {};
     return std::wstring(localAppData) + L"\\GSAliveAirport";
-}
-
-namespace
-{
-bool RemoveFolderTree(const std::wstring &path)
-{
-    WIN32_FIND_DATAW find{};
-    const HANDLE handle = FindFirstFileW((path + L"\\*").c_str(), &find);
-    if (handle == INVALID_HANDLE_VALUE)
-    {
-        const BOOL removed = RemoveDirectoryW(path.c_str());
-        return removed || GetLastError() == ERROR_FILE_NOT_FOUND || GetLastError() == ERROR_PATH_NOT_FOUND;
-    }
-    bool complete = true;
-    do
-    {
-        const std::wstring name(find.cFileName);
-        if (name == L"." || name == L"..") continue;
-        const std::wstring child = path + L"\\" + name;
-        if (find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-        {
-            complete = RemoveFolderTree(child) && complete;
-        }
-        else
-        {
-            SetFileAttributesW(child.c_str(), find.dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
-            complete = DeleteFileW(child.c_str()) && complete;
-        }
-    } while (FindNextFileW(handle, &find));
-    FindClose(handle);
-    return complete && RemoveDirectoryW(path.c_str()) != FALSE;
-}
-} // namespace
-
-void GSAliveUI::DeleteProfileFolder()
-{
-    // Wait for the WebView2 browser processes to release their profile files,
-    // then remove the folder so nothing is left behind after a clean exit.
-    const std::wstring folder = GetProfileFolder();
-    if (folder.empty()) return;
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(20);
-    for (;;)
-    {
-        if (RemoveFolderTree(folder)) return;
-        if (std::chrono::steady_clock::now() >= deadline) return;
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
 }
 
 std::string GSAliveUI::TrimTrailingNewline(std::string_view text)

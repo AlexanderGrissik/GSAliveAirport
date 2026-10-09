@@ -33,7 +33,7 @@ public:
     using CommandHandler = std::function<void(std::string_view)>;
 
     GSAliveUI() = default;
-    ~GSAliveUI() { Shutdown(); DeleteProfileFolder(); }
+    ~GSAliveUI() { Shutdown(); }
     GSAliveUI(const GSAliveUI &) = delete;
     GSAliveUI &operator=(const GSAliveUI &) = delete;
 
@@ -63,7 +63,6 @@ private:
     void FlushLogQueue();
     void FlushUiQueue();
     void HandleWebMessage(std::wstring_view text);
-    void DeleteProfileFolder();
     static std::wstring GetProfileFolder();
     void LogDiagnostic(const std::wstring &line);
 

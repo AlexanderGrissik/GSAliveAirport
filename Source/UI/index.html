@@ -53,23 +53,30 @@
 
             <main class="content">
                 <section class="page active" id="page-aircrafts">
-                    <div class="aircraft-list" id="aircraft-list"></div>
-                    <p class="page-empty" id="aircrafts-empty">No aircraft &mdash; waiting for data&hellip;</p>
-                </section>
-
-                <section class="page" id="page-log">
-                    <div class="toolbar">
-                        <div class="toolbar-group">
-                            <span class="group-label">Logging</span>
-                            <button type="button" class="btn toggle on" id="btn-log" aria-pressed="true" title="Toggle background event/periodic logging">
-                                <span class="toggle-indicator" aria-hidden="true"></span>Log
-                            </button>
-                            <div class="debug-field">
-                                <input type="text" id="debug-input" placeholder="debug loggers: all | off | GSAircraftTrackerThread, GSBuggageLoader" spellcheck="false" />
-                                <button type="button" class="btn" id="btn-debug" title="Show debug logger state, or enable the named loggers">Apply</button>
+                    <div class="ac-card" id="user-card">
+                        <div class="ac-head" id="user-head">
+                            <svg class="ac-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                            <span class="ac-id" id="uf-id">#&mdash;</span>
+                            <span class="ac-name"><span class="ac-name-atc">User Aircraft</span></span>
+                            <span class="ac-svc" id="user-chip">Not Detected</span>
+                        </div>
+                        <div class="ac-body">
+                            <div class="user-row">
+                                <span class="uf"><span class="k">Latitude</span><span class="v" id="uf-lat">&mdash;</span></span>
+                                <span class="uf"><span class="k">Longitude</span><span class="v" id="uf-lon">&mdash;</span></span>
+                                <span class="uf"><span class="k">Altitude (ft)</span><span class="v" id="uf-alt">&mdash;</span></span>
+                                <span class="uf"><span class="k">Ground alt (ft)</span><span class="v" id="uf-gnd-alt">&mdash;</span></span>
+                                <span class="uf"><span class="k">Heading (deg)</span><span class="v" id="uf-hdg">&mdash;</span></span>
+                                <span class="uf"><span class="k">Gnd speed (kt)</span><span class="v" id="uf-spd">&mdash;</span></span>
+                                <span class="uf"><span class="k">On Ground</span><span class="v" id="uf-on-gnd">&mdash;</span></span>
+                                <span class="uf"><span class="k">Current Airport</span><span class="v" id="uf-curr">&mdash;</span></span>
                             </div>
                         </div>
                     </div>
+                    <div class="aircraft-list" id="aircraft-list"></div>
+                </section>
+
+                <section class="page" id="page-log">
                     <section class="panel log-panel">
                         <div class="panel-head">
                             <h2>Live log</h2>
@@ -87,11 +94,22 @@
                 <section class="page" id="page-debug">
                     <div class="toolbar">
                         <div class="toolbar-group">
-                            <span class="group-label">Debug</span>
+                            <span class="group-label">Spawn</span>
                             <button type="button" class="btn accent" data-command="test" title="Spawn all sizes of parked aircrafts once near the user">Spawn test</button>
                         </div>
                     </div>
-                    <p class="page-empty">Debug page &mdash; coming soon.</p>
+                    <div class="toolbar">
+                        <div class="toolbar-group">
+                            <span class="group-label">Logging</span>
+                            <button type="button" class="btn toggle on" id="btn-log" aria-pressed="true" title="Toggle background event/periodic logging">
+                                <span class="toggle-indicator" aria-hidden="true"></span>Log
+                            </button>
+                            <div class="debug-field">
+                                <input type="text" id="debug-input" placeholder="debug loggers: all | off | GSAircraftTrackerThread, GSBuggageLoader" spellcheck="false" />
+                                <button type="button" class="btn" id="btn-debug" title="Show debug logger state, or enable the named loggers">Apply</button>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <section class="page" id="page-settings">

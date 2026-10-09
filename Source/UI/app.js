@@ -24,6 +24,23 @@ const MAX_LOG_LINES = 2000;
 let logLineCount = 0;
 let sawBanner = false;
 
+/* ---- Persistent UI state (the WebView2 profile now survives across runs) ----
+   Version guard: when the UI version changes, drop state saved by an older
+   build so stale keys never leak into the new one. */
+(function initStoredState() {
+  try {
+    const version = versionChip ? versionChip.textContent.trim() : "";
+    if (!version) return;
+    const key = "gsalive.version";
+    if (localStorage.getItem(key) !== version) {
+      localStorage.clear();
+      localStorage.setItem(key, version);
+    }
+  } catch (e) {
+    console.error("localStorage unavailable, running stateless:", e);
+  }
+})();
+
 function removePlaceholder() {
   if (logPlaceholder && logPlaceholder.parentNode) logPlaceholder.remove();
 }
@@ -117,9 +134,39 @@ navButtons.forEach((button) => {
   });
 });
 
+/* ---- User aircraft pane (fixed above the scrolling list, always first) ---- */
+const userChip = document.getElementById("user-chip");
+const userFields = {
+  id: document.getElementById("uf-id"),
+  lat: document.getElementById("uf-lat"),
+  lon: document.getElementById("uf-lon"),
+  alt: document.getElementById("uf-alt"),
+  gndAlt: document.getElementById("uf-gnd-alt"),
+  hdg: document.getElementById("uf-hdg"),
+  spd: document.getElementById("uf-spd"),
+  curr: document.getElementById("uf-curr"),
+  onGnd: document.getElementById("uf-on-gnd"),
+};
+function setUserAircraft(m) {
+  const put = (el, v) => { el.textContent = v === null || v === undefined || v === "" ? "\u2014" : String(v); };
+  userFields.id.textContent = m.id === null || m.id === undefined || m.id === "" ? "#\u2014" : "#" + m.id;
+  put(userFields.lat, m.lat);
+  put(userFields.lon, m.lon);
+  put(userFields.alt, m.altFt);
+  put(userFields.gndAlt, m.gndAltFt);
+  put(userFields.hdg, m.hdgDeg);
+  put(userFields.spd, m.gndSpdKt);
+  put(userFields.onGnd, m.onGround ? "Yes" : "No");
+  put(userFields.curr, m.curr);
+  userChip.textContent = "Detected";
+  userChip.classList.add("on");
+}
+document.getElementById("user-head").addEventListener("click", () => {
+  document.getElementById("user-card").classList.toggle("collapsed");
+});
+
 /* ---- Aircrafts list (populated by the host via GSAirportUI) ---- */
 const aircraftList = document.getElementById("aircraft-list");
-const aircraftsEmpty = document.getElementById("aircrafts-empty");
 const SVC_RANK = { inplace: 0, spawning: 1, none: 2 };
 const aircrafts = new Map(); // id -> { data, service, collapsed, el }
 
@@ -145,10 +192,13 @@ function buildBody(rec) {
   const groups = document.createElement("div"); groups.className = "ac-groups";
   groups.appendChild(groupBlock("Identity", [["ID", d.id], ["ATC", d.atc], ["Airline", d.airline], ["Flight", d.flight], ["Model", d.title], ["Size", d.category]]));
   groups.appendChild(groupBlock("Position", [["Latitude", d.lat], ["Longitude", d.lon], ["Altitude (ft)", d.altFt], ["Ground alt (ft)", d.gndAltFt], ["Heading (deg)", d.hdgDeg], ["Gnd speed (kt)", d.gndSpdKt]]));
-  const routeGroup = groupBlock("Route", [["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Current", d.curr], ["Parking", d.parking], ["State", d.state], ["ETD (s)", d.etdSec], ["ETA (s)", d.etaSec]]);
+  const sec = (v) => (typeof v === "number" && v > 0) ? v : null;
+  const onOff = (v) => v ? "On" : (v === 0 || v === false ? "Off" : "\u2014");
+  const yesNo = (v) => v ? "Yes" : (v === 0 || v === false ? "No" : "\u2014");
+  const routeGroup = groupBlock("Route", [["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Current", d.curr], ["Parking", d.parking], ["State", d.state], ["ETD (s)", sec(d.etdSec)], ["ETA (s)", sec(d.etaSec)]]);
   routeGroup.classList.add("ac-g-route");
   groups.appendChild(routeGroup);
-  groups.appendChild(groupBlock("Systems", [["Beacon", d.beacon], ["Nav", d.nav], ["Taxi", d.taxi], ["Park brake", d.parkBrake], ["On ground", d.onGround]]));
+  groups.appendChild(groupBlock("Systems", [["Beacon Lights", onOff(d.beacon)], ["Nav Lights", onOff(d.nav)], ["Taxi Lights", onOff(d.taxi)], ["Parking Brakes", onOff(d.parkBrake)], ["On Ground", yesNo(d.onGround)]]));
   groups.appendChild(groupBlock("Aircraft", [["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback attached", d.pushbackAttached], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ]]));
   if (Array.isArray(d.interactivePoints) && d.interactivePoints.length > 0) {
     const pointsGroup = groupBlock("Interactive points (" + d.interactivePoints.length + ")",
@@ -175,15 +225,13 @@ function buildCard(rec) {
   const atc = document.createElement("span"); atc.className = "ac-name-atc";
   atc.textContent = d.atc || d.flight || d.title || "\u2014"; name.appendChild(atc);
   if (d.title) { const model = document.createElement("span"); model.className = "ac-name-model"; model.textContent = d.title; name.appendChild(model); }
-  const svc = document.createElement("span"); svc.className = "ac-svc " + svcClass(rec.service); svc.textContent = "Ground Services";
+  const svc = document.createElement("span"); svc.className = "ac-svc " + svcClass(rec.service); svc.textContent = rec.service === "none" ? "No Ground Services" : "Ground Services";
   head.append(chev, idChip, name, svc);
   card.append(head, buildBody(rec));
   head.addEventListener("click", () => { rec.collapsed = !rec.collapsed; card.classList.toggle("collapsed", rec.collapsed); });
   if (rec.collapsed) card.classList.add("collapsed");
   return card;
 }
-
-function syncEmpty() { aircraftsEmpty.classList.toggle("hidden", aircrafts.size > 0); }
 
 function upsertAircraft(payload) {
   const id = payload.id;
@@ -200,10 +248,10 @@ function upsertAircraft(payload) {
     return r !== 0 ? r : a.data.id - b.data.id;
   });
   ordered.forEach((x) => aircraftList.appendChild(x.el));
-  syncEmpty();
 }
 
 window.GSAirportUI = {
+  setUserAircraft,
   addAircraft: (payload) => upsertAircraft(payload),
   updateAircraft: (payload) => upsertAircraft(payload),
   removeAircraft: (id) => {
@@ -211,7 +259,6 @@ window.GSAirportUI = {
     if (!rec) return;
     if (rec.el && rec.el.parentNode) rec.el.remove();
     aircrafts.delete(id);
-    syncEmpty();
   },
 };
 
@@ -223,6 +270,7 @@ function routeUiMessage(line) {
   if (msg.op === "aircraft.add") { window.GSAirportUI.addAircraft(msg); return true; }
   if (msg.op === "aircraft.update") { window.GSAirportUI.updateAircraft(msg); return true; }
   if (msg.op === "aircraft.remove") { window.GSAirportUI.removeAircraft(msg.id); return true; }
+  if (msg.op === "user.set") { window.GSAirportUI.setUserAircraft(msg); return true; }
   return false;
 }
 

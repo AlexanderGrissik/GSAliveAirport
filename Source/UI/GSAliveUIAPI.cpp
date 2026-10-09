@@ -109,6 +109,19 @@ std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac, const std::string
     return stream.str();
 }
 
+std::string GSAliveUIAPI::SetUserAircraft(const GSAircraft &ac)
+{
+    const GSAircraft::AircraftWireData &d = ac.GetRawData();
+    std::ostringstream stream;
+    stream << "{\"op\":\"user.set\",\"id\":" << ac.GetObjID();
+    stream << ",\"lat\":" << d.latitude << ",\"lon\":" << d.longitude
+        << ",\"altFt\":" << d.altitudeFeet << ",\"gndAltFt\":" << d.groundAltitudeFeet;
+    stream << ",\"hdgDeg\":" << d.headingDegrees << ",\"gndSpdKt\":" << d.groundSpeedKnots;
+    stream << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
+    stream << ",\"onGround\":" << d.onGround << "}";
+    return stream.str();
+}
+
 std::string GSAliveUIAPI::RemoveAircraft(std::uint32_t id)
 {
     return std::string("{\"op\":\"aircraft.remove\",\"id\":") + std::to_string(id) + "}";

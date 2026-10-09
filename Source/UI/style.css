@@ -1,4 +1,4 @@
-﻿/* GSAliveAirport UI â€” dark night-flight theme */
+/* GSAliveAirport UI â€” dark night-flight theme */
 :root {
     --bg: #0a1017;
     --bg-gradient-top: #0e1722;
@@ -331,7 +331,8 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    padding: 16px 20px;
+    padding: 16px 0;
+    scrollbar-gutter: stable;
     scrollbar-color: rgba(140, 175, 215, 0.3) transparent;
 }
 
@@ -500,4 +501,14 @@ html, body {
     .topbar { padding-inline: 20px; flex-wrap: wrap; }
 }
 
+/* Green state of the user-aircraft chip (on top of .ac-svc). */
+.user-chip.on { color: #052018; background: var(--ok); border-color: var(--ok); }
 
+/* User-aircraft card: all fields on one line (no group titles). */
+.user-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 18px; }
+.user-row .uf { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.user-row .k { font-size: 12.5px; color: var(--text-dim); }
+.user-row .v { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+
+/* Align the user card with the cards inside .aircraft-list (list has 20px inner padding). */
+#user-card { margin: 0 10px 0 0; } /* 10px = list scrollbar width */
