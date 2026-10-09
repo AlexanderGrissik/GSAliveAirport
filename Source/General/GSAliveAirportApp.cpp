@@ -18,7 +18,9 @@ int GSAliveAirportApp::Run()
 {
     GSLogStream::SetSink([this](std::string_view text) { m_ui.AppendLog(text); });
 
-    if (!m_ui.Initialize([this](std::string_view commandLine) { HandleCommand(ParseCommand(commandLine)); })) {
+    if (!m_ui.Initialize([this](std::string_view commandLine) {
+            if (const auto cmd = ParseCommand(commandLine)) { HandleCommand(*cmd); }
+        })) {
         MessageBoxW(nullptr, L"Unable to create the application window.", L"GSAliveAirport", MB_OK | MB_ICONERROR);
         return 1;
     }
@@ -45,41 +47,32 @@ int GSAliveAirportApp::Run()
     return static_cast<int>(message.wParam);
 }
 
-GSAliveAirportApp::AppCommand GSAliveAirportApp::ParseCommand(std::string_view line)
+std::optional<GSAliveAirportApp::AppCommand> GSAliveAirportApp::ParseCommand(std::string_view line)
 {
     std::istringstream input{std::string(line)};
     std::string command;
     input >> command;
     command = GSLogStream::Lower(std::move(command));
-    if (command.empty()) return {};
-    if (command == "tracked") return {AppCommandType::Tracked};
-    if (command == "tracked_1km") return {AppCommandType::Tracked_1km};
-    if (command == "parked") return {AppCommandType::Parked};
-    if (command == "log") return {AppCommandType::Log};
+    if (command.empty()) return std::nullopt;
+    if (command == "log") return AppCommand{AppCommandType::Log, {}};
     if (command == "debug") {
-        AppCommand debug{AppCommandType::Debug};
+        AppCommand debug{AppCommandType::Debug, {}};
         std::getline(input >> std::ws, debug.argument);
         return debug;
     }
-    if (command == "test") return {AppCommandType::Test};
-    return {};
+    if (command == "test") return AppCommand{AppCommandType::Test, {}};
+    if (command == "injector") {
+        AppCommand injector{AppCommandType::Injector, {}};
+        std::getline(input >> std::ws, injector.argument);
+        return injector;
+    }
+    return std::nullopt;
 }
 
-void GSAliveAirportApp::HandleCommand(AppCommand command)
+void GSAliveAirportApp::HandleCommand(const AppCommand &command)
 {
     using AT = AppCommandType;
     switch (command.type) {
-    case AT::None:
-        break;
-    case AT::Tracked:
-        PostACTrackCommand(GSDefinitions::CMD_PRINT_AIRCRAFT_ALL);
-        break;
-    case AT::Tracked_1km:
-        PostACTrackCommand(GSDefinitions::CMD_PRINT_AIRCRAFT_1KM);
-        break;
-    case AT::Parked:
-        PostACTrackCommand(GSDefinitions::CMD_PRINT_AIRCRAFT_PARKED);
-        break;
     case AT::Log: {
         const bool enabled = !GSLogStream::LoggingEnabled();
         GSLogStream::SetLoggingEnabled(enabled);
@@ -95,6 +88,10 @@ void GSAliveAirportApp::HandleCommand(AppCommand command)
         break;
     case AT::Test:
         PostACTrackCommand(GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT);
+        break;
+    case AT::Injector:
+        // Stub: injector selection from the settings page ("0" = SayIntentions/MSFS24 default, "1" = any).
+        GSLogStream::Print("Injector selection received: " + command.argument + " (stub)");
         break;
     }
 }

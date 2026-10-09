@@ -5,7 +5,6 @@
 #include "resources.h"
 #include <chrono>
 #include <cwchar>
-#include <fstream>
 #include <thread>
 #include <utility>
 
@@ -33,7 +32,6 @@ bool GSAliveUI::Initialize(const CommandHandler &commandHandler)
     ShowWindow(m_hwnd, SW_SHOW);
     SetTimer(m_hwnd, s_InitTimer, s_InitTimeoutMs, nullptr);
 
-    LogDiagnostic(L"initializing WebView2");
     const std::weak_ptr<int> LIFETIME = m_callbackLifetime;
     auto handler = Microsoft::WRL::Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
         [this, LIFETIME](HRESULT result, ICoreWebView2Environment *environment) -> HRESULT {
@@ -54,7 +52,6 @@ HRESULT GSAliveUI::OnEnvironmentCreated(HRESULT result, ICoreWebView2Environment
         return S_OK;
     }
 
-    LogDiagnostic(L"environment-ready");
     const std::weak_ptr<int> LIFETIME = m_callbackLifetime;
     auto handler = Microsoft::WRL::Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
         [this, LIFETIME](HRESULT controllerResult, ICoreWebView2Controller *controller) -> HRESULT {
@@ -87,7 +84,6 @@ HRESULT GSAliveUI::ConfigureWebView()
     HRESULT result = m_controller->get_CoreWebView2(m_webView.ReleaseAndGetAddressOf());
     if (FAILED(result)) return result;
     if (!m_webView) return E_POINTER;
-    LogDiagnostic(L"webview-ready");
     SetWebViewBounds();
     result = m_controller->put_IsVisible(TRUE);
     if (FAILED(result)) return result;
@@ -126,7 +122,6 @@ HRESULT GSAliveUI::ConfigureWebView()
             COREWEBVIEW2_WEB_ERROR_STATUS status = COREWEBVIEW2_WEB_ERROR_STATUS_UNKNOWN;
             args->get_IsSuccess(&success);
             args->get_WebErrorStatus(&status);
-            LogDiagnostic(L"nav-completed success=" + std::to_wstring(success) + L" errorStatus=" + std::to_wstring(static_cast<int>(status)));
             if (!success && status != COREWEBVIEW2_WEB_ERROR_STATUS_OPERATION_CANCELED) {
                 ReportError(L"Navigating to the application UI (WebView2 status " + std::to_wstring(static_cast<int>(status)) + L")", E_FAIL);
             }
@@ -141,7 +136,6 @@ HRESULT GSAliveUI::ConfigureWebView()
     if (FAILED(result)) return result;
     result = webView3->SetVirtualHostNameToFolderMapping(L"gsalive", GetModuleDirectory().c_str(), COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_DENY_CORS);
     if (FAILED(result)) return result;
-    LogDiagnostic(L"navigating https://gsalive/index.html");
     return m_webView->Navigate(L"https://gsalive/index.html");
 }
 
@@ -152,7 +146,6 @@ void GSAliveUI::ReportError(std::wstring_view operation, HRESULT result)
     wchar_t code[32]{};
     swprintf_s(code, L"0x%08lX", static_cast<unsigned long>(result));
     m_errorMessage = std::wstring(operation) + L" failed (" + code + L").\n\nCheck that the WebView2 Runtime and the application's UI files are available.";
-    LogDiagnostic(m_errorMessage);
     KillTimer(m_hwnd, s_InitTimer);
     // Show modal UI only after the WebView2 callback has returned.
     PostMessageW(m_hwnd, s_WM_APP_ERROR, 0, 0);
@@ -183,14 +176,6 @@ void GSAliveUI::Shutdown()
     m_commandHandler = nullptr;
 }
 
-void GSAliveUI::LogDiagnostic(const std::wstring &line)
-{
-    // Diagnostics file next to the exe (visible even when the UI itself is broken).
-    const std::wstring path = GetModuleDirectory() + L"ui-load.log";
-    std::wofstream file(path, std::ios::app);
-    if (!file) return;
-    file << line << L'\n';
-}
 
 void GSAliveUI::AppendLog(std::string_view text)
 {
@@ -301,7 +286,6 @@ void GSAliveUI::HandleWebMessage(std::wstring_view text)
     {
         m_pageReady = true;
         if (m_hwnd != nullptr) KillTimer(m_hwnd, s_InitTimer);
-        LogDiagnostic(L"page-ready");
         if (m_hwnd != nullptr) PostMessageW(m_hwnd, s_WM_APP_LOG, 0, 0);
         if (m_hwnd != nullptr) PostMessageW(m_hwnd, s_WM_APP_UI, 0, 0);
         return;

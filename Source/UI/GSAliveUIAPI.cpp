@@ -109,17 +109,23 @@ std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac, const std::string
     return stream.str();
 }
 
-std::string GSAliveUIAPI::SetUserAircraft(const GSAircraft &ac)
+std::string GSAliveUIAPI::SetUserAircraft(const GSAircraft *ac)
 {
-    const GSAircraft::AircraftWireData &d = ac.GetRawData();
+    if (ac == nullptr) return std::string("{\"op\":\"user.clear\"}");
+    const GSAircraft::AircraftWireData &d = ac->GetRawData();
     std::ostringstream stream;
-    stream << "{\"op\":\"user.set\",\"id\":" << ac.GetObjID();
+    stream << "{\"op\":\"user.set\",\"id\":" << ac->GetObjID();
     stream << ",\"lat\":" << d.latitude << ",\"lon\":" << d.longitude
         << ",\"altFt\":" << d.altitudeFeet << ",\"gndAltFt\":" << d.groundAltitudeFeet;
     stream << ",\"hdgDeg\":" << d.headingDegrees << ",\"gndSpdKt\":" << d.groundSpeedKnots;
     stream << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
     stream << ",\"onGround\":" << d.onGround << "}";
     return stream.str();
+}
+
+std::string GSAliveUIAPI::SetGlobalStatus(bool isConnected)
+{
+    return std::string("{\"op\":\"status.set\",\"connected\":") + (isConnected ? "true" : "false") + "}";
 }
 
 std::string GSAliveUIAPI::RemoveAircraft(std::uint32_t id)

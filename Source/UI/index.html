@@ -78,13 +78,6 @@
 
                 <section class="page" id="page-log">
                     <section class="panel log-panel">
-                        <div class="panel-head">
-                            <h2>Live log</h2>
-                            <div class="panel-actions">
-                                <span class="log-count" id="log-count"></span>
-                                <button type="button" class="btn small" id="btn-clear">Clear</button>
-                            </div>
-                        </div>
                         <div class="log" id="log">
                             <div class="log-line placeholder" id="log-placeholder">Waiting for the first message&hellip;</div>
                         </div>
@@ -113,7 +106,13 @@
                 </section>
 
                 <section class="page" id="page-settings">
-                    <p class="page-empty">Settings page &mdash; coming soon.</p>
+                    <div class="setting-row">
+                        <span class="setting-label">Injector</span>
+                        <select id="select-injector" class="setting-select">
+                            <option value="0">SayIntentions / MSFS24 Default</option>
+                            <option value="1">Any</option>
+                        </select>
+                    </div>
                 </section>
             </main>
         </div>

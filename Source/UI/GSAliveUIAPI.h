@@ -20,7 +20,10 @@ public:
     static std::string UpdateAircraft(const GSAircraft &ac, const std::string &service);
     static std::string RemoveAircraft(std::uint32_t id);
     // Compact snapshot for the dedicated user-aircraft pane: id + position fields + on-ground.
-    static std::string SetUserAircraft(const GSAircraft &ac);
+    // Pass nullptr to clear the pane (back to the initial "Not Detected" state).
+    static std::string SetUserAircraft(const GSAircraft *ac);
+    // Global status for the top-bar title: true = connected (green), false = waiting (yellow).
+    static std::string SetGlobalStatus(bool isConnected);
 
 private:
 

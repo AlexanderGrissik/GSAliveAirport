@@ -15,7 +15,6 @@ const bridge = {
 
 const logElement = document.getElementById("log");
 const logPlaceholder = document.getElementById("log-placeholder");
-const logCount = document.getElementById("log-count");
 const statusPill = document.getElementById("status-pill");
 const statusText = document.getElementById("status-text");
 const versionChip = document.getElementById("version-chip");
@@ -45,9 +44,6 @@ function removePlaceholder() {
   if (logPlaceholder && logPlaceholder.parentNode) logPlaceholder.remove();
 }
 
-function updateLogCount() {
-  logCount.textContent = logLineCount > 0 ? String(logLineCount) : "";
-}
 
 function appendLogLine(text) {
   removePlaceholder();
@@ -65,7 +61,6 @@ function appendLogLine(text) {
   }
   logLineCount += 1;
   if (nearBottom) logElement.scrollTop = logElement.scrollHeight;
-  updateLogCount();
   updateStatus(text);
 }
 
@@ -115,13 +110,28 @@ debugInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") debugButton.click();
 });
 
-/* ---- Clear log ---- */
-document.getElementById("btn-clear").addEventListener("click", () => {
-  logElement.querySelectorAll(".log-line").forEach((element) => element.remove());
-  logLineCount = 0;
-  if (logPlaceholder && !logPlaceholder.parentNode) logElement.appendChild(logPlaceholder);
-  updateLogCount();
-});
+
+/* ---- Settings (persisted; the host is notified on load and on every change) ---- */
+const INJECTOR_KEY = "gsalive.injector";
+const injectorSelect = document.getElementById("select-injector");
+function applyInjector(value) {
+  injectorSelect.value = value;
+  try {
+    localStorage.setItem(INJECTOR_KEY, value);
+  } catch (e) {
+    console.error("localStorage unavailable, setting not persisted:", e);
+  }
+  bridge.send("injector " + value);
+}
+(function initInjector() {
+  let value = "0";
+  try {
+    const stored = localStorage.getItem(INJECTOR_KEY);
+    if (stored === "0" || stored === "1") value = stored;
+  } catch (e) { /* no persistence available - use the default */ }
+  applyInjector(value);
+})();
+injectorSelect.addEventListener("change", () => applyInjector(injectorSelect.value));
 
 /* ---- Left rail navigation ---- */
 const navButtons = Array.from(document.querySelectorAll(".sidebar .nav-btn"));
@@ -160,6 +170,17 @@ function setUserAircraft(m) {
   put(userFields.curr, m.curr);
   userChip.textContent = "Detected";
   userChip.classList.add("on");
+}
+function clearUserAircraft() {
+  for (const el of Object.values(userFields)) el.textContent = "\u2014";
+  userFields.id.textContent = "#\u2014";
+  userChip.textContent = "Not Detected";
+  userChip.classList.remove("on");
+}
+function setConnected(connected) {
+  statusPill.classList.remove("disconnected");
+  statusPill.classList.toggle("connected", connected);
+  statusText.textContent = connected ? "Connected" : "Waiting for MSFS 2024\u2026";
 }
 document.getElementById("user-head").addEventListener("click", () => {
   document.getElementById("user-card").classList.toggle("collapsed");
@@ -200,9 +221,10 @@ function buildBody(rec) {
   groups.appendChild(routeGroup);
   groups.appendChild(groupBlock("Systems", [["Beacon Lights", onOff(d.beacon)], ["Nav Lights", onOff(d.nav)], ["Taxi Lights", onOff(d.taxi)], ["Parking Brakes", onOff(d.parkBrake)], ["On Ground", yesNo(d.onGround)]]));
   groups.appendChild(groupBlock("Aircraft", [["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback attached", d.pushbackAttached], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ]]));
-  if (Array.isArray(d.interactivePoints) && d.interactivePoints.length > 0) {
-    const pointsGroup = groupBlock("Interactive points (" + d.interactivePoints.length + ")",
-      d.interactivePoints.map((p, i) => [(i + 1) + ". " + fmt(p.type), p.x + ", " + p.y + ", " + p.z, fmt(p.hdg)]));
+  const points = Array.isArray(d.interactivePoints) ? d.interactivePoints : [];
+  const pointsRows = points.length > 0 ? points.map((p, i) => [(i + 1) + ". " + fmt(p.type), p.x + ", " + p.y + ", " + p.z, fmt(p.hdg)]) : [["1.", "\u2014"]];
+  if (true) {
+    const pointsGroup = groupBlock("Interactive points (" + points.length + ")", pointsRows);
     pointsGroup.classList.add("ac-g-points");
     groups.appendChild(pointsGroup);
   }
@@ -252,6 +274,8 @@ function upsertAircraft(payload) {
 
 window.GSAirportUI = {
   setUserAircraft,
+  clearUserAircraft,
+  setConnected,
   addAircraft: (payload) => upsertAircraft(payload),
   updateAircraft: (payload) => upsertAircraft(payload),
   removeAircraft: (id) => {
@@ -271,6 +295,8 @@ function routeUiMessage(line) {
   if (msg.op === "aircraft.update") { window.GSAirportUI.updateAircraft(msg); return true; }
   if (msg.op === "aircraft.remove") { window.GSAirportUI.removeAircraft(msg.id); return true; }
   if (msg.op === "user.set") { window.GSAirportUI.setUserAircraft(msg); return true; }
+  if (msg.op === "user.clear") { window.GSAirportUI.clearUserAircraft(); return true; }
+  if (msg.op === "status.set") { window.GSAirportUI.setConnected(msg.connected === true); return true; }
   return false;
 }
 

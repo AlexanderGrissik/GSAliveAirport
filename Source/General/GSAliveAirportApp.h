@@ -9,6 +9,7 @@
 #include "../SimObjects/GSMovementThread.h"
 #include "../UI/GSAliveUI.h"
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -32,17 +33,17 @@ private:
 
     enum class AppCommandType
     {
-        None, Tracked, Tracked_1km, Parked, Log, Debug, Test,
+        Log, Debug, Test, Injector,
     };
 
     struct AppCommand
     {
-        AppCommandType type{AppCommandType::None};
+        AppCommandType type;
         std::string argument;
     };
 
-    void HandleCommand(AppCommand command);
-    static AppCommand ParseCommand(std::string_view line);
+    void HandleCommand(const AppCommand &command);
+    static std::optional<AppCommand> ParseCommand(std::string_view line);
     void SendSampleAircraft();
 
     GSAircraftTrackerThread m_aircraftTracker;

@@ -32,6 +32,7 @@ html, body {
     font-size: 14px;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    color-scheme: dark;
 }
 
 .app {
@@ -152,7 +153,6 @@ html, body {
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.btn.small { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
 .btn.icon { padding: 4px 9px; font-size: 12px; }
 
 .btn.accent {
@@ -281,27 +281,9 @@ html, body {
     overflow: hidden;
 }
 
-.panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(20, 32, 46, 0.6);
-}
 
-.panel-head h2 {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-}
 
-.panel-actions { display: flex; align-items: center; gap: 12px; }
 
-.log-count { font-size: 12px; color: var(--text-dim); min-width: 40px; text-align: right; }
 
 .log {
     flex: 1;
@@ -411,10 +393,10 @@ html, body {
 
 .ac-groups {
     display: grid;
-    grid-template-columns: minmax(180px, 1.25fr) minmax(170px, 1.25fr) minmax(120px, 0.95fr) minmax(110px, 0.85fr) minmax(180px, 1.15fr);
+    grid-template-columns: minmax(115px, 1fr) minmax(120px, 1fr) minmax(140px, 1.1fr) minmax(110px, 0.85fr) minmax(180px, 1.15fr);
     grid-auto-flow: column;
     grid-auto-columns: max-content;
-    gap: 12px 18px;
+    gap: 12px 14px;
 }
 
 .ac-group { display: grid; grid-template-columns: max-content auto; column-gap: 24px; grid-auto-rows: 18px; }
@@ -501,14 +483,55 @@ html, body {
     .topbar { padding-inline: 20px; flex-wrap: wrap; }
 }
 
+/* User aircraft pane (fields) */
+.ac-card#user-card { margin-bottom: 12px; }
+.ac-card#user-card .user-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px 18px;
+}
+.ac-card#user-card .uf {
+    display: flex; align-items: baseline; gap: 12px; min-width: 0;
+}
+.ac-card#user-card .uf .k {
+    flex: 0 0 118px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--text-dim); user-select: none; white-space: nowrap;
+}
+.ac-card#user-card .uf .v {
+    font-size: 13px; font-weight: 500; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
 /* Green state of the user-aircraft chip (on top of .ac-svc). */
-.user-chip.on { color: #052018; background: var(--ok); border-color: var(--ok); }
+#user-chip.on { color: #052018; background: var(--ok); border-color: var(--ok); }
 
-/* User-aircraft card: all fields on one line (no group titles). */
-.user-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 18px; }
-.user-row .uf { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
-.user-row .k { font-size: 12.5px; color: var(--text-dim); }
-.user-row .v { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
-
-/* Align the user card with the cards inside .aircraft-list (list has 20px inner padding). */
-#user-card { margin: 0 10px 0 0; } /* 10px = list scrollbar width */
+/* ---------------- Settings ---------------- */
+.setting-row { display: flex; align-items: center; gap: 14px; }
+.setting-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-dim);
+    user-select: none;
+}
+.setting-select {
+    appearance: none;
+    border: 1px solid var(--border-strong);
+    background-color: var(--panel);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238ea3ba' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>"), linear-gradient(180deg, var(--panel-raised), var(--panel));
+    background-repeat: no-repeat, no-repeat;
+    background-position: right 10px center, center;
+    background-size: 12px, 100% 100%;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 30px 7px 14px;
+    border-radius: 9px;
+    cursor: pointer;
+    line-height: 1;
+}
+.setting-select:focus { outline: none; border-color: var(--accent); }
+.setting-select option { background: var(--panel); color: var(--text); font-family: inherit; }

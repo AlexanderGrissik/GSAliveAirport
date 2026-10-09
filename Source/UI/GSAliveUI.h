@@ -64,7 +64,6 @@ private:
     void FlushUiQueue();
     void HandleWebMessage(std::wstring_view text);
     static std::wstring GetProfileFolder();
-    void LogDiagnostic(const std::wstring &line);
 
     static LRESULT CALLBACK WndProcThunk(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
     LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
