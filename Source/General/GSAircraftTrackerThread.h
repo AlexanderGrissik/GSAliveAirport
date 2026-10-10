@@ -55,7 +55,6 @@ public:
     void HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft);
     bool HandleScanMessage(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
     bool HandleScanAirportMessage(SIMCONNECT_RECV_AIRPORT_LIST &entry);
-    void PrintAircrafts(bool parkedOnly, double distKM) const;
     void SpawnTestAircrafts();
 
     std::unordered_map<DWORD, std::shared_ptr<GSAircraft>> m_tracked;

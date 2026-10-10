@@ -109,9 +109,15 @@
                     <div class="setting-row">
                         <span class="setting-label">Injector</span>
                         <select id="select-injector" class="setting-select">
-                            <option value="0">SayIntentions / MSFS24 Default</option>
-                            <option value="1">Any</option>
+                            <option value="0">SayIntentions</option>
+                            <option value="1">MSFS24 Default</option>
+                            <option value="99">Any</option>
                         </select>
+                    </div>
+                    <div class="setting-row" id="ground-serviced-row">
+                        <label class="setting-label" for="ground-serviced">Ground Serviced</label>
+                        <input id="ground-serviced" class="setting-slider" type="range" min="0" max="100" step="1" value="50" />
+                        <output id="ground-serviced-value" class="setting-slider-value" for="ground-serviced">50%</output>
                     </div>
                 </section>
             </main>

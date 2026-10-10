@@ -113,25 +113,57 @@ debugInput.addEventListener("keydown", (event) => {
 
 /* ---- Settings (persisted; the host is notified on load and on every change) ---- */
 const INJECTOR_KEY = "gsalive.injector";
+const GROUND_SERVICED_KEY = "gsalive.ground-serviced";
 const injectorSelect = document.getElementById("select-injector");
-function applyInjector(value) {
+const groundServicedRow = document.getElementById("ground-serviced-row");
+const groundServicedSlider = document.getElementById("ground-serviced");
+const groundServicedValue = document.getElementById("ground-serviced-value");
+function sendInjectorSettings() {
+  bridge.send("injector " + injectorSelect.value + " " + groundServicedSlider.value);
+}
+function updateGroundServicedVisibility() {
+  groundServicedRow.classList.toggle("hidden", injectorSelect.value === "0");
+}
+function applyInjector(value, notifyHost = true) {
   injectorSelect.value = value;
   try {
     localStorage.setItem(INJECTOR_KEY, value);
   } catch (e) {
     console.error("localStorage unavailable, setting not persisted:", e);
   }
-  bridge.send("injector " + value);
+  updateGroundServicedVisibility();
+  if (notifyHost) sendInjectorSettings();
+}
+function applyGroundServiced(value, notifyHost = true) {
+  groundServicedSlider.value = value;
+  groundServicedValue.value = value + "%";
+  groundServicedValue.textContent = value + "%";
+  try {
+    localStorage.setItem(GROUND_SERVICED_KEY, value);
+  } catch (e) {
+    console.error("localStorage unavailable, setting not persisted:", e);
+  }
+  if (notifyHost) sendInjectorSettings();
 }
 (function initInjector() {
-  let value = "0";
+  let injector = "0";
+  let groundServiced = "50";
   try {
     const stored = localStorage.getItem(INJECTOR_KEY);
-    if (stored === "0" || stored === "1") value = stored;
+    if (stored === "0" || stored === "1" || stored === "99") injector = stored;
+    const storedGroundServiced = localStorage.getItem(GROUND_SERVICED_KEY);
+    if (storedGroundServiced !== null) {
+      const percentage = Number(storedGroundServiced);
+      if (Number.isInteger(percentage) && percentage >= 0 && percentage <= 100) {
+        groundServiced = String(percentage);
+      }
+    }
   } catch (e) { /* no persistence available - use the default */ }
-  applyInjector(value);
+  applyGroundServiced(groundServiced, false);
+  applyInjector(injector, false);
 })();
 injectorSelect.addEventListener("change", () => applyInjector(injectorSelect.value));
+groundServicedSlider.addEventListener("input", () => applyGroundServiced(groundServicedSlider.value));
 
 /* ---- Left rail navigation ---- */
 const navButtons = Array.from(document.querySelectorAll(".sidebar .nav-btn"));
@@ -167,12 +199,16 @@ function setUserAircraft(m) {
   put(userFields.hdg, m.hdgDeg);
   put(userFields.spd, m.gndSpdKt);
   put(userFields.onGnd, m.onGround ? "Yes" : "No");
-  put(userFields.curr, m.curr);
   userChip.textContent = "Detected";
   userChip.classList.add("on");
 }
+function setUserAirport(m) {
+  userFields.curr.textContent = fmt(m.curr);
+}
 function clearUserAircraft() {
-  for (const el of Object.values(userFields)) el.textContent = "\u2014";
+  for (const [key, el] of Object.entries(userFields)) {
+    if (key !== "curr") el.textContent = "\u2014";
+  }
   userFields.id.textContent = "#\u2014";
   userChip.textContent = "Not Detected";
   userChip.classList.remove("on");
@@ -189,6 +225,7 @@ document.getElementById("user-head").addEventListener("click", () => {
 /* ---- Aircrafts list (populated by the host via GSAirportUI) ---- */
 const aircraftList = document.getElementById("aircraft-list");
 const SVC_RANK = { inplace: 0, spawning: 1, none: 2 };
+const SVC_KEYS = ["none", "spawning", "inplace"]; // C++ AircraftService wire value -> internal key
 const aircrafts = new Map(); // id -> { data, service, collapsed, el }
 
 function svcClass(s) { return s === "inplace" ? "inplace" : s === "spawning" ? "spawning" : ""; }
@@ -211,7 +248,7 @@ function groupBlock(title, rows) {
 function buildBody(rec) {
   const d = rec.data;
   const groups = document.createElement("div"); groups.className = "ac-groups";
-  groups.appendChild(groupBlock("Identity", [["ID", d.id], ["ATC", d.atc], ["Airline", d.airline], ["Flight", d.flight], ["Model", d.title], ["Size", d.category]]));
+  groups.appendChild(groupBlock("Identity", [["ATC", d.atc], ["Airline", d.airline], ["Flight", d.flight], ["Model", d.title], ["Size", d.category]]));
   groups.appendChild(groupBlock("Position", [["Latitude", d.lat], ["Longitude", d.lon], ["Altitude (ft)", d.altFt], ["Ground alt (ft)", d.gndAltFt], ["Heading (deg)", d.hdgDeg], ["Gnd speed (kt)", d.gndSpdKt]]));
   const sec = (v) => (typeof v === "number" && v > 0) ? v : null;
   const onOff = (v) => v ? "On" : (v === 0 || v === false ? "Off" : "\u2014");
@@ -244,9 +281,10 @@ function buildCard(rec) {
   pth.setAttribute("d", "M6 9l6 6 6-6"); chev.appendChild(pth);
   const idChip = document.createElement("span"); idChip.className = "ac-id"; idChip.textContent = "#" + d.id;
   const name = document.createElement("span"); name.className = "ac-name";
-  const atc = document.createElement("span"); atc.className = "ac-name-atc";
-  atc.textContent = d.atc || d.flight || d.title || "\u2014"; name.appendChild(atc);
-  if (d.title) { const model = document.createElement("span"); model.className = "ac-name-model"; model.textContent = d.title; name.appendChild(model); }
+  const atcText = (d.atc || "").trim();
+  const modelText = (d.title || "").trim();
+  if (atcText) { const atc = document.createElement("span"); atc.className = "ac-name-atc"; atc.textContent = atcText; name.appendChild(atc); }
+  if (modelText) { const model = document.createElement("span"); model.className = "ac-name-model"; model.textContent = modelText; name.appendChild(model); }
   const svc = document.createElement("span"); svc.className = "ac-svc " + svcClass(rec.service); svc.textContent = rec.service === "none" ? "No Ground Services" : "Ground Services";
   head.append(chev, idChip, name, svc);
   card.append(head, buildBody(rec));
@@ -261,7 +299,23 @@ function upsertAircraft(payload) {
   let rec = aircrafts.get(id);
   if (!rec) { rec = { data: {}, service: "none", collapsed: false, el: null }; aircrafts.set(id, rec); }
   Object.assign(rec.data, payload); rec.data.id = id;
-  if (typeof payload.service === "string" && payload.service in SVC_RANK) rec.service = payload.service;
+  const el = buildCard(rec);
+  if (rec.el && rec.el.parentNode) rec.el.replaceWith(el); else aircraftList.appendChild(el);
+  rec.el = el;
+  const ordered = Array.from(aircrafts.values()).sort((a, b) => {
+    const r = SVC_RANK[a.service] - SVC_RANK[b.service];
+    return r !== 0 ? r : a.data.id - b.data.id;
+  });
+  ordered.forEach((x) => aircraftList.appendChild(x.el));
+}
+
+function setAircraftServices(payload) {
+  const id = payload.id;
+  if (id === undefined || id === null) return;
+  const rec = aircrafts.get(id);
+  if (!rec) return;
+  if (payload.service !== 0 && payload.service !== 1 && payload.service !== 2) return;
+  rec.service = SVC_KEYS[payload.service];
   const el = buildCard(rec);
   if (rec.el && rec.el.parentNode) rec.el.replaceWith(el); else aircraftList.appendChild(el);
   rec.el = el;
@@ -274,10 +328,12 @@ function upsertAircraft(payload) {
 
 window.GSAirportUI = {
   setUserAircraft,
+  setUserAirport,
   clearUserAircraft,
   setConnected,
   addAircraft: (payload) => upsertAircraft(payload),
   updateAircraft: (payload) => upsertAircraft(payload),
+  setAircraftServices,
   removeAircraft: (id) => {
     const rec = aircrafts.get(id);
     if (!rec) return;
@@ -294,7 +350,9 @@ function routeUiMessage(line) {
   if (msg.op === "aircraft.add") { window.GSAirportUI.addAircraft(msg); return true; }
   if (msg.op === "aircraft.update") { window.GSAirportUI.updateAircraft(msg); return true; }
   if (msg.op === "aircraft.remove") { window.GSAirportUI.removeAircraft(msg.id); return true; }
+  if (msg.op === "aircraft.services") { window.GSAirportUI.setAircraftServices(msg); return true; }
   if (msg.op === "user.set") { window.GSAirportUI.setUserAircraft(msg); return true; }
+  if (msg.op === "user.airport") { window.GSAirportUI.setUserAirport(msg); return true; }
   if (msg.op === "user.clear") { window.GSAirportUI.clearUserAircraft(); return true; }
   if (msg.op === "status.set") { window.GSAirportUI.setConnected(msg.connected === true); return true; }
   return false;
@@ -312,4 +370,6 @@ if (window.chrome && window.chrome.webview) {
   });
   // Tell the host it is safe to flush startup logs only after the listener exists.
   window.chrome.webview.postMessage("ready");
+  // The host accepts commands only after it processes "ready".
+  sendInjectorSettings();
 }

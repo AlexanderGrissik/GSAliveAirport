@@ -3,14 +3,7 @@
 // See LICENSE for details
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#pragma warning(push)
-#pragma warning(disable : 4245)
-#include <SimConnect.h>
-#pragma warning(pop)
-
+#include "../General/GSDefinitions.h"
 #include "../General/GSCoord.h"
 #include "../General/GSSimConnect.h"
 #include "../General/GSAirport.h"
@@ -107,7 +100,6 @@ public:
     bool IsParkedActive() const;
     double LateralDistanceMetersFrom(const GSAircraft& ac) const;
 
-    void Print() const;
     const AircraftWireData& GetRawData() const { return m_rawData; }
     AircraftSizeCategory GetCategory() const { return m_category; }
     DWORD GetObjID() const { return objectID; }

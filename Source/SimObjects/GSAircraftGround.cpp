@@ -5,12 +5,14 @@
 #include <algorithm>
 #include "../General/GSLogStream.h"
 #include "../General/GSRandom.h"
+#include "../UI/GSAliveUIAPI.h"
 
 namespace NS_GSAliveAirport
 {
 
-GSAircraftGround::GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport):
-    m_aircraft(aircraft), m_simConnect(simConn), m_airport(airport)
+GSAircraftGround::GSAircraftGround(
+    const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport, GSAliveUI& ui):
+    m_aircraft(aircraft), m_simConnect(simConn), m_airport(airport), m_ui(ui)
 {
     if (m_airport) {
         m_aircraft.SetAirport(m_airport.get());
@@ -21,6 +23,42 @@ GSAircraftGround::GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& sim
     }
 }
 
+void GSAircraftGround::UpdateAircraft(const GSAircraft& aircraft)
+{ 
+    m_aircraft.CopyDynInfo(aircraft); 
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(aircraft)); 
+}
+
+void GSAircraftGround::Spawning()
+{
+    m_spawnState = SpawnState::SPAWNING;
+    GSLogStream::Log("Services Spawning for: ") << m_aircraft.GetObjID();
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::Spawning)); 
+}
+
+void GSAircraftGround::Spawned()
+{
+    m_spawnState = SpawnState::SPAWNED;
+    // A completed spawn attempt can have no objects (filtered out or all failed).
+    const bool hasServices = m_spawnedObjs > 0;
+    GSLogStream::Log(hasServices ? "Services InPlace for: " : "No Services Spawned for: ") << m_aircraft.GetObjID();
+    const auto service = hasServices ? GSAliveUIAPI::AircraftService::Inplace : GSAliveUIAPI::AircraftService::None;
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), service));
+}
+
+void GSAircraftGround::Despawning()
+{
+    m_spawnState = SpawnState::DESPAWNING;
+    GSLogStream::Log("Services Despawning for: ") << m_aircraft.GetObjID();
+}
+
+void GSAircraftGround::Unspawned()
+{
+    m_spawnState = SpawnState::UNSPAWNED;
+    GSLogStream::Log("Services Despawned for: ") << m_aircraft.GetObjID();
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::None));
+}
+
 void GSAircraftGround::Spawn()
 {
     if (m_spawnState == SpawnState::SPAWNING || m_spawnState == SpawnState::SPAWNED) {
@@ -28,25 +66,20 @@ void GSAircraftGround::Spawn()
         return;
     }
 
-    m_spawnState = SpawnState::SPAWNING;
+    Spawning(); 
 
-    if (!m_aircraft.HasParking()) {
-        BuildObjs(true);
-    } else if (GSRandom::RandSizeT(0, 1) == 0) {
-        BuildObjs(false);
-    }
+    BuildObjs(!m_aircraft.HasParking());
 
     std::erase_if(m_objs, [](const auto& item) {
         return !item->PreSpawn(); // remove items that do not match
     });
 
-    if (m_objs.empty())
-        m_spawnState = SpawnState::SPAWNED;
+    if (m_objs.empty()) {
+        Spawned();
+    }
 
     for (auto& itr : m_objs)
         itr->Spawn();
-
-    GSLogStream::Log("Services Spawning for: ") << m_aircraft.GetObjID();
 }
 
 void GSAircraftGround::Despawn()
@@ -57,12 +90,11 @@ void GSAircraftGround::Despawn()
     }
 
     if (m_objs.size() > 0) {
-        m_spawnState = SpawnState::DESPAWNING;
+        Despawning();
         for (auto& itr : m_objs)
             itr->Despawn();
-        GSLogStream::Log("Services Despawning for: ") << m_aircraft.GetObjID();
     } else {
-        m_spawnState = SpawnState::UNSPAWNED;
+        Unspawned(); 
     }
 }
 
@@ -77,8 +109,7 @@ void GSAircraftGround::OnSpawned(bool ok, GSSimObj& obj)
     }
 
     if (m_spawnedObjs == m_objs.size()) {
-        GSLogStream::Log("Services InPlace for: ") << m_aircraft.GetObjID();
-        m_spawnState = SpawnState::SPAWNED;
+        Spawned(); 
     }
 }
 
@@ -87,8 +118,7 @@ void GSAircraftGround::OnDespawned()
     --m_spawnedObjs;
     if (!m_spawnedObjs) {
         m_objs.clear();
-        GSLogStream::Log("Services Despawned for: ") << m_aircraft.GetObjID();
-        m_spawnState = SpawnState::UNSPAWNED;
+        Unspawned(); 
     }
 }
 

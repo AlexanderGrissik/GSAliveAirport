@@ -6,6 +6,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
+#include <intsafe.h>
 #pragma warning(push)
 #pragma warning(disable : 4245)
 #include <SimConnect.h>
@@ -50,9 +51,6 @@ public:
     {
         CMD_REQ_PROCESS = 0,
         CMD_REQ_PROCESS_IDENT,
-        CMD_PRINT_AIRCRAFT_ALL,
-        CMD_PRINT_AIRCRAFT_1KM,
-        CMD_PRINT_AIRCRAFT_PARKED,
         CMD_SPAWN_TEST_AIRCRAFT,
         CMD_SPAWNER_AIRCRAFT_ADDED,
         CMD_SPAWNER_AIRCRAFT_REMOVED,

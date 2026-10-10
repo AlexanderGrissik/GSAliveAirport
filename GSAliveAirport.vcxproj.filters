@@ -144,6 +144,9 @@
     <ClInclude Include="Source\General\GSRandom.h">
       <Filter>Source\General</Filter>
     </ClInclude>
+    <ClInclude Include="Source\General\GSStringUtils.h">
+      <Filter>Source\General</Filter>
+    </ClInclude>
     <ClInclude Include="Source\SimObjects\GSMovementThread.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>

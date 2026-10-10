@@ -9,6 +9,7 @@
 #include "../Commands/GSCmdAircraftUpdate.h"
 #include "../Commands/GSCmdAirport.h"
 #include "GSSpawnerThread.h"
+#include "GSStringUtils.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -121,24 +122,6 @@ void GSAircraftTrackerThread::HandleRemoved()
 void GSAircraftTrackerThread::OnCommand(GSCommand& cmd)
 {
     switch (cmd.GetCmdID()) {
-    case GSDefinitions::CMD_PRINT_AIRCRAFT_ALL: {
-        PrintAircrafts(false, 9999.0);
-        CmdPtr ret(new GSCommand(cmd));
-        cmd.Finish(ret);
-        break;
-    }
-    case GSDefinitions::CMD_PRINT_AIRCRAFT_1KM: {
-        PrintAircrafts(false, 1.0);
-        CmdPtr ret(new GSCommand(cmd));
-        cmd.Finish(ret);
-        break;
-    }
-    case GSDefinitions::CMD_PRINT_AIRCRAFT_PARKED: {
-        PrintAircrafts(true, 9999.0);
-        CmdPtr ret(new GSCommand(cmd));
-        cmd.Finish(ret);
-        break;
-    }
     case GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT: {
         SpawnTestAircrafts();
         CmdPtr ret(new GSCommand(cmd));
@@ -149,46 +132,6 @@ void GSAircraftTrackerThread::OnCommand(GSCommand& cmd)
         GSLogStream::LogError("GSAircraftTrackerThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;
     }
-}
-
-void GSAircraftTrackerThread::PrintAircrafts(bool parkedOnly, double distKM) const
-{
-    GSLogStream::Log() << "=== PrintAircrafts, ParkedOnly =" << (parkedOnly ? "Y" : "N")
-            << " MaxDistKm =" << distKM << " Total =" << m_tracked.size() << " ===";
-
-    const GSAircraft *user = nullptr;
-    for (const auto &pair : m_tracked) {
-        if (pair.second && pair.second->IsUser()) {
-            user = pair.second.get();
-            break;
-        }
-    }
-
-    if (!user) {
-        GSLogStream::Log() << "no user aircraft found; distance filter disabled";
-    }
-
-    int printed = 0;
-    int skipped = 0;
-
-    for (const auto &pair : m_tracked) {
-        const GSAircraft &ac = *pair.second;
-        if (ac.IsUser() || (parkedOnly && !ac.IsParkedActive())) {
-           ++skipped;
-            continue;
-        }
-
-        if (user && (distKM < (user->LateralDistanceMetersFrom(ac) / 1000.0))) {
-            ++skipped;
-            continue;
-        }
-
-        ac.Print();
-
-        ++printed;
-    }
-
-    GSLogStream::Log() << "=== end: printed=" << printed << " skipped=" << skipped << " ===";
 }
 
 void GSAircraftTrackerThread::SpawnTestAircrafts()
@@ -228,7 +171,7 @@ void GSAircraftTrackerThread::HandleAircraftUser(std::shared_ptr<GSAircraft>& ai
 
 bool GSAircraftTrackerThread::HandleExistingAircraft(std::shared_ptr<GSAircraft> &aircraft, std::shared_ptr<GSAircraft> &exisitng)
 {
-    if (!aircraft->GetRawData().onGround) 
+    if (!aircraft->GetRawData().onGround && !exisitng->GetRawData().onGround) 
         return false;
 
     if (aircraft != exisitng) {
@@ -242,6 +185,10 @@ bool GSAircraftTrackerThread::HandleExistingAircraft(std::shared_ptr<GSAircraft>
 bool GSAircraftTrackerThread::HandleNewAircraft(std::shared_ptr<GSAircraft> &aircraft)
 {
     if (!aircraft->GetRawData().onGround) 
+        return false;
+
+    const auto title = GSStringUtils::ToLower(aircraft->GetRawData().title);
+    if (title.find("jetwayhelper") != std::string::npos)
         return false;
 
     m_tracked.emplace(aircraft->GetObjID(), aircraft);

@@ -6,6 +6,7 @@
 #include "../UI/GSAliveUIAPI.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
@@ -35,7 +36,7 @@ int GSAliveAirportApp::Run()
     GSLogStream::Print(std::string("For MSFS24. Version: ") + s_Version);
     GSLogStream::Print("=================================================");
 
-    SendSampleAircraft();
+    //SendSampleAircraft();
 
     MSG message{};
     while (GetMessage(&message, nullptr, 0, 0) > 0) {
@@ -90,9 +91,22 @@ void GSAliveAirportApp::HandleCommand(const AppCommand &command)
         PostACTrackCommand(GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT);
         break;
     case AT::Injector:
-        // Stub: injector selection from the settings page ("0" = SayIntentions/MSFS24 default, "1" = any).
-        GSLogStream::Print("Injector selection received: " + command.argument + " (stub)");
+    {
+        std::istringstream input(command.argument);
+        std::string injectorValue;
+        unsigned int groundServicedPercent = 50;
+        input >> injectorValue >> groundServicedPercent;
+        if (groundServicedPercent > 100) groundServicedPercent = 100;
+
+        if (injectorValue == "1") {
+            m_spawner.SetInjector(GSSpawnerThread::Injector::MSFS24Default, static_cast<std::uint8_t>(groundServicedPercent));
+        } else if (injectorValue == "99") {
+            m_spawner.SetInjector(GSSpawnerThread::Injector::Any, static_cast<std::uint8_t>(groundServicedPercent));
+        } else {
+            m_spawner.SetInjector(GSSpawnerThread::Injector::SayIntentions, static_cast<std::uint8_t>(groundServicedPercent));
+        }
         break;
+    }
     }
 }
 
@@ -141,7 +155,8 @@ void GSAliveAirportApp::SendSampleAircraft()
     d1.numberOfEngines = 2;
     d1.interactivePoints[0] = GSAircraft::InteractivePointWireData{ 0, 12.1f, 3.0f, -1.4f, 90.0f };
     d1.interactivePoints[1] = GSAircraft::InteractivePointWireData{ 1, 14.2f, 3.1f, -0.8f, 90.0f };
-    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(237, d1), "inplace"));
+    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(237, d1)));
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(237, GSAliveUIAPI::AircraftService::Inplace));
 
     GSAircraft::AircraftWireData d2{};
     fill(d2.atcId, "EI874");
@@ -168,7 +183,8 @@ void GSAliveAirportApp::SendSampleAircraft()
     d2.pushbackContactXMeters = 21.3f;
     d2.pushbackContactZMeters = -0.4f;
     d2.interactivePoints[0] = GSAircraft::InteractivePointWireData{ 0, 11.8f, 3.0f, -1.2f, 12.0f };
-    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(1042, d2), "spawning"));
+    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(1042, d2)));
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(1042, GSAliveUIAPI::AircraftService::Spawning));
 
     GSAircraft::AircraftWireData d3{};
     fill(d3.atcId, "AF1452");

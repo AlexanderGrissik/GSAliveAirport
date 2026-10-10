@@ -5,6 +5,7 @@
 
 #include "GSAircraft.h"
 #include "../General/GSAirport.h"
+#include "../UI/GSAliveUI.h"
 #include "GSSimObj.h"
 #include <cstddef>
 #include <list>
@@ -25,7 +26,8 @@ public:
         DESPAWNING
     };
 
-    GSAircraftGround(const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport);
+    GSAircraftGround(
+        const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport, GSAliveUI& ui);
     virtual ~GSAircraftGround() = default;
 
     virtual void BuildObjs(bool full) = 0;
@@ -35,11 +37,16 @@ public:
     
     void Spawn();
     void Despawn();
-    void UpdateAircraft(const GSAircraft& aircraft) { m_aircraft.CopyDynInfo(aircraft); }
+    void UpdateAircraft(const GSAircraft& aircraft);
     SpawnState GetSpawnState() const { return m_spawnState; }
     const GSAircraft& Aircraft() const { return m_aircraft; }
 
 protected:
+
+    void Spawning();
+    void Spawned();
+    void Despawning();
+    void Unspawned();
 
     GSAircraft m_aircraft;
     std::shared_ptr<GSAirport> m_airport;
@@ -47,6 +54,7 @@ protected:
     SpawnState m_spawnState = SpawnState::UNSPAWNED;
     std::list<std::unique_ptr<GSSimObj>> m_objs;
     size_t m_spawnedObjs = 0U;
+    GSAliveUI& m_ui;
 };
 
 }

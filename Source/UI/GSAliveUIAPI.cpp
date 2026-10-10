@@ -3,6 +3,7 @@
 // See LICENSE for details
 #include "GSAliveUIAPI.h"
 
+#include "../General/GSAirport.h"
 #include "../SimObjects/GSAircraft.h"
 
 #include <cstddef>
@@ -48,7 +49,7 @@ std::string GSAliveUIAPI::CStr(const char *value)
     return std::string(value, len);
 }
 
-std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac, const std::string &service)
+std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
 {
     const GSAircraft::AircraftWireData &d = ac.GetRawData();
     std::ostringstream stream;
@@ -72,7 +73,7 @@ std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac, const std::string &s
     stream << ",\"wingSpanM\":" << d.wingSpanMeters << ",\"engines\":" << d.numberOfEngines
         << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait;
     stream << ",\"pushX\":" << d.pushbackContactXMeters << ",\"pushZ\":" << d.pushbackContactZMeters
-        << ",\"service\":" << JsonString(service);
+        << ",\"service\":" << static_cast<unsigned int>(AircraftService::None);
     stream << ",\"interactivePoints\":[";
     bool first = true;
     for (const auto &p : d.interactivePoints)
@@ -88,7 +89,7 @@ std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac, const std::string &s
     return stream.str();
 }
 
-std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac, const std::string &service)
+std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac)
 {
     const GSAircraft::AircraftWireData &d = ac.GetRawData();
     std::ostringstream stream;
@@ -104,8 +105,7 @@ std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac, const std::string
         << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
     stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
         << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround;
-    stream << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait
-        << ",\"service\":" << JsonString(service) << "}";
+    stream << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait << "}";
     return stream.str();
 }
 
@@ -118,9 +118,14 @@ std::string GSAliveUIAPI::SetUserAircraft(const GSAircraft *ac)
     stream << ",\"lat\":" << d.latitude << ",\"lon\":" << d.longitude
         << ",\"altFt\":" << d.altitudeFeet << ",\"gndAltFt\":" << d.groundAltitudeFeet;
     stream << ",\"hdgDeg\":" << d.headingDegrees << ",\"gndSpdKt\":" << d.groundSpeedKnots;
-    stream << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
     stream << ",\"onGround\":" << d.onGround << "}";
     return stream.str();
+}
+
+std::string GSAliveUIAPI::SetUserAirport(const GSAirport *airport)
+{
+    return std::string("{\"op\":\"user.airport\",\"curr\":")
+        + JsonString(airport != nullptr ? airport->GetICAO() : std::string()) + "}";
 }
 
 std::string GSAliveUIAPI::SetGlobalStatus(bool isConnected)
@@ -131,5 +136,11 @@ std::string GSAliveUIAPI::SetGlobalStatus(bool isConnected)
 std::string GSAliveUIAPI::RemoveAircraft(std::uint32_t id)
 {
     return std::string("{\"op\":\"aircraft.remove\",\"id\":") + std::to_string(id) + "}";
+}
+
+std::string GSAliveUIAPI::UpdateAircraftServices(std::uint32_t id, AircraftService service)
+{
+    return std::string("{\"op\":\"aircraft.services\",\"id\":") + std::to_string(id)
+        + ",\"service\":" + std::to_string(static_cast<std::uint8_t>(service)) + "}";
 }
 } // namespace NS_GSAliveAirport

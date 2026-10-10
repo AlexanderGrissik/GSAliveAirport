@@ -14,7 +14,7 @@
     <!-- WebView2 SDK (pinned version). Restored into the repo-local, git-ignored "Packages"
          folder (see RestorePackagesPath below). Its build\native MSBuild targets are
          imported explicitly at the bottom of this file (native C++ flavor). -->
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" ExcludeAssets="build;buildTransitive" />
     <!-- VS 2026 (v180) C++ targets renamed the .rc item type from RC to ResourceCompile;
          the legacy <RC> item is silently ignored there. -->
     <ResourceCompile Include="App.rc" />
@@ -23,9 +23,7 @@
     <RestorePackagesPath>$(ProjectDir)Packages</RestorePackagesPath>
     <!-- Statically link the WebView2 loader into the exe (no WebView2Loader.dll to ship). -->
     <WebView2LoaderPreference>Static</WebView2LoaderPreference>
-    <!-- Compute the NuGet restore graph in a single evaluation. Avoids an MSB4011
-         duplicate-import warning (the package's restore-only buildTransitive targets vs.
-         the explicit build\native targets import below). -->
+    <!-- Compute the NuGet restore graph in a single evaluation. -->
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
   </PropertyGroup>
   <ItemGroup>
@@ -52,6 +50,7 @@
     <ClInclude Include="Source\General\GSLogStream.h" />
     <ClInclude Include="Source\General\GSQuickQueue.h" />
     <ClInclude Include="Source\General\GSRandom.h" />
+    <ClInclude Include="Source\General\GSStringUtils.h" />
     <ClInclude Include="Source\General\GSRequest.h" />
     <ClInclude Include="Source\General\GSRoadsNetwork.h" />
     <ClInclude Include="Source\General\GSSimConnect.h" />
@@ -186,7 +185,7 @@
       <AdditionalLibraryDirectories>$(MSFS2024_SDK)\SimConnect SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd" "$(ProjectDir)x64\Debug" "VCEndSwallow"</Command>
+      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -210,7 +209,7 @@
       <AdditionalLibraryDirectories>$(MSFS2024_SDK)\SimConnect SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd" "$(ProjectDir)x64\Release" "VCEndSwallow"</Command>
+      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
