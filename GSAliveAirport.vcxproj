@@ -120,7 +120,6 @@
     <ClCompile Include="Source\UI\GSAliveUIAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source\UI\CopyUI.cmd" />
     <None Include="Source\UI\index.html" />
     <None Include="Source\UI\style.css" />
     <None Include="Source\UI\app.js" />
@@ -184,9 +183,6 @@
       <AdditionalDependencies>SimConnect.lib;msimg32.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSFS2024_SDK)\SimConnect SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -208,9 +204,6 @@
       <AdditionalDependencies>SimConnect.lib;msimg32.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSFS2024_SDK)\SimConnect SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>"$(ProjectDir)Source\UI\CopyUI.cmd"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

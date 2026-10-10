@@ -134,7 +134,13 @@ HRESULT GSAliveUI::ConfigureWebView()
     Microsoft::WRL::ComPtr<ICoreWebView2_3> webView3;
     result = m_webView.As(&webView3);
     if (FAILED(result)) return result;
-    result = webView3->SetVirtualHostNameToFolderMapping(L"gsalive", GetModuleDirectory().c_str(), COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_DENY_CORS);
+    // The browser needs a real origin for https://gsalive (the host mapping provides it).
+    // The mapped folder is (re)populated on every launch from the UI assets embedded
+    // in the executable, so no external UI files have to be shipped or copied.
+    const std::wstring mappedFolder = GetProfileFolder() + L"\\EmbeddedUI";
+    CreateDirectoryW(mappedFolder.c_str(), nullptr); // best effort; ignore "already exists"
+    if (!ExtractUiAssets(mappedFolder)) return E_FAIL;
+    result = webView3->SetVirtualHostNameToFolderMapping(L"gsalive", mappedFolder.c_str(), COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_DENY_CORS);
     if (FAILED(result)) return result;
     return m_webView->Navigate(L"https://gsalive/index.html");
 }
@@ -176,6 +182,49 @@ void GSAliveUI::Shutdown()
     m_commandHandler = nullptr;
 }
 
+
+// Embedded UI assets: file name -> RCDATA resource ID.
+namespace
+{
+struct UiAssetEntry
+{
+    const wchar_t *file;
+    const wchar_t *resource;
+};
+
+const UiAssetEntry kUiAssets[] = {
+    { L"index.html", MAKEINTRESOURCEW(IDR_UI_HTML) },
+    { L"style.css", MAKEINTRESOURCEW(IDR_UI_CSS) },
+    { L"app.js", MAKEINTRESOURCEW(IDR_UI_JS) },
+    { L"Logo.png", MAKEINTRESOURCEW(IDR_UI_LOGO) },
+};
+} // namespace
+
+bool GSAliveUI::ExtractUiAssets(const std::wstring &folder)
+{
+    HMODULE module = GetModuleHandleW(nullptr);
+    for (const auto &asset : kUiAssets)
+    {
+        HRSRC resource = FindResourceW(module, asset.resource, RT_RCDATA);
+        if (resource == nullptr) return false;
+        HGLOBAL blob = LoadResource(module, resource);
+        const DWORD size = SizeofResource(module, resource);
+        const BYTE *data = static_cast<const BYTE *>(LockResource(blob));
+        if (blob == nullptr || data == nullptr || size == 0) return false;
+
+        const std::wstring path = folder + L"\\" + asset.file;
+        HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (file == INVALID_HANDLE_VALUE) return false;
+        DWORD written = 0;
+        if (!WriteFile(file, data, size, &written, nullptr) || written != size)
+        {
+            CloseHandle(file);
+            return false;
+        }
+        CloseHandle(file);
+    }
+    return true;
+}
 
 void GSAliveUI::AppendLog(std::string_view text)
 {
@@ -225,16 +274,6 @@ void GSAliveUI::SetWebViewBounds()
     RECT bounds{};
     GetClientRect(m_hwnd, &bounds);
     m_controller->SetBoundsAndZoomFactor(bounds, 1.0);
-}
-
-std::wstring GSAliveUI::GetModuleDirectory() const
-{
-    wchar_t buffer[4096]{};
-    if (GetModuleFileNameW(nullptr, buffer, 4096) == 0) return {};
-    const std::wstring path(buffer);
-    const auto lastSlash = path.find_last_of(L'\\');
-    if (lastSlash == std::wstring::npos) return path;
-    return path.substr(0, lastSlash + 1);
 }
 
 void GSAliveUI::FlushLogQueue()

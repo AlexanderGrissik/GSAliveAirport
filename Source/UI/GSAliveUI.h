@@ -56,10 +56,12 @@ private:
     HRESULT OnControllerCreated(HRESULT result, ICoreWebView2Controller *controller);
     HRESULT ConfigureWebView();
     void ReportError(std::wstring_view operation, HRESULT result);
+    // Extracts the embedded UI assets into the folder that the WebView2 host mapping serves.
+    bool ExtractUiAssets(const std::wstring &folder);
+
     bool RegisterWindowClass();
     HWND CreateHostWindow();
     void SetWebViewBounds();
-    std::wstring GetModuleDirectory() const;
     void FlushLogQueue();
     void FlushUiQueue();
     void HandleWebMessage(std::wstring_view text);
@@ -78,9 +80,9 @@ private:
     // Callbacks run on the UI thread; invalidate them before shutdown or destruction.
     std::shared_ptr<int> m_callbackLifetime;
 
-    Microsoft::WRL::ComPtr<ICoreWebView2Controller> m_controller;
+        Microsoft::WRL::ComPtr<ICoreWebView2Controller> m_controller;
     Microsoft::WRL::ComPtr<ICoreWebView2> m_webView;
-
+    
 
 
     bool m_pageReady{false};

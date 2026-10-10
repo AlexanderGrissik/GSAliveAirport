@@ -1,3 +1,7 @@
 #include "Source\\UI\\resources.h"
 
 IDR_APP_ICON ICON "Source\\UI\\Logo.ico"
+IDR_UI_HTML RCDATA "Source\\UI\\index.html"
+IDR_UI_CSS RCDATA "Source\\UI\\style.css"
+IDR_UI_JS RCDATA "Source\\UI\\app.js"
+IDR_UI_LOGO RCDATA "Source\\UI\\Logo.png"
