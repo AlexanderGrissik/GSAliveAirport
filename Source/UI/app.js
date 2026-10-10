@@ -23,20 +23,17 @@ const MAX_LOG_LINES = 2000;
 let logLineCount = 0;
 let sawBanner = false;
 
-/* ---- Persistent UI state (the WebView2 profile now survives across runs) ----
-   Version guard: when the UI version changes, drop state saved by an older
-   build so stale keys never leak into the new one. */
-(function initStoredState() {
+/* ---- Persistent UI state (the WebView2 profile survives across runs and
+   across version updates - stored settings are kept as-is). The current UI
+   version is recorded as well; it is not evaluated yet, but is kept for
+   future use (e.g. diagnostics or migration logic). ---- */
+(function recordVersion() {
   try {
     const version = versionChip ? versionChip.textContent.trim() : "";
     if (!version) return;
-    const key = "gsalive.version";
-    if (localStorage.getItem(key) !== version) {
-      localStorage.clear();
-      localStorage.setItem(key, version);
-    }
+    localStorage.setItem("gsalive.version", version);
   } catch (e) {
-    console.error("localStorage unavailable, running stateless:", e);
+    console.error("localStorage unavailable, version not recorded:", e);
   }
 })();
 
@@ -146,7 +143,7 @@ function applyGroundServiced(value, notifyHost = true) {
   if (notifyHost) sendInjectorSettings();
 }
 (function initInjector() {
-  let injector = "0";
+  let injector = "99";
   let groundServiced = "50";
   try {
     const stored = localStorage.getItem(INJECTOR_KEY);

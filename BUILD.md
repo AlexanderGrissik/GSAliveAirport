@@ -9,7 +9,7 @@
 | **C++ standard** | C++20 (`stdcpp20`) |
 | **MSFS 2024 SDK** | SimConnect SDK (include, lib, dll). Default path: `D:\MSFS24\SDK`. Override with the `MSFS2024_SDK` MSBuild property. |
 | **MSFS 2024** (to run) | Must be installed and running (or reachable) for the app to connect via SimConnect |
-| **WebView2 Runtime** (to run) | Microsoft Edge WebView2 Runtime — built into Windows 11; on Windows 10 install it once from https://developer.microsoft.com/en-us/microsoft-edge/webview2/. The app starts its UI in WebView2 and exits if the runtime is missing. The per-user browser profile lives in `%LOCALAPPDATA%\GSAliveAirport` and is kept on disk across runs — it holds the WebView2 browser caches and the UI's persisted localStorage state (guarded by the stored `gsalive.version`). |
+| **WebView2 Runtime** (to run) | Microsoft Edge WebView2 Runtime — built into Windows 11; on Windows 10 install it once from https://developer.microsoft.com/en-us/microsoft-edge/webview2/. The app starts its UI in WebView2 and exits if the runtime is missing. The per-user browser profile lives in `%LOCALAPPDATA%\GSAliveAirport` and is kept on disk across runs — it holds the WebView2 browser caches and the UI's persisted localStorage state. |
 | **WebView2 SDK** (to build) | `Microsoft.Web.WebView2` NuGet package, version pinned in `GSAliveAirport.vcxproj`. Restored from nuget.org into the repo-local `Packages\` folder (git-ignored) — one-time network access on first build per machine/version. The loader is **statically linked**, so no WebView2 DLL is needed next to the exe. |
 
 SDK folder layout expected under `$(MSFS2024_SDK)`:

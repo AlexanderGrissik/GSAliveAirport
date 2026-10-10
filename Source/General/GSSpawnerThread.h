@@ -75,7 +75,7 @@ private:
 
     std::jthread m_thread;
     GSCoord m_userPos;
-    std::atomic<Injector> m_injector {Injector::SayIntentions};
+    std::atomic<Injector> m_injector {Injector::Any};
     std::atomic<std::uint8_t> m_groundServicedPercent {50};
 
     using GroundMap = std::unordered_map<DWORD, std::unique_ptr<GSAircraftGround>>;

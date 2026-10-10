@@ -8,6 +8,7 @@
 #include "../Animation/GSAnimationThread.h"
 #include "../SimObjects/GSMovementThread.h"
 #include "../UI/GSAliveUI.h"
+#include "../UI/resources.h"
 
 #include <optional>
 #include <string>
@@ -18,7 +19,7 @@ namespace NS_GSAliveAirport
 class GSAliveAirportApp final
 {
 public:
-    static constexpr const char* s_Version = "0.5.0";
+    static constexpr const char* s_Version = APP_VERSION;
     GSAliveAirportApp(): m_aircraftTracker(m_spawner), m_spawner(m_animThread, m_mvmntThread, m_ui) {}
     ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
 
