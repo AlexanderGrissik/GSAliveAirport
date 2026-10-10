@@ -248,15 +248,18 @@ bool GSSpawnerThread::SpawnCond(const GSAircraft& aircraft)
     const auto& aircraftData = aircraft.GetRawData();
     bool baseCond = (GSGeography::DistanceMeters(m_userPos, aircraft.GetLongLat()) < s_SpawnDistMeters) && (aircraftData.groundSpeedKnots < 1.0);
     baseCond &= !aircraft.IsTaxing();
-    return (baseCond && (aircraft.HasParking() || aircraftData.lightNav || IsAnyInjector()));
+    return ((IsAnyInjector() && baseCond) ||
+            (IsMSFSInjector() && baseCond && aircraft.HasParking()) ||
+            (IsSIInjector() && baseCond && aircraftData.lightNav));
 }
 
 bool GSSpawnerThread::DespawnCond(const GSAircraft& aircraft)
 {
     const auto& aircraftData = aircraft.GetRawData();
     bool baseCond = (aircraftData.groundSpeedKnots > 2.0) || aircraft.IsTaxing() || !aircraftData.onGround;
-    return ((baseCond && IsAnyInjector()) ||
-            (baseCond && (!aircraftData.lightNav || aircraftData.lightBeacon)));
+    return ((IsAnyInjector() && baseCond) ||
+            (IsMSFSInjector() && baseCond) ||
+            (IsSIInjector() && (baseCond || !aircraftData.lightNav || aircraftData.lightBeacon)));
 }
 
 void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd, const GSAircraft& aircraftUpdated)

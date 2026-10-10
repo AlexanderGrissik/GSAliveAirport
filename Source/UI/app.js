@@ -238,6 +238,20 @@ function fieldRow(label, value) {
   row.append(k, v); return row;
 }
 
+function compactField(label, value) {
+  const field = document.createElement("span"); field.className = "ac-extra-field";
+  const k = document.createElement("span"); k.className = "k"; k.textContent = label;
+  const v = document.createElement("span"); v.className = "v"; v.textContent = fmt(value);
+  field.append(k, v); return field;
+}
+
+function mainField(label, value) {
+  const field = document.createElement("span"); field.className = "ac-main-field";
+  const k = document.createElement("span"); k.className = "k"; k.textContent = label;
+  const v = document.createElement("span"); v.className = "v"; v.textContent = fmt(value);
+  field.append(k, v); return field;
+}
+
 function groupBlock(title, rows) {
   const g = document.createElement("div"); g.className = "ac-group";
   const h = document.createElement("h3"); h.textContent = title; g.appendChild(h);
@@ -247,25 +261,44 @@ function groupBlock(title, rows) {
 
 function buildBody(rec) {
   const d = rec.data;
-  const groups = document.createElement("div"); groups.className = "ac-groups";
-  groups.appendChild(groupBlock("Identity", [["ATC", d.atc], ["Airline", d.airline], ["Flight", d.flight], ["Model", d.title], ["Size", d.category]]));
-  groups.appendChild(groupBlock("Position", [["Latitude", d.lat], ["Longitude", d.lon], ["Altitude (ft)", d.altFt], ["Ground alt (ft)", d.gndAltFt], ["Heading (deg)", d.hdgDeg], ["Gnd speed (kt)", d.gndSpdKt]]));
   const sec = (v) => (typeof v === "number" && v > 0) ? v : null;
   const onOff = (v) => v ? "On" : (v === 0 || v === false ? "Off" : "\u2014");
   const yesNo = (v) => v ? "Yes" : (v === 0 || v === false ? "No" : "\u2014");
-  const routeGroup = groupBlock("Route", [["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Current", d.curr], ["Parking", d.parking], ["State", d.state], ["ETD (s)", sec(d.etdSec)], ["ETA (s)", sec(d.etaSec)]]);
-  routeGroup.classList.add("ac-g-route");
-  groups.appendChild(routeGroup);
-  groups.appendChild(groupBlock("Systems", [["Beacon Lights", onOff(d.beacon)], ["Nav Lights", onOff(d.nav)], ["Taxi Lights", onOff(d.taxi)], ["Parking Brakes", onOff(d.parkBrake)], ["On Ground", yesNo(d.onGround)]]));
-  groups.appendChild(groupBlock("Aircraft", [["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback attached", d.pushbackAttached], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ]]));
+  const mainFields = document.createElement("div"); mainFields.className = "ac-main-fields";
+  [["Gnd speed (kt)", d.gndSpdKt], ["Latitude", d.lat], ["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Beacon Lights", onOff(d.beacon)],
+   ["On Ground", yesNo(d.onGround)], ["Longitude", d.lon], ["Parking", d.parking], ["Nav Lights", onOff(d.nav)],
+   ["Size", d.category], ["Altitude (ft)", d.altFt], ["State", d.state], ["Taxi Lights", onOff(d.taxi)],
+   ["Ground alt (ft)", d.gndAltFt], ["Heading (deg)", d.hdgDeg], ["Parking Brakes", onOff(d.parkBrake)], ["Pushback attached", d.pushbackAttached]]
+    .forEach(([label, value]) => mainFields.appendChild(mainField(label, value)));
+
+  const extra = document.createElement("div"); extra.className = "ac-extra";
+  if (rec.detailsCollapsed) extra.classList.add("collapsed");
+  const extraHead = document.createElement("div"); extraHead.className = "ac-extra-head";
+  const extraChev = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  extraChev.setAttribute("class", "ac-extra-chev"); extraChev.setAttribute("viewBox", "0 0 24 24");
+  extraChev.setAttribute("fill", "none"); extraChev.setAttribute("stroke", "currentColor");
+  extraChev.setAttribute("stroke-width", "2.5"); extraChev.setAttribute("stroke-linecap", "round"); extraChev.setAttribute("stroke-linejoin", "round");
+  const extraPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  extraPath.setAttribute("d", "M6 9l6 6 6-6"); extraChev.appendChild(extraPath);
+  const extraTitle = document.createElement("span"); extraTitle.textContent = "Additional Details";
+  extraHead.append(extraChev, extraTitle);
+
+  const extraBody = document.createElement("div"); extraBody.className = "ac-extra-body";
+  const extraFields = document.createElement("div"); extraFields.className = "ac-extra-fields";
+  [["Airline", d.airline], ["Flight", d.flight], ["Current", d.curr], ["ETD (s)", sec(d.etdSec)], ["ETA (s)", sec(d.etaSec)],
+   ["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ]]
+    .forEach(([label, value]) => extraFields.appendChild(compactField(label, value)));
   const points = Array.isArray(d.interactivePoints) ? d.interactivePoints : [];
-  const pointsRows = points.length > 0 ? points.map((p, i) => [(i + 1) + ". " + fmt(p.type), p.x + ", " + p.y + ", " + p.z, fmt(p.hdg)]) : [["1.", "\u2014"]];
-  if (true) {
-    const pointsGroup = groupBlock("Interactive points (" + points.length + ")", pointsRows);
-    pointsGroup.classList.add("ac-g-points");
-    groups.appendChild(pointsGroup);
-  }
-  const body = document.createElement("div"); body.className = "ac-body"; body.appendChild(groups);
+  const pointsGroup = document.createElement("div"); pointsGroup.className = "ac-interactive-points";
+  const pointsTitle = document.createElement("h3"); pointsTitle.textContent = "Interactive points (" + points.length + ")";
+  const pointsList = document.createElement("div"); pointsList.className = "ac-points-list";
+  const pointFields = points.length > 0 ? points.map((p, i) => [(i + 1) + ". " + fmt(p.type), p.x + ", " + p.y + ", " + p.z]) : [["1.", "\u2014"]];
+  pointFields.forEach(([label, value]) => pointsList.appendChild(compactField(label, value)));
+  pointsGroup.append(pointsTitle, pointsList);
+  extraBody.append(extraFields, pointsGroup); extra.append(extraHead, extraBody);
+  extraHead.addEventListener("click", () => { rec.detailsCollapsed = !rec.detailsCollapsed; extra.classList.toggle("collapsed", rec.detailsCollapsed); });
+
+  const body = document.createElement("div"); body.className = "ac-body"; body.append(mainFields, extra);
   return body;
 }
 
@@ -297,7 +330,7 @@ function upsertAircraft(payload) {
   const id = payload.id;
   if (id === undefined || id === null) return;
   let rec = aircrafts.get(id);
-  if (!rec) { rec = { data: {}, service: "none", collapsed: false, el: null }; aircrafts.set(id, rec); }
+  if (!rec) { rec = { data: {}, service: "none", collapsed: false, detailsCollapsed: true, el: null }; aircrafts.set(id, rec); }
   Object.assign(rec.data, payload); rec.data.id = id;
   const el = buildCard(rec);
   if (rec.el && rec.el.parentNode) rec.el.replaceWith(el); else aircraftList.appendChild(el);

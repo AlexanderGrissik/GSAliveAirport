@@ -39,7 +39,7 @@ void GSAnimationObject::SetAIWaypoints(const std::vector<SIMCONNECT_DATA_WAYPOIN
 
 void GSAnimationObject::Move(GSSimConnect& handler, float elapsedMilli)
 {
-    if (!m_aiWaypoints)
+    if (!m_aiWaypoints || !m_aiWaypoints->size())
         return;
 
     const auto& waypoints = *m_aiWaypoints;

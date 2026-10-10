@@ -421,6 +421,28 @@ html, body {
 .ac-field .k { color: var(--text-dim); white-space: nowrap; }
 .ac-field .v { font-family: var(--mono); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
+.ac-main-fields { display: grid; grid-template-columns: 1.1fr 1fr 1.2fr 0.7fr; gap: 10px 18px; }
+.ac-main-field { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.ac-main-field .k { flex: 0 0 118px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-dim); user-select: none; white-space: nowrap; }
+.ac-main-field .v { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.ac-extra { margin-top: 12px; border-top: 1px solid var(--border); }
+.ac-extra-head { display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer; user-select: none; }
+.ac-extra-head:hover { color: var(--accent); }
+.ac-extra-head span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-dim); }
+.ac-extra-head:hover span { color: inherit; }
+.ac-extra-chev { width: 12px; height: 12px; color: var(--text-dim); transition: transform 0.15s ease; }
+.ac-extra.collapsed .ac-extra-chev { transform: rotate(-90deg); }
+.ac-extra.collapsed .ac-extra-body { display: none; }
+.ac-extra-body { padding: 2px 0 4px; }
+.ac-extra-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px 18px; margin-bottom: 12px; }
+.ac-extra-field { display: flex; align-items: baseline; gap: 12px; min-width: 0; font-size: 12.5px; line-height: 18px; }
+.ac-extra-field .k { color: var(--text-dim); white-space: nowrap; }
+.ac-extra-field .v { font-family: var(--mono); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ac-interactive-points h3 { margin: 0 0 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-dim); }
+.ac-points-list { display: flex; flex-wrap: wrap; gap: 6px 24px; }
+.ac-points-list .ac-extra-field { min-width: 260px; }
+
 /* ---------------- Modals ---------------- */
 .modal-backdrop {
     position: fixed;

@@ -51,6 +51,7 @@ public:
     void SetInjector(Injector injector, std::uint8_t groundServicedPercent);
     bool IsAnyInjector() const { return m_injector.load(std::memory_order_relaxed) == Injector::Any; }
     bool IsSIInjector() const { return m_injector.load(std::memory_order_relaxed) == Injector::SayIntentions; }
+    bool IsMSFSInjector() const { return m_injector.load(std::memory_order_relaxed) == Injector::MSFS24Default; }
     uint8_t ServicedPerc() const { return m_groundServicedPercent.load(std::memory_order_relaxed); }
 
 private:
