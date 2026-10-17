@@ -40,6 +40,8 @@ public:
         GSDefID_GroundPowerExtStateSet,
         GSDefID_BuggageLoaderExtStateGet,
         GSDefID_BuggageLoaderExtStateSet,
+        GSDefID_StaircaseExtStateGet,
+        GSDefID_StaircaseExtStateSet,
         GSDefID_AnimVelocBodyY,
         GSDefID_AnimWagonBLO,
         GSDefID_AnimWagonBFLO,

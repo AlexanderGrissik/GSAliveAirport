@@ -37,7 +37,6 @@ public:
     static void InitDatums(GSSimConnect& handler);
 
     void SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
-    void SetFinalPositionAndStatePost();
 
 private:
 

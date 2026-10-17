@@ -35,6 +35,7 @@ public:
     const std::string& GetTugExt() { return GetEntry(m_entiresTarmac); }
     const std::string& GetBuggageLoaderExt() { return GetEntry(m_entiresBuggageLoaderExt); }
     const std::string& GetBuggageWorkerExt() { return GetEntry(m_entiresBuggageWorkerExt); }
+    const std::string& GetStaircaseExt() { return GetEntry(m_entiresStaircaseExt); }
     const std::string& GetPilotExt() { return GetEntry(m_entriesPilotExt); }
     const std::string& GetPassengerExt() { return GetEntry(m_entriesPassengerExt); }
     const std::string& GetTruckFacility() { return GetEntry(m_entiresTruckFacility); }
@@ -58,6 +59,7 @@ private:
     std::vector<std::pair<std::string, std::string>> m_entires;
     EntiresVec m_entiresBuggageLoaderExt;
     EntiresVec m_entiresBuggageWorkerExt;
+    EntiresVec m_entiresStaircaseExt;
     EntiresVec m_entiresTugExt;
     EntiresVec m_entiresTruckFacility;
     EntiresVec m_entiresTarmac;

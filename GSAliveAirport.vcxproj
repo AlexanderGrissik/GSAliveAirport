@@ -42,7 +42,6 @@
     <ClInclude Include="Source\General\GSAircraftTrackerThread.h" />
     <ClInclude Include="Source\General\GSAirport.h" />
     <ClInclude Include="Source\General\GSCatalog.h" />
-
     <ClInclude Include="Source\General\GSCoord.h" />
     <ClInclude Include="Source\General\GSDefinitions.h" />
     <ClInclude Include="Source\General\GSGeography.h" />
@@ -55,6 +54,7 @@
     <ClInclude Include="Source\General\GSRoadsNetwork.h" />
     <ClInclude Include="Source\General\GSSimConnect.h" />
     <ClInclude Include="Source\General\GSSpawnerThread.h" />
+    <ClInclude Include="Source\SimObjects\GSStaircase.h" />
     <ClInclude Include="Source\UI\GSAliveUI.h" />
     <ClInclude Include="Source\UI\GSAliveUIAPI.h" />
     <ClInclude Include="Source\SimObjects\GSAircraft.h" />
@@ -88,7 +88,6 @@
     <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp" />
     <ClCompile Include="Source\General\GSAirport.cpp" />
     <ClCompile Include="Source\General\GSCatalog.cpp" />
-
     <ClCompile Include="Source\General\GSGeography.cpp" />
     <ClCompile Include="Source\General\GSAliveAirportApp.cpp" />
     <ClCompile Include="Source\General\GSLogStream.cpp" />
@@ -112,6 +111,7 @@
     <ClCompile Include="Source\SimObjects\GSPushback.cpp" />
     <ClCompile Include="Source\SimObjects\GSSimObj.cpp" />
     <ClCompile Include="Source\SimObjects\GSSmallCones.cpp" />
+    <ClCompile Include="Source\SimObjects\GSStaircase.cpp" />
     <ClCompile Include="Source\SimObjects\GSStandingHuman.cpp" />
     <ClCompile Include="Source\SimObjects\GSStatic.cpp" />
     <ClCompile Include="Source\SimObjects\GSTruckFacility.cpp" />

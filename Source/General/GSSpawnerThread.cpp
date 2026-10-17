@@ -10,6 +10,7 @@
 #include "../SimObjects/GSCateringCart.h"
 #include "../SimObjects/GSGroundPower.h"
 #include "../SimObjects/GSBuggageLoader.h"
+#include "../SimObjects/GSStaircase.h"
 #include "../Commands/GSCmdAircraftUpdate.h"
 #include "../Commands/GSCmdAnimObj.h"
 #include "../Commands/GSCmdSimObj.h"
@@ -63,6 +64,7 @@ void GSSpawnerThread::OnConnect()
     GSCateringCart::InitDatums(*this); 
     GSGroundPower::InitDatums(*this);
     GSBuggageLoader::InitDatums(*this);
+    GSStaircase::InitDatums(*this);
     GSCatalog::GetInstance().LoadCatalog();
 
     m_ui.PostMessageUI(GSAliveUIAPI::SetGlobalStatus(true));

@@ -16,6 +16,8 @@ void GSCatalog::LoadCatalog()
     m_entires.reserve(1024);
     m_entiresBuggageLoaderExt.clear();
     m_entiresBuggageLoaderExt.reserve(64);
+    m_entiresStaircaseExt.clear();
+    m_entiresStaircaseExt.reserve(64);
     
     auto stop = m_source.get_token();
     while (!stop.stop_requested()) {
@@ -28,6 +30,7 @@ void GSCatalog::LoadCatalog()
     std::string strBuggageLoaderExt = "FSDT_Tug_660";
     std::string strBuggageCargo = "CARGO";
     std::string strBuggageWorkerExt = "FSDT_Baggage_Loader_Man_02";
+    std::string strStaircaseExt = "FSDT_Staircase_TLD_ABS-580";
     std::string strTugExt = "FSDT_Tug_M1A";
     std::string strTruckFacility = "ASO_TruckFacility01";
     std::string strPilotExt = "FSDT_Passenger_PILOT";
@@ -66,6 +69,8 @@ void GSCatalog::LoadCatalog()
             m_entiresBuggageLoaderExt.push_back(&pr);
         else if (pr.first.starts_with(strBuggageWorkerExt) && (pr.first.find(strBuggageCargo) == std::string::npos))
             m_entiresBuggageWorkerExt.push_back(&pr);
+        else if (pr.first.starts_with(strStaircaseExt))
+            m_entiresStaircaseExt.push_back(&pr);
     }
 
     Disconnect();

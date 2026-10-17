@@ -10,6 +10,7 @@
 #include "GSBuggageLoader.h"
 #include "GSMarshaller.h"
 #include "GSWingmans.h"
+#include "GSStaircase.h"
 
 namespace NS_GSAliveAirport
 {
@@ -21,6 +22,8 @@ void GSAircraftGroundXL::BuildObjs(bool full)
     m_objs.emplace_back(new GSLavatoryTruck(m_simConnect, m_aircraft, *this));
 	m_objs.emplace_back(new GSBuggageLoader(m_simConnect, m_aircraft, *this, true));
 	m_objs.emplace_back(new GSBuggageLoader(m_simConnect, m_aircraft, *this, false));
+	m_objs.emplace_back(new GSStaircase(m_simConnect, m_aircraft, *this, true));
+	m_objs.emplace_back(new GSStaircase(m_simConnect, m_aircraft, *this, false));
 	m_objs.emplace_back(new GSMarshaller(m_simConnect, m_aircraft, *this));
 	m_objs.emplace_back(new GSWingmans(m_simConnect, m_aircraft, *this, GSWingmans::AIRLINE));
 

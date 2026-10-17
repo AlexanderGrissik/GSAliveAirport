@@ -14,10 +14,10 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_BuggageLoaderExtStateGet{
-    GSDefinitions::DatumSpec{"BAGGAGELOADER END RAMP Y", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"BAGGAGELOADER END RAMP Y", "feet",   SIMCONNECT_DATATYPE_FLOAT32},
     GSDefinitions::DatumSpec{"BAGGAGELOADER END RAMP Z", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BAGGAGELOADER PIVOT Y", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BAGGAGELOADER PIVOT Z", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"BAGGAGELOADER PIVOT Y",    "feet",   SIMCONNECT_DATATYPE_FLOAT32},
+    GSDefinitions::DatumSpec{"BAGGAGELOADER PIVOT Z",    "meters", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_BuggageLoaderExtStateSet{
@@ -38,7 +38,39 @@ bool GSBuggageLoader::OnCreated()
 
 void GSBuggageLoader::OnArrived()
 {
-    SetFinalPositionAndStatePost();
+    m_simHandle.PostReqIdentCommand(
+        new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        [](SIMCONNECT_RECV_EXCEPTION* message) {
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_OpenDoors, ") << message->dwException; });
+
+    Freeze();
+
+    if (m_ext) {
+        auto* anim = new GSAnimBFLO(m_simObjectID);
+        anim->AddFrameSet(4213, 0, 30.0, 650, 0, 30.0);
+        RegisterAnim(anim);
+
+        auto ptrWorker = new GSStatic(m_simHandle, m_aircraft, *this);
+        ptrWorker->SetTitle(GSCatalog::GetInstance().GetBuggageWorkerExt());
+        ptrWorker->SetPosRel(GSStatic::REL_ABSOLUTE);
+        ptrWorker->SetPosition({ m_initPos.Longitude, m_initPos.Latitude });
+        ptrWorker->SetHeading(m_initPos.Heading);
+        ptrWorker->GetInitPos().Altitude = m_initPos.Altitude;
+        ptrWorker->GetInitPos().OnGround = 1;
+        ptrWorker->PreSpawn();
+        
+        auto* animWorker = new GSAnimSingle(0);
+        animWorker->AddFrameSet(GSDefinitions::GSDefID_AnimWagonBLO, 4213, 0, 30.0);
+        ptrWorker->SetAnimObj(animWorker);
+
+        m_attached.emplace_back(ptrWorker);
+    }
+
+    auto ptrTrain = new GSBuggageTrain(m_simHandle, m_aircraft, *this, *this);
+    ptrTrain->PreSpawn();
+    m_attached.emplace_back(ptrTrain);
+        
+    ContinueSpawn();
 }
 
 void GSBuggageLoader::OnDespawning()
@@ -97,43 +129,6 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
     m_initPos.Latitude = loaderPos.Lat();
 
     FinalizeRoute();
-}
-
-void GSBuggageLoader::SetFinalPositionAndStatePost()
-{
-    m_simHandle.PostReqIdentCommand(
-        new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
-        [](SIMCONNECT_RECV_EXCEPTION* message) {
-            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_OpenDoors, ") << message->dwException; });
-
-    Freeze();
-
-    if (m_ext) {
-        auto* anim = new GSAnimBFLO(m_simObjectID);
-        anim->AddFrameSet(4213, 0, 30.0, 650, 0, 30.0);
-        RegisterAnim(anim);
-
-        auto ptrWorker = new GSStatic(m_simHandle, m_aircraft, *this);
-        ptrWorker->SetTitle(GSCatalog::GetInstance().GetBuggageWorkerExt());
-        ptrWorker->SetPosRel(GSStatic::REL_ABSOLUTE);
-        ptrWorker->SetPosition({ m_initPos.Longitude, m_initPos.Latitude });
-        ptrWorker->SetHeading(m_initPos.Heading);
-        ptrWorker->GetInitPos().Altitude = m_initPos.Altitude;
-        ptrWorker->GetInitPos().OnGround = 1;
-        ptrWorker->PreSpawn();
-        
-        auto* animWorker = new GSAnimSingle(0);
-        animWorker->AddFrameSet(GSDefinitions::GSDefID_AnimWagonBLO, 4213, 0, 30.0);
-        ptrWorker->SetAnimObj(animWorker);
-
-        m_attached.emplace_back(ptrWorker);
-    }
-
-    auto ptrTrain = new GSBuggageTrain(m_simHandle, m_aircraft, *this, *this);
-    ptrTrain->PreSpawn();
-    m_attached.emplace_back(ptrTrain);
-        
-    ContinueSpawn();
 }
 
 float GSBuggageLoader::CalcLoaderOpenAngle(const GSBuggageLoader::StateWireDataGet& rawStateGet)
