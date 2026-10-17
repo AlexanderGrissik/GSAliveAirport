@@ -69,7 +69,8 @@ std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
         << ",\"state\":" << JsonString(CStr(d.trafficState.data()))
         << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
     stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
-        << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround;
+        << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround
+        << ",\"departing\":" << (ac.IsDeparting() ? "true" : "false");
     stream << ",\"wingSpanM\":" << d.wingSpanMeters << ",\"engines\":" << d.numberOfEngines
         << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait;
     stream << ",\"pushX\":" << d.pushbackContactXMeters << ",\"pushZ\":" << d.pushbackContactZMeters

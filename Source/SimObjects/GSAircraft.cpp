@@ -90,6 +90,8 @@ void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entr
     GSSimConnect::ReadMsgData(&m_rawData, sizeof(m_rawData), entry);
     objectID = entry.dwObjectID;
 
+    m_departing = (m_rawData.onGround && m_rawData.groundSpeedKnots < 2.0);
+
     m_category = AircraftSizeCategory::Small;
     if (m_rawData.wingSpanMeters > 24.0) m_category = AircraftSizeCategory::Medium;
     if (m_rawData.wingSpanMeters > 36.0) m_category = AircraftSizeCategory::Large;

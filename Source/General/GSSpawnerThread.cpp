@@ -247,6 +247,7 @@ bool GSSpawnerThread::SpawnCond(const GSAircraft& aircraft)
 {
     const auto& aircraftData = aircraft.GetRawData();
     bool baseCond = (GSGeography::DistanceMeters(m_userPos, aircraft.GetLongLat()) < s_SpawnDistMeters) && (aircraftData.groundSpeedKnots < 1.0);
+    baseCond &= (aircraft.GetRawData().onGround != 0);
     baseCond &= !aircraft.IsTaxing();
     return ((IsAnyInjector() && baseCond) ||
             (IsMSFSInjector() && baseCond && aircraft.HasParking()) ||

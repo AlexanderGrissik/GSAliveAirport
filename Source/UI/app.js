@@ -265,7 +265,7 @@ function buildBody(rec) {
   [["Gnd speed (kt)", d.gndSpdKt], ["Latitude", d.lat], ["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Beacon Lights", onOff(d.beacon)],
    ["On Ground", yesNo(d.onGround)], ["Longitude", d.lon], ["Parking", d.parking], ["Nav Lights", onOff(d.nav)],
    ["Size", d.category], ["Altitude (ft)", d.altFt], ["State", d.state], ["Taxi Lights", onOff(d.taxi)],
-   ["Ground alt (ft)", d.gndAltFt], ["Heading (deg)", d.hdgDeg], ["Parking Brakes", onOff(d.parkBrake)], ["Pushback attached", d.pushbackAttached]]
+   ["Departing", yesNo(d.departing)], ["Ground alt (ft)", d.gndAltFt], ["Parking Brakes", onOff(d.parkBrake)], ["Pushback attached", d.pushbackAttached]]
     .forEach(([label, value]) => mainFields.appendChild(mainField(label, value)));
 
   const extra = document.createElement("div"); extra.className = "ac-extra";
@@ -283,7 +283,7 @@ function buildBody(rec) {
   const extraBody = document.createElement("div"); extraBody.className = "ac-extra-body";
   const extraFields = document.createElement("div"); extraFields.className = "ac-extra-fields";
   [["Airline", d.airline], ["Flight", d.flight], ["Current", d.curr], ["ETD (s)", sec(d.etdSec)], ["ETA (s)", sec(d.etaSec)],
-   ["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ]]
+   ["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ], ["Heading (deg)", d.hdgDeg]]
     .forEach(([label, value]) => extraFields.appendChild(compactField(label, value)));
   const points = Array.isArray(d.interactivePoints) ? d.interactivePoints : [];
   const pointsGroup = document.createElement("div"); pointsGroup.className = "ac-interactive-points";

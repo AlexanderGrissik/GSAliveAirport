@@ -184,9 +184,6 @@ bool GSAircraftTrackerThread::HandleExistingAircraft(std::shared_ptr<GSAircraft>
 
 bool GSAircraftTrackerThread::HandleNewAircraft(std::shared_ptr<GSAircraft> &aircraft)
 {
-    if (!aircraft->GetRawData().onGround) 
-        return false;
-
     const auto title = GSStringUtils::ToLower(aircraft->GetRawData().title);
     if (title.find("jetwayhelper") != std::string::npos)
         return false;

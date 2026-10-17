@@ -107,6 +107,7 @@ public:
     bool IsTaxing() const { return m_trafficState == "STATE_SIMPLE_TAXI"; }
     bool HasParking() const { return !m_parkingState.empty(); }
     bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
+    bool IsDeparting() const { return m_departing; } 
     void SetAirport(const GSAirport* ap) { m_airport = ap; }
     void SetParking(const GSRoadsNetwork::RoadNode* prkNode) { m_parkingNode = prkNode; }
     const GSAirport* GetAirport() const { return m_airport; }
@@ -139,6 +140,7 @@ private:
     const GSAirport* m_airport;
     const GSRoadsNetwork::RoadNode* m_parkingNode;
     DWORD objectID{};
+    bool m_departing = true;
 };
 
 } // namespace NS_GSAliveAirport

@@ -435,7 +435,7 @@ html, body {
 .ac-extra.collapsed .ac-extra-chev { transform: rotate(-90deg); }
 .ac-extra.collapsed .ac-extra-body { display: none; }
 .ac-extra-body { padding: 2px 0 4px; }
-.ac-extra-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px 18px; margin-bottom: 12px; }
+.ac-extra-fields { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px 18px; margin-bottom: 12px; }
 .ac-extra-field { display: flex; align-items: baseline; gap: 12px; min-width: 0; font-size: 12.5px; line-height: 18px; }
 .ac-extra-field .k { color: var(--text-dim); white-space: nowrap; }
 .ac-extra-field .v { font-family: var(--mono); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
