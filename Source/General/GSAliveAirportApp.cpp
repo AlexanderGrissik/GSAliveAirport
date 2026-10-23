@@ -36,7 +36,7 @@ int GSAliveAirportApp::Run()
     GSLogStream::Print(std::string("For MSFS24. Version: ") + s_Version);
     GSLogStream::Print("=================================================");
 
-    SendSampleAircraft();
+    //SendSampleAircraft();
 
     MSG message{};
     while (GetMessage(&message, nullptr, 0, 0) > 0) {

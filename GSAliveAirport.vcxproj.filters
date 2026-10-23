@@ -78,6 +78,9 @@
     <ClInclude Include="Source\Animation\GSAnimBFLOT.h">
       <Filter>Source\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Animation\GSAnimMulti.h">
+      <Filter>Source\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Animation\GSAnimSingle.h">
       <Filter>Source\Animation</Filter>
     </ClInclude>
@@ -112,6 +115,9 @@
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
     <ClInclude Include="Source\SimObjects\GSMarshaller.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SimObjects\GSPassenger.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
     <ClInclude Include="Source\SimObjects\GSPushback.h">
@@ -203,6 +209,9 @@
     <ClCompile Include="Source\Animation\GSAnimBFLOT.cpp">
       <Filter>Source\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Animation\GSAnimMulti.cpp">
+      <Filter>Source\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Animation\GSAnimSingle.cpp">
       <Filter>Source\Animation</Filter>
     </ClCompile>
@@ -240,6 +249,9 @@
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
     <ClCompile Include="Source\SimObjects\GSMarshaller.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SimObjects\GSPassenger.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
     <ClCompile Include="Source\SimObjects\GSPushback.cpp">

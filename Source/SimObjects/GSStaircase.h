@@ -45,10 +45,12 @@ private:
     void OnArrived() override;
     void OnDespawning() override;
 
+    GSCoord m_doorPos;
+    GSCoord m_stairBasePos;
+    GSCoord m_stairTopPos;
     float m_doorPosElev = 0.0f;
     DWORD m_doorIdx = 0;
     bool m_front = false;
-    bool m_ext = true;
 
     class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {
     public:

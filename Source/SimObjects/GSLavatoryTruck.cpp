@@ -20,7 +20,7 @@ void GSLavatoryTruck::OnArrived()
 {
     if (m_hasAnimLavaratory) {
         auto* anim = new GSAnimBFLOT(m_simObjectID);
-        anim->AddFrameSet(50, 51, 30.0, 0, 1755, 30, 0, 1942, 30);
+        anim->AddFrameSet({ 50, 51, 30.0 }, { 0, 1755, 30 }, { 0, 1942, 30 });
         RegisterAnim(anim);
     }
 

@@ -65,6 +65,7 @@ void GSAircraftTrackerThread::OnConnect()
     GSAircraft::InitDatums(*this);
     GSSimObj::InitDatums(*this);
     InvokeMapClientEvent(GSDefinitions::GSDefID_Jetway, "TOGGLE_JETWAY");
+    InvokeMapClientEvent(GSDefinitions::GSDefID_BeaconLights, "BEACON_LIGHTS_SET");
     m_lastScanTime = std::chrono::steady_clock::now() - 10s;
 }
 
@@ -377,6 +378,8 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
         
         auto requestId = m_simHandle.NextRequestID();
         auto aiRC = m_simHandle.InvokeRequest(requestId, SimConnect_AIReleaseControl, msg->dwObjectID, requestId);
+        auto beaconRC = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_BeaconLights, 0,
+            SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
 
         std::this_thread::sleep_for(100ms);
 
@@ -387,9 +390,9 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
         auto simRC = m_simHandle.Invoke(SimConnect_SetDataOnSimObject, GSDefinitions::GSDefID::GSDefID_Position, msg->dwObjectID, 0, 1,
             static_cast<DWORD>(sizeof(m_pos)), &m_pos);
         
-        if (!simRC1.isOK() || !simRC2.isOK() || !simRC.isOK() || !aiRC.isOK()) {
+        if (!simRC1.isOK() || !simRC2.isOK() || !simRC.isOK() || !aiRC.isOK() || !beaconRC.isOK()) {
             GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Failed call Freeze: ") << 
-                simRC1.rc << "," << simRC2.rc << "," << simRC.rc;
+                simRC1.rc << "," << simRC2.rc << "," << simRC.rc << "," << beaconRC.rc;
         }
 
         std::this_thread::sleep_for(100ms);

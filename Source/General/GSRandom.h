@@ -20,6 +20,11 @@ public:
         std::uniform_int_distribution<std::size_t> distribution(from, to);
         return distribution(Engine());
     }
+
+    inline static double RandDouble(double from, double to) {
+        std::uniform_real_distribution<double> distribution(from, to);
+        return distribution(Engine());
+    }
 };
 
 }

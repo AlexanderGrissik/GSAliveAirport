@@ -17,10 +17,10 @@ void GSAnimBFLO::InitDatums(GSSimConnect& handler)
     handler.InvokeAddDatums(GSDatums_AnimWagonBFLO, GSDefinitions::GSDefID::GSDefID_AnimWagonBFLO);
 }
 
-void GSAnimBFLO::AddFrameSet(float startFrameB, float endFrameB, float fpsB, float startFrameF, float endFrameF, float fpsF)
+void GSAnimBFLO::AddFrameSet(const FrameRangeInfo& infoB, const FrameRangeInfo& infoF)
 {
-    m_BLO = { startFrameB, endFrameB, fpsB, startFrameB, std::abs(endFrameB - startFrameB) };
-    m_FLO = { startFrameF, endFrameF, fpsF, startFrameF, std::abs(endFrameF - startFrameF) };
+    m_BLO = infoB;
+    m_FLO = infoF;
 }
 
 void GSAnimBFLO::Animate(GSSimConnect& handler, float elapsedMilli)

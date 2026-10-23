@@ -14,8 +14,8 @@ bool GSWingmans::OnCreated()
 {
     Freeze();
 
-    auto* anim = new GSAnimSingle(m_simObjectID);
-    anim->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 230, 267, 30.0);
+    auto* anim = new GSAnimSingle(m_simObjectID, GSDefinitions::GSDefID_AnimVelocBodyY);
+    anim->AddFrameSet({ 230, 267, 30.0 });
     anim->SetAIWaypoints(&m_aiWaypoints);
     RegisterAnim(anim);
     
@@ -56,8 +56,8 @@ bool GSWingmans::PreSpawn()
         ptrWalker2->SetPosition({ halfWing - 6, -halfWing / 2 });
         ptrWalker2->PreSpawn();
 
-        auto* animWorker2 = new GSAnimSingle(0);
-        animWorker2->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 230, 267, 30.0);
+        auto* animWorker2 = new GSAnimSingle(0, GSDefinitions::GSDefID_AnimVelocBodyY);
+        animWorker2->AddFrameSet({ 230, 267, 30.0 });
         ptrWalker2->SetAnimObj(animWorker2);
 
         const auto wp21 = GSGeography::RelativePosition(
@@ -73,8 +73,8 @@ bool GSWingmans::PreSpawn()
         ptrWalker3->SetPosition({ -halfWing + 6, -halfWing / 2 });
         ptrWalker3->PreSpawn();
 
-        auto* animWorker3 = new GSAnimSingle(0);
-        animWorker3->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 230, 267, 30.0);
+        auto* animWorker3 = new GSAnimSingle(0, GSDefinitions::GSDefID_AnimVelocBodyY);
+        animWorker3->AddFrameSet({ 230, 267, 30.0 });
         ptrWalker3->SetAnimObj(animWorker3);
 
         const auto wp31 = GSGeography::RelativePosition(
@@ -92,7 +92,7 @@ bool GSWingmans::PreSpawn()
 void GSWingmans::BuildWalkPath(const GSCoord& wp1, const GSCoord& wp2, GSSimObj& simObj)
 {
     GSCoord center = { simObj.GetInitPos().Longitude, simObj.GetInitPos().Latitude };
-    static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
+    static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND;
     float alt = static_cast<float>(simObj.GetInitPos().Altitude);
     float speedKTs = 2.2f;
     simObj.AddWaypoint(center, alt, speedKTs, 0.0, flags);

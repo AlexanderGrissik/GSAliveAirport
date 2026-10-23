@@ -19,12 +19,14 @@ public:
     };
     #pragma pack(pop)
 
-    GSAnimSingle(SIMCONNECT_OBJECT_ID objID) : GSAnimationObject(objID) {}
+    GSAnimSingle(SIMCONNECT_OBJECT_ID objID, GSDefinitions::GSDefID defID):
+        GSAnimationObject(objID), m_defID(defID) {}
 
     static void InitDatums(GSSimConnect& handler);
 
     void Animate(GSSimConnect& handler, float elapsedMilli) override;
-    void AddFrameSet(GSDefinitions::GSDefID defID, float startFrame, float endFrame, float fps);
+    void OnNextWayPoint(std::size_t idx) override { VD(idx); }
+    void AddFrameSet(const FrameRangeInfo& info);
 
 private:
 

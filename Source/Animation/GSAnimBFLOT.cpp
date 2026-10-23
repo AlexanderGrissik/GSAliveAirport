@@ -19,12 +19,11 @@ void GSAnimBFLOT::InitDatums(GSSimConnect& handler)
 }
 
 void GSAnimBFLOT::AddFrameSet(
-    float startFrameB, float endFrameB, float fpsB, float startFrameF, float endFrameF, float fpsF,
-    float startFrameT, float endFrameT, float fpsT)
+    const FrameRangeInfo& infoB, const FrameRangeInfo& infoF, const FrameRangeInfo& infoT)
 {
-    m_BLO = { startFrameB, endFrameB, fpsB, startFrameB, std::abs(endFrameB - startFrameB) };
-    m_FLO = { startFrameF, endFrameF, fpsF, startFrameF, std::abs(endFrameF - startFrameF) };
-    m_TDW = { startFrameT, endFrameT, fpsT, startFrameT, std::abs(endFrameT - startFrameT) };
+    m_BLO = infoB;
+    m_FLO = infoF;
+    m_TDW = infoT;
 }
 
 void GSAnimBFLOT::Animate(GSSimConnect& handler, float elapsedMilli)

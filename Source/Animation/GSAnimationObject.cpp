@@ -32,6 +32,7 @@ void GSAnimationObject::SetAIWaypoints(const std::vector<SIMCONNECT_DATA_WAYPOIN
     m_aiWaypoints = aiWaypoints;
     if (m_aiWaypoints && m_aiWaypoints->size() > 1) {
         m_currLocation = { (*m_aiWaypoints)[0].Longitude, (*m_aiWaypoints)[0].Latitude };
+        m_currAlt = static_cast<float>((*m_aiWaypoints)[0].Altitude);
     } else {
         m_aiWaypoints = nullptr;
     }
@@ -53,14 +54,24 @@ void GSAnimationObject::Move(GSSimConnect& handler, float elapsedMilli)
     const double moveMeters = waypoint.ktsSpeed * GSGeography::KnotsToMetersSecond * (static_cast<double>(elapsedMilli) / 1000.0);
 
     if (tgtDist <= ArrivalRadiusMeters || moveMeters >= tgtDist) {
-        m_currLocation = target;
         m_tgtWaypoint = (m_tgtWaypoint + 1) % waypoints.size();
+        if (m_tgtWaypoint == 0 && m_uncycle) {
+            const auto& start = waypoints[0];
+            m_currLocation = { start.Longitude, start.Latitude };
+            m_currAlt = static_cast<float>(start.Altitude);
+            m_tgtWaypoint = 1;
+        } else {
+            m_currLocation = target;
+            m_currAlt = static_cast<float>(waypoint.Altitude);
+        }
+        OnNextWayPoint(m_tgtWaypoint);
     } else {
+        m_currAlt += static_cast<float>(waypoint.Altitude - m_currAlt) * static_cast<float>(moveMeters / tgtDist);
         m_currLocation = GSGeography::RelativePosition(headingToTarget, m_currLocation, moveMeters, 0.0);
     }
 
     SIMCONNECT_DATA_INITPOSITION position { 
-        m_currLocation.Lat(), m_currLocation.Long(), waypoint.Altitude, 0, 0,
+        m_currLocation.Lat(), m_currLocation.Long(), m_currAlt, 0, 0,
         GSGeography::NormDeg(headingToTarget + ((waypoint.Flags & SIMCONNECT_WAYPOINT_REVERSE) ? 180.0 : 0.0)),
         (waypoint.Flags & SIMCONNECT_WAYPOINT_ON_GROUND) ? 1U : 0U, 0
     };

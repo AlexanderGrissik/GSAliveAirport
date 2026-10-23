@@ -15,8 +15,8 @@ bool GSMarshaller::OnCreated()
     Freeze();
 
     if (m_hasAnimMarshall) {
-        auto* anim = new GSAnimSingle(m_simObjectID);
-        anim->AddFrameSet(GSDefinitions::GSDefID_AnimVelocBodyY, 0, 2179, 30.0);
+        auto* anim = new GSAnimSingle(m_simObjectID, GSDefinitions::GSDefID_AnimVelocBodyY);
+        anim->AddFrameSet({ 0, 2179, 30.0 });
         RegisterAnim(anim);
     }
 

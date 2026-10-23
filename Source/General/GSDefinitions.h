@@ -26,7 +26,8 @@ public:
         GSDefID_Freeze_Attitude,
         GSDefID_OpenDoors,
         GSDefID_CloseDoors,
-        GSDefID_Jetway
+        GSDefID_Jetway,
+        GSDefID_BeaconLights
     };
 
     enum GSDefID : SIMCONNECT_DATA_DEFINITION_ID {

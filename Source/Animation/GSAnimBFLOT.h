@@ -26,9 +26,8 @@ public:
     static void InitDatums(GSSimConnect& handler);
 
     void Animate(GSSimConnect& handler, float elapsedMilli) override;
-    void AddFrameSet(
-        float startFrameB, float endFrameB, float fpsB, float startFrameF, float endFrameF, float fpsF,
-        float startFrameT, float endFrameT, float fpsT);
+    void OnNextWayPoint(std::size_t idx) override { VD(idx); }
+    void AddFrameSet(const FrameRangeInfo& infoB, const FrameRangeInfo& infoF, const FrameRangeInfo& infoT);
 
 private:
 

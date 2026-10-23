@@ -22,10 +22,9 @@ void GSAnimSingle::InitDatums(GSSimConnect& handler)
     handler.InvokeAddDatums(GSDatums_AnimWagonBLO, GSDefinitions::GSDefID::GSDefID_AnimWagonBLO);
 }
 
-void GSAnimSingle::AddFrameSet(GSDefinitions::GSDefID defID, float startFrame, float endFrame, float fps)
+void GSAnimSingle::AddFrameSet(const FrameRangeInfo& info)
 {
-    m_frame = { startFrame, endFrame, fps, startFrame, std::abs(endFrame - startFrame) };
-    m_defID = defID;
+    m_frame = info;
 }
 
 void GSAnimSingle::Animate(GSSimConnect& handler, float elapsedMilli)

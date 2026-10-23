@@ -31,6 +31,7 @@
     <ClInclude Include="Source\Animation\GSAnimationThread.h" />
     <ClInclude Include="Source\Animation\GSAnimBFLO.h" />
     <ClInclude Include="Source\Animation\GSAnimBFLOT.h" />
+    <ClInclude Include="Source\Animation\GSAnimMulti.h" />
     <ClInclude Include="Source\Animation\GSAnimSingle.h" />
     <ClInclude Include="Source\Commands\GSCmdAircraftUpdate.h" />
     <ClInclude Include="Source\Commands\GSCmdAirport.h" />
@@ -71,6 +72,7 @@
     <ClInclude Include="Source\SimObjects\GSLinerCones.h" />
     <ClInclude Include="Source\SimObjects\GSMarshaller.h" />
     <ClInclude Include="Source\SimObjects\GSMovementThread.h" />
+    <ClInclude Include="Source\SimObjects\GSPassenger.h" />
     <ClInclude Include="Source\SimObjects\GSPushback.h" />
     <ClInclude Include="Source\SimObjects\GSSimObj.h" />
     <ClInclude Include="Source\SimObjects\GSSmallCones.h" />
@@ -84,6 +86,7 @@
     <ClCompile Include="Source\Animation\GSAnimationThread.cpp" />
     <ClCompile Include="Source\Animation\GSAnimBFLO.cpp" />
     <ClCompile Include="Source\Animation\GSAnimBFLOT.cpp" />
+    <ClCompile Include="Source\Animation\GSAnimMulti.cpp" />
     <ClCompile Include="Source\Animation\GSAnimSingle.cpp" />
     <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp" />
     <ClCompile Include="Source\General\GSAirport.cpp" />
@@ -108,6 +111,7 @@
     <ClCompile Include="Source\SimObjects\GSLinerCones.cpp" />
     <ClCompile Include="Source\SimObjects\GSMarshaller.cpp" />
     <ClCompile Include="Source\SimObjects\GSMovementThread.cpp" />
+    <ClCompile Include="Source\SimObjects\GSPassenger.cpp" />
     <ClCompile Include="Source\SimObjects\GSPushback.cpp" />
     <ClCompile Include="Source\SimObjects\GSSimObj.cpp" />
     <ClCompile Include="Source\SimObjects\GSSmallCones.cpp" />

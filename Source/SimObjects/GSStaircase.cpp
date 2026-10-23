@@ -4,8 +4,9 @@
 #include "GSStaircase.h"
 #include "../General/GSGeography.h"
 #include "../General/GSCatalog.h"
-#include "GSStatic.h"
+#include "GSPassenger.h"
 #include <algorithm>
+#include <iterator>
 
 namespace NS_GSAliveAirport
 {
@@ -36,6 +37,7 @@ bool GSStaircase::OnCreated()
 
 void GSStaircase::OnArrived()
 {
+    static const size_t PASSANGER_COUNT = 5U;
     m_simHandle.PostReqIdentCommand(
         new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
@@ -43,30 +45,15 @@ void GSStaircase::OnArrived()
 
     Freeze();
 
-    /*if (m_ext) {
-        auto* anim = new GSAnimBFLO(m_simObjectID);
-        anim->AddFrameSet(4213, 0, 30.0, 650, 0, 30.0);
-        RegisterAnim(anim);
+    float totDoorAltFeet = m_aircraft.GetRawData().groundAltitudeFeet + m_doorPosElev;
+    float stairBaseHeading = static_cast<float>(GSGeography::NormDeg(m_initPos.Heading + 180.0));
 
-        auto ptrWorker = new GSStatic(m_simHandle, m_aircraft, *this);
-        ptrWorker->SetTitle(GSCatalog::GetInstance().GetBuggageWorkerExt());
-        ptrWorker->SetPosRel(GSStatic::REL_ABSOLUTE);
-        ptrWorker->SetPosition({ m_initPos.Longitude, m_initPos.Latitude });
-        ptrWorker->SetHeading(m_initPos.Heading);
-        ptrWorker->GetInitPos().Altitude = m_initPos.Altitude;
-        ptrWorker->GetInitPos().OnGround = 1;
-        ptrWorker->PreSpawn();
-        
-        auto* animWorker = new GSAnimSingle(0);
-        animWorker->AddFrameSet(GSDefinitions::GSDefID_AnimWagonBLO, 4213, 0, 30.0);
-        ptrWorker->SetAnimObj(animWorker);
-
-        m_attached.emplace_back(ptrWorker);
-    }
-
-    auto ptrTrain = new GSBuggageTrain(m_simHandle, m_aircraft, *this, *this);
-    ptrTrain->PreSpawn();
-    m_attached.emplace_back(ptrTrain);*/
+    std::generate_n(std::back_inserter(m_attached), PASSANGER_COUNT, [this, stairBaseHeading, totDoorAltFeet] {
+        auto passenger = std::make_unique<GSPassenger>(
+            m_simHandle, m_aircraft, *this, m_stairBasePos, m_stairTopPos, m_doorPos, stairBaseHeading, totDoorAltFeet, true);
+        passenger->PreSpawn();
+        return passenger;
+    });
         
     ContinueSpawn();
 }
@@ -90,11 +77,10 @@ bool GSStaircase::PreSpawn()
 
     m_doorIdx = static_cast<DWORD>(paxDoor->second);
 
-    m_title = GSCatalog::GetInstance().GetStaircaseExt();
-    if (m_title.empty()) {
+    //m_title = GSCatalog::GetInstance().GetStaircaseExt();
+    //if (m_title.empty()) {
         m_title = "ASO_Boarding_Stairs";
-        m_ext = false;
-    }
+    //}
 
     m_initPos.Airspeed = 0;
     m_initPos.Bank = 0.0;
@@ -103,9 +89,9 @@ bool GSStaircase::PreSpawn()
     m_initPos.Heading = GSGeography::NormDeg(airData.headingDegrees + paxDoor->first.get().headingDegrees + 180.0);
     m_initPos.Altitude = airData.groundAltitudeFeet;
 
-    const auto doorPos = GSGeography::RelativePosition(airData.headingDegrees, m_aircraft.GetLongLat(), paxDoor->first.get().posZMeter, paxDoor->first.get().posXMeter);
-    m_initPos.Longitude = doorPos.Long();
-    m_initPos.Latitude = doorPos.Lat();
+    m_doorPos = GSGeography::RelativePosition(airData.headingDegrees, m_aircraft.GetLongLat(), paxDoor->first.get().posZMeter, paxDoor->first.get().posXMeter);
+    m_initPos.Longitude = m_doorPos.Long();
+    m_initPos.Latitude = m_doorPos.Lat();
 
     m_doorPosElev = airData.alt_abv_grnd + paxDoor->first.get().posYFeet; 
 
@@ -134,6 +120,12 @@ void GSStaircase::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry
         m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -extZMeters - 0.1, 0.0);
     m_initPos.Longitude = stairPos.Long();
     m_initPos.Latitude  = stairPos.Lat();
+
+    m_stairBasePos = GSGeography::RelativePosition(
+        m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -5.1, 0.0);
+    
+    m_stairTopPos = GSGeography::RelativePosition(
+        m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, extZMeters - 3.2, 0.0);
 
     FinalizeRoute();
 }
