@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <list>
 #include <stop_token>
 #include <unordered_map>
 #include <utility>
@@ -54,6 +55,7 @@ public:
     void FlushPendingRequestsWithException();
     void PostCommand(CmdPtr& cmd) { m_commands.Push(cmd); }
     void PostReqCommand(GSRequest* req);
+    void PostReqCommandDeferred(GSRequest* req, GSTimePoint execTime);
     void PostReqIdentCommand(GSRequest* req, GSCmdReqIdent::Callable&& clb);
     DWORD NextRequestID() { return m_nextRequestId++; }
 
@@ -89,6 +91,7 @@ private:
     bool m_simStarted = false;
     bool m_reportedWaiting = false;
     GSCmdQueue m_commands;
+    std::list<CmdPtr> m_deferred;
 
     using GSReqRef = std::reference_wrapper<GSRequest>;
     std::unordered_map<GSDefinitions::SendResultIDs, GSReqRef, decltype(&HashReqID), decltype(&EqualReqID)> m_reqIDToPtr{ 1, &HashReqID, &EqualReqID };

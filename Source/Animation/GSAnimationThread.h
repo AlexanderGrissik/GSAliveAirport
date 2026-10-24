@@ -37,7 +37,7 @@ private:
 	void DoAnimation();
 
 	std::unordered_map<SIMCONNECT_OBJECT_ID, std::unique_ptr<GSAnimationObject>> m_animObjs;
-	std::chrono::steady_clock::time_point m_lastAnimTime{};
+	GSTimePoint m_lastAnimTime{};
 	std::jthread m_thread;
 };
 

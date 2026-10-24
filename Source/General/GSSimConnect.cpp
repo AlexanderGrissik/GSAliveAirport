@@ -258,11 +258,21 @@ void GSSimConnect::InvokeMapClientEvent(SIMCONNECT_CLIENT_EVENT_ID EventID, cons
 
 void GSSimConnect::RunCommands()
 {
+    while (!m_deferred.empty() && m_commands.TryPush(m_deferred.front())) {
+        m_deferred.pop_front();
+    }
+
+    const auto currTime = std::chrono::steady_clock::now();
     bool cont = true;
     do {
-        
         auto opt = m_commands.TryPop();
         if (opt.has_value()) {
+            const auto& execTime = (*opt)->GetExecTime();
+            if (execTime.has_value() && *execTime > currTime) {
+                m_deferred.push_back(std::move(*opt));
+                continue;
+            }
+
             m_lastLoopMsg = true;
             if (opt->get()->GetCmdID() == GSDefinitions::CMD_REQ_PROCESS)
                 HandleCmdReqProcess(static_cast<GSCmdReq&>(*opt->get()));
@@ -331,6 +341,13 @@ void GSSimConnect::PostReqCommand(GSRequest* req)
 {
     GSCmdReq::ReqPtr reqPtr(req);
     CmdPtr cmd(new GSCmdReq(GSDefinitions::CMD_REQ_PROCESS, reqPtr));
+    PostCommand(cmd);
+}
+
+void GSSimConnect::PostReqCommandDeferred(GSRequest* req, GSTimePoint execTime)
+{
+    GSCmdReq::ReqPtr reqPtr(req);
+    CmdPtr cmd(new GSCmdReq(GSDefinitions::CMD_REQ_PROCESS, reqPtr, execTime));
     PostCommand(cmd);
 }
 

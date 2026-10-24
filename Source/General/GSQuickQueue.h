@@ -19,22 +19,31 @@ class GSQuickQueue
 {
     static_assert(CAP >= 2, "GSQuickQueue CAP must be at least 2");
     static_assert((CAP & (CAP - 1)) == 0, "GSQuickQueue CAP must be power of two");
+    static_assert(std::is_nothrow_move_constructible_v<T>);
 
-    using storage_type = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
-
-    class ProducerGuard final
-    {
-    public:
-        ProducerGuard(std::atomic_flag& lock) : m_lock(lock) {
-            while (m_lock.test_and_set(std::memory_order_acquire)) {
-                _mm_pause();
-            }
+    bool PushInner(T& val, bool wait) {
+        while (m_producerLock.test_and_set(std::memory_order_acquire)) { 
+            if (!wait) { return false; }
+            _mm_pause(); 
         }
 
-        ~ProducerGuard() { m_lock.clear(std::memory_order_release); }
-    private:
-        std::atomic_flag& m_lock;
-    };
+        size_t pushPos = m_push_pos.load(std::memory_order_relaxed);
+        while (pushPos - m_pop_pos.load(std::memory_order_acquire) >= CAP) {
+            if (!wait) {
+                m_producerLock.clear(std::memory_order_release);
+                return false;
+            }
+
+            std::this_thread::sleep_for(s_longWait);
+        }
+
+        ::new (static_cast<void*>(&m_array[ItemIdex(pushPos)])) T(std::move(val));
+
+        m_push_pos.store(pushPos + 1, std::memory_order_release);
+
+        m_producerLock.clear(std::memory_order_release);
+        return true;
+    }
 
     static constexpr size_t s_cacheLineSize = 64;
     static constexpr auto s_longWait = std::chrono::milliseconds(1);
@@ -42,6 +51,7 @@ class GSQuickQueue
 
     T* valPos(size_t pos) { return std::launder(reinterpret_cast<T*>(&m_array[ItemIdex(pos)])); }
 
+    using storage_type = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
     alignas(s_cacheLineSize) std::array<storage_type, CAP> m_array{};
     std::atomic_size_t m_push_pos{ 0 };
     std::atomic_size_t m_pop_pos{ 0 };
@@ -62,18 +72,8 @@ public:
         }
     }
 
-    void Push(T& val) {
-        ProducerGuard grd(m_producerLock);
-
-        size_t pushPos = m_push_pos.load(std::memory_order_relaxed);
-        while (pushPos - m_pop_pos.load(std::memory_order_acquire) >= CAP) {
-            std::this_thread::sleep_for(s_longWait);
-        }
-
-        ::new (static_cast<void*>(&m_array[ItemIdex(pushPos)])) T(std::move(val));
-
-        m_push_pos.store(pushPos + 1, std::memory_order_release);
-    }
+    void Push(T& val) { PushInner(val, true); }
+    bool TryPush(T& val) { return PushInner(val, false); }
 
     T Pop() {
         size_t popPos = m_pop_pos.load(std::memory_order_relaxed);

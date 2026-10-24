@@ -6,6 +6,8 @@
 #include "../General/GSCatalog.h"
 #include "../General/GSRandom.h"
 #include "../Animation/GSAnimMulti.h"
+#include <cstddef>
+#include <iterator>
 
 namespace NS_GSAliveAirport
 {
@@ -91,9 +93,10 @@ bool GSPassenger::PreSpawn()
     m_title = catalog.GetPassengerExt();
     if (m_title.empty()) {
         m_dynamic = false;
-        m_title = catalog.GetTarmacHuman(); 
+        m_title = catalog.GetTarmacHuman();
     } else if (!s_ExtPassengerFrames.contains(m_title)) {
-        m_title = "FSDT_Passenger_CASUAL_M_0022";
+        const auto index = GSRandom::RandSizeT(0, s_ExtPassengerFrames.size() - 1);
+        m_title = std::next(s_ExtPassengerFrames.begin(), static_cast<std::ptrdiff_t>(index))->first;
     }
 
     auto halfWing = airData.wingSpanMeters / 5.0;

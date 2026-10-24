@@ -16,6 +16,7 @@ public:
     using ReqPtr = std::unique_ptr<GSRequest>;
 
     GSCmdReq(int cmd, ReqPtr& req): GSCommand(cmd), m_Req(std::move(req)) {}
+    GSCmdReq(int cmd, ReqPtr& req, GSTimePoint execTime): GSCommand(cmd, execTime), m_Req(std::move(req)) {}
     virtual ~GSCmdReq() {}
 
     ReqPtr ReleaseReq() { return std::move(m_Req); }

@@ -62,7 +62,7 @@ public:
     GSDefinitions::SendResult m_rc{};
     bool m_scanInProgress = false;
     GSSimConnect& m_singleObserver;
-    std::chrono::steady_clock::time_point m_lastScanTime{};
+    GSTimePoint m_lastScanTime{};
     std::jthread m_thread;
     std::shared_ptr<GSAircraft> m_userAircraft;
     std::shared_ptr<GSAirport> m_currAirport;

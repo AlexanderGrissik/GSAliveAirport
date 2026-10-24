@@ -29,7 +29,7 @@ public:
 
 	struct TrackState { 
 		GSSimObj* m_simObj;
-		std::chrono::steady_clock::time_point m_lastPosCheckTime;
+		GSTimePoint m_lastPosCheckTime;
 		double m_lastDistToDest;
 	};
 
@@ -58,7 +58,7 @@ private:
 
 	std::unordered_map<SIMCONNECT_OBJECT_ID, TrackState> m_trackObjs;
 	std::unordered_map<SIMCONNECT_OBJECT_ID, GSSimObj*> m_pendRemObjs;
-	std::chrono::steady_clock::time_point m_lastTrackTime{};
+	GSTimePoint m_lastTrackTime{};
 	std::jthread m_thread;
 	size_t m_inflightReqs = 0U;
 

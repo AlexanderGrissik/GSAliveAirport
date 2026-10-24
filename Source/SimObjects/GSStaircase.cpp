@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSStaircase.h"
+#include <chrono>
 #include "../General/GSGeography.h"
 #include "../General/GSCatalog.h"
 #include "GSPassenger.h"
@@ -37,7 +38,9 @@ bool GSStaircase::OnCreated()
 
 void GSStaircase::OnArrived()
 {
-    static const size_t PASSANGER_COUNT = 5U;
+    static const size_t PASSANGER_COUNT = 8U;
+    static constexpr std::chrono::seconds DELTA_SPAWN{3};
+
     m_simHandle.PostReqIdentCommand(
         new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
@@ -48,10 +51,13 @@ void GSStaircase::OnArrived()
     float totDoorAltFeet = m_aircraft.GetRawData().groundAltitudeFeet + m_doorPosElev;
     float stairBaseHeading = static_cast<float>(GSGeography::NormDeg(m_initPos.Heading + 180.0));
 
-    std::generate_n(std::back_inserter(m_attached), PASSANGER_COUNT, [this, stairBaseHeading, totDoorAltFeet] {
+    GSTimePoint incrDelta = std::chrono::steady_clock::now();
+    std::generate_n(std::back_inserter(m_attached), PASSANGER_COUNT, [this, stairBaseHeading, totDoorAltFeet, &incrDelta] {
         auto passenger = std::make_unique<GSPassenger>(
             m_simHandle, m_aircraft, *this, m_stairBasePos, m_stairTopPos, m_doorPos, stairBaseHeading, totDoorAltFeet, true);
+        passenger->SetDeferredSpawn(incrDelta);
         passenger->PreSpawn();
+        incrDelta += DELTA_SPAWN;
         return passenger;
     });
         
@@ -77,10 +83,7 @@ bool GSStaircase::PreSpawn()
 
     m_doorIdx = static_cast<DWORD>(paxDoor->second);
 
-    //m_title = GSCatalog::GetInstance().GetStaircaseExt();
-    //if (m_title.empty()) {
-        m_title = "ASO_Boarding_Stairs";
-    //}
+    m_title = "ASO_Boarding_Stairs";
 
     m_initPos.Airspeed = 0;
     m_initPos.Bank = 0.0;
