@@ -76,7 +76,7 @@ void GSStaircase::TrySpawnPassengers()
     GSTimePoint incrDelta = std::chrono::steady_clock::now();
     std::generate_n(std::back_inserter(m_attached), PASSANGER_COUNT, [this, stairBaseHeading, totDoorAltFeet, &incrDelta] {
         auto passenger = std::make_unique<GSPassenger>(
-            m_simHandle, m_aircraft, *this, m_stairBasePos, m_stairTopPos, m_doorPos, stairBaseHeading, totDoorAltFeet, true);
+            m_simHandle, m_aircraft, *this, m_stairBasePos, m_stairTopPos, m_doorPos, stairBaseHeading, totDoorAltFeet, m_departing);
         passenger->SetDeferredSpawn(incrDelta);
         passenger->PreSpawn();
         incrDelta += DELTA_SPAWN;

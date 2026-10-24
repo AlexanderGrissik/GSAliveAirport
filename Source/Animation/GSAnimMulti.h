@@ -24,7 +24,7 @@ public:
     #pragma pack(pop)
 
     GSAnimMulti(SIMCONNECT_OBJECT_ID objID, bool uncycle, GSDefinitions::GSDefID defID):
-        GSAnimationObject(objID, uncycle), m_defID(defID) {}
+        GSAnimationObject(objID, uncycle), m_defID(defID), m_activeFrameRange(uncycle ? 1 : 0) {}
 
     void Animate(GSSimConnect& handler, float elapsedMilli) override;
     void OnNextWayPoint(std::size_t idx) override;
@@ -36,13 +36,17 @@ private:
 
     GSDefinitions::GSDefID m_defID;
     std::vector<GSAnimationObject::FrameRange> m_frameRanges;
-    std::size_t m_activeFrameRange = 0;
+    std::size_t m_activeFrameRange;
 };
 
 template <size_t N>
 void GSAnimMulti::AddFrameSet(const std::array<FrameRangeInfo, N>& infoArr, bool order)
 {
-    if (order) {
+    if (m_uncycle) {
+        m_frameRanges.emplace_back(); // Dummy FrameSeet for uncycled mode.
+    }
+
+    if (order) {  
         for (const auto& info : infoArr)
             m_frameRanges.emplace_back(info);
     } else {

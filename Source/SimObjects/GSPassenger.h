@@ -26,9 +26,9 @@ public:
 
     bool PreSpawn() override;
 
-    // Per passenger model title: [0] = walk.0 (longWalk) range, [1] = duplicate of [0],
-    // [2] = walk.3 (stoop_insideAircraft / climb) range, [3] = duplicate of [0]. All frames @ 30 fps.
-    static const std::unordered_map<std::string, std::array<GSAnimationObject::FrameRangeInfo, 4>> s_ExtPassengerFrames;
+    // Per passenger model title: [0] = walk.0 (longWalk) range,
+    // [1] = walk.3 (stoop_insideAircraft / climb) range, [2] = walk.0 (longWalk) range. All frames @ 30 fps.
+    static const std::unordered_map<std::string, std::array<GSAnimationObject::FrameRangeInfo, 3>> s_ExtPassengerFrames;
 
 private:
 

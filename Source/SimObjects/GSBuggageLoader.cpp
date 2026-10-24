@@ -47,7 +47,11 @@ void GSBuggageLoader::OnArrived()
 
     if (m_ext) {
         auto* anim = new GSAnimBFLO(m_simObjectID);
-        anim->AddFrameSet({ 4213, 0, 30.0 }, { 650, 0, 30.0 });
+        if (m_departing) {
+            anim->AddFrameSet({ 4213, 0, 30.0 }, { 650, 0, 30.0 });
+        } else {
+            anim->AddFrameSet({ 0, 4213, 30.0 }, { 0, 650, 30.0 });
+        }
         RegisterAnim(anim);
 
         auto ptrWorker = new GSStatic(m_simHandle, m_aircraft, *this);
@@ -60,7 +64,11 @@ void GSBuggageLoader::OnArrived()
         ptrWorker->PreSpawn();
         
         auto* animWorker = new GSAnimSingle(0, GSDefinitions::GSDefID_AnimWagonBLO);
-        animWorker->AddFrameSet({ 4213, 0, 30.0 });
+        if (m_departing) {
+            animWorker->AddFrameSet({ 4213, 0, 30.0 });
+        } else {
+            animWorker->AddFrameSet({ 0, 4213, 30.0 });
+        }
         ptrWorker->SetAnimObj(animWorker);
 
         m_attached.emplace_back(ptrWorker);
