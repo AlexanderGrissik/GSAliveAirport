@@ -52,6 +52,7 @@ std::string GSAliveUIAPI::CStr(const char *value)
 std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
 {
     const GSAircraft::AircraftWireData &d = ac.GetRawData();
+    const auto* parking = ac.GetParking();
     std::ostringstream stream;
     stream << "{\"op\":\"aircraft.add\",\"id\":" << ac.GetObjID();
     stream << ",\"atc\":" << JsonString(CStr(d.atcId.data()))
@@ -70,7 +71,8 @@ std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
         << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
     stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
         << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround
-        << ",\"departing\":" << (ac.IsDeparting() ? "true" : "false");
+        << ",\"departing\":" << (ac.IsDeparting() ? "true" : "false")
+        << ",\"jetway\":" << (parking != nullptr && parking->m_hasJetway ? "true" : "false");
     stream << ",\"wingSpanM\":" << d.wingSpanMeters << ",\"engines\":" << d.numberOfEngines
         << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait;
     stream << ",\"pushX\":" << d.pushbackContactXMeters << ",\"pushZ\":" << d.pushbackContactZMeters

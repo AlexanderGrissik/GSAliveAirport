@@ -141,6 +141,7 @@ void GSAircraftTrackerThread::SpawnTestAircrafts()
     PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 2));
     PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 3));
     PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 4));
+    PostReqCommand(new GSReqSpawnAircraft(*this, *m_currAirport, 5));
 }
 
 GSRequest::SendResult GSAircraftTrackerThread::GSReqScan::Process()
@@ -357,6 +358,11 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
         title = "A330-300 (RR)";
         m_pos.Latitude = posUser.Lat() + 0.001;
         m_pos.Longitude = posUser.Long() - 0.001;
+    } else if (m_type == 5) {
+        title = "737 Max 8 Passengers";
+        m_pos.Latitude = posUser.Lat() - 0.001;
+        m_pos.Longitude = posUser.Long() + 0.001;
+        m_pos.Airspeed = 5;
     }
 
     auto id = m_simHandle.NextRequestID();
@@ -382,6 +388,7 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
 
         std::this_thread::sleep_for(100ms);
+        m_pos.Airspeed = 0;
 
         auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_LongLat, 1,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);

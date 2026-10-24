@@ -192,8 +192,8 @@ void GSSpawnerThread::NewAircraft(const GSAircraft& aircraft)
         return;
     }
 
-    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(aircraft));
-    CheckForUnspawned(*itr.first->second, aircraft);
+    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(grnd->Aircraft()));
+    CheckForUnspawned(*grnd, aircraft);
 }
 
 void GSSpawnerThread::ModAircraft(const GSAircraft& aircraft)

@@ -265,7 +265,7 @@ function buildBody(rec) {
   [["Gnd speed (kt)", d.gndSpdKt], ["Latitude", d.lat], ["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Beacon Lights", onOff(d.beacon)],
    ["On Ground", yesNo(d.onGround)], ["Longitude", d.lon], ["Parking", d.parking], ["Nav Lights", onOff(d.nav)],
    ["Size", d.category], ["Altitude (ft)", d.altFt], ["State", d.state], ["Taxi Lights", onOff(d.taxi)],
-   ["Departing", yesNo(d.departing)], ["Ground alt (ft)", d.gndAltFt], ["Parking Brakes", onOff(d.parkBrake)], ["Pushback attached", d.pushbackAttached]]
+   ["Jetway", yesNo(d.jetway)], ["Ground alt (ft)", d.gndAltFt], ["Parking Brakes", onOff(d.parkBrake)], ["Pushback attached", d.pushbackAttached]]
     .forEach(([label, value]) => mainFields.appendChild(mainField(label, value)));
 
   const extra = document.createElement("div"); extra.className = "ac-extra";
@@ -315,8 +315,11 @@ function buildCard(rec) {
   const modelText = (d.title || "").trim();
   if (atcText) { const atc = document.createElement("span"); atc.className = "ac-name-atc"; atc.textContent = atcText; name.appendChild(atc); }
   if (modelText) { const model = document.createElement("span"); model.className = "ac-name-model"; model.textContent = modelText; name.appendChild(model); }
+  const flightState = document.createElement("span");
+  flightState.className = "ac-flight-state " + (d.departing ? "departing" : "arriving");
+  flightState.textContent = d.departing ? "Departing" : "Arriving";
   const svc = document.createElement("span"); svc.className = "ac-svc " + svcClass(rec.service); svc.textContent = rec.service === "none" ? "No Ground Services" : "Ground Services";
-  head.append(chev, idChip, name, svc);
+  head.append(chev, idChip, name, flightState, svc);
   card.append(head, buildBody(rec));
   head.addEventListener("click", () => { rec.collapsed = !rec.collapsed; card.classList.toggle("collapsed", rec.collapsed); });
   if (rec.collapsed) card.classList.add("collapsed");
