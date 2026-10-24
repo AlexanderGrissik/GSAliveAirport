@@ -120,6 +120,9 @@
     <ClInclude Include="Source\SimObjects\GSPassenger.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SimObjects\GSPaxBus.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClInclude Include="Source\SimObjects\GSPushback.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
@@ -252,6 +255,9 @@
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
     <ClCompile Include="Source\SimObjects\GSPassenger.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SimObjects\GSPaxBus.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
     <ClCompile Include="Source\SimObjects\GSPushback.cpp">

@@ -73,6 +73,7 @@
     <ClInclude Include="Source\SimObjects\GSMarshaller.h" />
     <ClInclude Include="Source\SimObjects\GSMovementThread.h" />
     <ClInclude Include="Source\SimObjects\GSPassenger.h" />
+    <ClInclude Include="Source\SimObjects\GSPaxBus.h" />
     <ClInclude Include="Source\SimObjects\GSPushback.h" />
     <ClInclude Include="Source\SimObjects\GSSimObj.h" />
     <ClInclude Include="Source\SimObjects\GSSmallCones.h" />
@@ -112,6 +113,7 @@
     <ClCompile Include="Source\SimObjects\GSMarshaller.cpp" />
     <ClCompile Include="Source\SimObjects\GSMovementThread.cpp" />
     <ClCompile Include="Source\SimObjects\GSPassenger.cpp" />
+    <ClCompile Include="Source\SimObjects\GSPaxBus.cpp" />
     <ClCompile Include="Source\SimObjects\GSPushback.cpp" />
     <ClCompile Include="Source\SimObjects\GSSimObj.cpp" />
     <ClCompile Include="Source\SimObjects\GSSmallCones.cpp" />

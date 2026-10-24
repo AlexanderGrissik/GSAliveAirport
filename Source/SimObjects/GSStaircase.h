@@ -44,6 +44,9 @@ private:
     bool OnCreated() override;
     void OnArrived() override;
     void OnDespawning() override;
+    void OnSpawned(bool ok, GSSimObj& obj) override;
+
+    void TrySpawnPassengers();
 
     GSCoord m_doorPos;
     GSCoord m_stairBasePos;
@@ -51,6 +54,9 @@ private:
     float m_doorPosElev = 0.0f;
     DWORD m_doorIdx = 0;
     bool m_front = false;
+    bool m_stairsArrived = false;
+    bool m_busArrived = false;
+    bool m_paxSpawned = false;
 
     class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {
     public:

@@ -94,6 +94,7 @@ protected:
     size_t m_childSpawned = 0;
     bool m_hasAnim = false;
     bool m_routePrepared = false;
+    bool m_spawnRequested = false;
 
     class GSReqCreate : public GSSimObjReq {
     public:

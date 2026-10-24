@@ -33,6 +33,11 @@ void GSSimObj::InitDatums(GSSimConnect& handler)
 
 void GSSimObj::Spawn()
 {
+    if (m_spawnRequested) {
+        return;
+    }
+
+    m_spawnRequested = true;
     auto* req = new GSReqCreate(m_simHandle, *this);
     if (m_deferredSpawn.has_value()) {
         m_simHandle.PostReqCommandDeferred(req, *m_deferredSpawn);

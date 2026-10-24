@@ -5,7 +5,9 @@
 #include <chrono>
 #include "../General/GSGeography.h"
 #include "../General/GSCatalog.h"
+#include "../General/GSRandom.h"
 #include "GSPassenger.h"
+#include "GSPaxBus.h"
 #include <algorithm>
 #include <iterator>
 
@@ -36,17 +38,37 @@ bool GSStaircase::OnCreated()
     return false;
 }
 
+void GSStaircase::OnSpawned(bool ok, GSSimObj& obj)
+{
+    if (m_paxSpawned) {
+        GSSimObj::OnSpawned(ok, obj);
+    } else {
+        ++m_childSpawned;
+        TrySpawnPassengers();
+    }
+}
+
 void GSStaircase::OnArrived()
 {
-    static const size_t PASSANGER_COUNT = 8U;
-    static constexpr std::chrono::seconds DELTA_SPAWN{3};
-
     m_simHandle.PostReqIdentCommand(
         new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_OpenDoors, ") << message->dwException; });
 
     Freeze();
+
+    m_stairsArrived = true;
+    TrySpawnPassengers();
+}
+
+void GSStaircase::TrySpawnPassengers()
+{
+    static const size_t PASSANGER_COUNT = 8U;
+    static constexpr std::chrono::seconds DELTA_SPAWN{3};
+
+    if (!m_stairsArrived || !m_busArrived || m_paxSpawned) {
+        return;
+    }
 
     float totDoorAltFeet = m_aircraft.GetRawData().groundAltitudeFeet + m_doorPosElev;
     float stairBaseHeading = static_cast<float>(GSGeography::NormDeg(m_initPos.Heading + 180.0));
@@ -61,6 +83,7 @@ void GSStaircase::OnArrived()
         return passenger;
     });
         
+    m_paxSpawned = true;
     ContinueSpawn();
 }
 
@@ -131,6 +154,17 @@ void GSStaircase::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry
         m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, extZMeters - 3.2, 0.0);
 
     FinalizeRoute();
+
+    auto halfWing = m_aircraft.GetRawData().wingSpanMeters / 5.0;
+    double distY = GSRandom::RandDouble(halfWing, halfWing + 1.0);
+    auto busPos = GSGeography::RelativePosition(m_initPos.Heading, m_stairBasePos, -distY - 3, 0.0);
+    
+    auto bus = std::make_unique<GSPaxBus>(
+        m_simHandle, m_aircraft, *this, busPos, GSGeography::NormDeg(m_initPos.Heading + 90.0), m_busArrived);
+    if (bus->PreSpawn()) {
+        m_attached.emplace_back(std::move(bus));
+        ContinueSpawn();
+    }
 }
 
 }
