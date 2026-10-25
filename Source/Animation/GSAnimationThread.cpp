@@ -3,7 +3,9 @@
 // See LICENSE for details
 #include "GSAnimationThread.h"
 #include "../Commands/GSCmdAnimObj.h"
+#include "../Commands/GSCmdAircraftUpdate.h"
 #include "../General/GSLogStream.h"
+#include "../General/GSGeography.h"
 #include "GSAnimBFLO.h"
 #include "GSAnimBFLOT.h"
 #include "GSAnimSingle.h"
@@ -11,6 +13,10 @@
 namespace NS_GSAliveAirport
 {
 using namespace std::chrono_literals;
+
+// Equator: ~800m in every direction (round circle).
+// EGLL (51.5°N):~800m N‑S, ~500m E‑W.
+#define USER_MIN_DIST_DEG_POW 5.20e-5
 
 void GSAnimationThread::Start()
 {
@@ -63,7 +69,8 @@ void GSAnimationThread::DoAnimation()
 {
     auto currTime = std::chrono::steady_clock::now();
     for (auto& anim : m_animObjs)
-        anim.second->Animate(*this, std::chrono::duration<float, std::milli>(currTime - m_lastAnimTime).count());
+        if (GSGeography::DistanceCheckQuick(m_userPos, anim.second->GetCurrLoc(), USER_MIN_DIST_DEG_POW))
+            anim.second->Animate(*this, std::chrono::duration<float, std::milli>(currTime - m_lastAnimTime).count());
 
     m_lastAnimTime = std::chrono::steady_clock::now();
 }
@@ -83,10 +90,18 @@ void GSAnimationThread::OnCommand(GSCommand& cmd)
         cmdAnim.RetSimConn().PostCommand(newCmd);
         break;
     }
+    case GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER:
+        UserAircraft(*static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraft());
+        break;
     default:
         GSLogStream::LogError("GSAnimationThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;
     }
+}
+
+void GSAnimationThread::UserAircraft(const GSAircraft& aircraft)
+{
+    m_userPos = aircraft.GetLongLat();
 }
 
 }

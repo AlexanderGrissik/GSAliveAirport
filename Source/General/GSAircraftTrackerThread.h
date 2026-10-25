@@ -24,7 +24,8 @@ public:
     static constexpr double MinAirportRefreshDistMtr = 2000;
 
     ~GSAircraftTrackerThread() override {}
-    GSAircraftTrackerThread(GSSimConnect& singleObserver): m_singleObserver(singleObserver) {}
+    GSAircraftTrackerThread(GSSimConnect& singleObserver, GSSimConnect& animThread):
+        m_singleObserver(singleObserver), m_animThread(animThread) {}
     GSAircraftTrackerThread(const GSAircraftTrackerThread &) = delete;
     GSAircraftTrackerThread &operator=(const GSAircraftTrackerThread &) = delete;
 
@@ -62,6 +63,7 @@ public:
     GSDefinitions::SendResult m_rc{};
     bool m_scanInProgress = false;
     GSSimConnect& m_singleObserver;
+    GSSimConnect& m_animThread;
     GSTimePoint m_lastScanTime{};
     std::jthread m_thread;
     std::shared_ptr<GSAircraft> m_userAircraft;

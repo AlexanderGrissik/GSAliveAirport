@@ -22,8 +22,8 @@ public:
         float getSpan() const { return std::abs(m_endFrame - m_startFrame); }
     };
 
-    GSAnimationObject(SIMCONNECT_OBJECT_ID objID) : m_simObjectID(objID) {}
-    GSAnimationObject(SIMCONNECT_OBJECT_ID objID, bool uncycle) : m_simObjectID(objID), m_uncycle(uncycle) {}
+    GSAnimationObject(SIMCONNECT_OBJECT_ID objID, const GSCoord& initCoord, bool uncycle):
+        m_simObjectID(objID), m_currLocation(initCoord), m_uncycle(uncycle) {}
     virtual ~GSAnimationObject() {}
 
     static void InitDatums(GSSimConnect& handler);
@@ -33,6 +33,8 @@ public:
     
     void ResetObjID(SIMCONNECT_OBJECT_ID objID) { m_simObjectID = objID; }
     SIMCONNECT_OBJECT_ID GetObjID() const { return m_simObjectID; }
+
+    const GSCoord& GetCurrLoc() const { return m_currLocation; }
 
     void SetAIWaypoints(const std::vector<SIMCONNECT_DATA_WAYPOINT>* aiWaypoints);
 

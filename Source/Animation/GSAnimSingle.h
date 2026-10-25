@@ -19,8 +19,8 @@ public:
     };
     #pragma pack(pop)
 
-    GSAnimSingle(SIMCONNECT_OBJECT_ID objID, GSDefinitions::GSDefID defID):
-        GSAnimationObject(objID), m_defID(defID) {}
+    GSAnimSingle(SIMCONNECT_OBJECT_ID objID, const GSCoord& initCoord, GSDefinitions::GSDefID defID):
+        GSAnimationObject(objID, initCoord, false), m_defID(defID) {}
 
     static void InitDatums(GSSimConnect& handler);
 

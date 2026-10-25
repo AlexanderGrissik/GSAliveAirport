@@ -23,8 +23,8 @@ public:
     };
     #pragma pack(pop)
 
-    GSAnimMulti(SIMCONNECT_OBJECT_ID objID, bool uncycle, GSDefinitions::GSDefID defID):
-        GSAnimationObject(objID, uncycle), m_defID(defID), m_activeFrameRange(uncycle ? 1 : 0) {}
+    GSAnimMulti(SIMCONNECT_OBJECT_ID objID, const GSCoord& initCoord, bool uncycle, GSDefinitions::GSDefID defID):
+        GSAnimationObject(objID, initCoord, uncycle), m_defID(defID), m_activeFrameRange(uncycle ? 1 : 0) {}
 
     void Animate(GSSimConnect& handler, float elapsedMilli) override;
     void OnNextWayPoint(std::size_t idx) override;

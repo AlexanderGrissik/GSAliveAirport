@@ -46,7 +46,8 @@ void GSBuggageLoader::OnArrived()
     Freeze();
 
     if (m_ext) {
-        auto* anim = new GSAnimBFLO(m_simObjectID);
+        GSCoord initPosLoc = { m_initPos.Longitude, m_initPos.Latitude };
+        auto* anim = new GSAnimBFLO(m_simObjectID, initPosLoc);
         if (m_departing) {
             anim->AddFrameSet({ 4213, 0, 30.0 }, { 650, 0, 30.0 });
         } else {
@@ -57,13 +58,13 @@ void GSBuggageLoader::OnArrived()
         auto ptrWorker = new GSStatic(m_simHandle, m_aircraft, *this);
         ptrWorker->SetTitle(GSCatalog::GetInstance().GetBuggageWorkerExt());
         ptrWorker->SetPosRel(GSStatic::REL_ABSOLUTE);
-        ptrWorker->SetPosition({ m_initPos.Longitude, m_initPos.Latitude });
+        ptrWorker->SetPosition(initPosLoc);
         ptrWorker->SetHeading(m_initPos.Heading);
         ptrWorker->GetInitPos().Altitude = m_initPos.Altitude;
         ptrWorker->GetInitPos().OnGround = 1;
         ptrWorker->PreSpawn();
         
-        auto* animWorker = new GSAnimSingle(0, GSDefinitions::GSDefID_AnimWagonBLO);
+        auto* animWorker = new GSAnimSingle(0, initPosLoc, GSDefinitions::GSDefID_AnimWagonBLO);
         if (m_departing) {
             animWorker->AddFrameSet({ 4213, 0, 30.0 });
         } else {

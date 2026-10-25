@@ -14,7 +14,8 @@ bool GSWingmans::OnCreated()
 {
     Freeze();
 
-    auto* anim = new GSAnimSingle(m_simObjectID, GSDefinitions::GSDefID_AnimVelocBodyY);
+    GSCoord initPosLoc = { m_initPos.Longitude, m_initPos.Latitude };
+    auto* anim = new GSAnimSingle(m_simObjectID, initPosLoc, GSDefinitions::GSDefID_AnimVelocBodyY);
     anim->AddFrameSet({ 230, 267, 30.0 });
     anim->SetAIWaypoints(&m_aiWaypoints);
     RegisterAnim(anim);
@@ -51,12 +52,13 @@ bool GSWingmans::PreSpawn()
     BuildWalkPath(wp1, wp2, *this);
     
     if (m_countTP == GSWingmans::AIRLINE) {
+        GSCoord initPosLoc2 = { halfWing - 6, -halfWing / 2 };
         auto ptrWalker2 = new GSStatic(m_simHandle, m_aircraft, *this);
         ptrWalker2->SetTitle(m_title);
-        ptrWalker2->SetPosition({ halfWing - 6, -halfWing / 2 });
+        ptrWalker2->SetPosition(initPosLoc2);
         ptrWalker2->PreSpawn();
 
-        auto* animWorker2 = new GSAnimSingle(0, GSDefinitions::GSDefID_AnimVelocBodyY);
+        auto* animWorker2 = new GSAnimSingle(0, initPosLoc2, GSDefinitions::GSDefID_AnimVelocBodyY);
         animWorker2->AddFrameSet({ 230, 267, 30.0 });
         ptrWalker2->SetAnimObj(animWorker2);
 
@@ -68,12 +70,13 @@ bool GSWingmans::PreSpawn()
 
         m_attached.emplace_back(ptrWalker2);
 
+        GSCoord initPosLoc3 = { -halfWing + 6, -halfWing / 2 };
         auto ptrWalker3 = new GSStatic(m_simHandle, m_aircraft, *this);
         ptrWalker3->SetTitle(m_title);
-        ptrWalker3->SetPosition({ -halfWing + 6, -halfWing / 2 });
+        ptrWalker3->SetPosition(initPosLoc3);
         ptrWalker3->PreSpawn();
 
-        auto* animWorker3 = new GSAnimSingle(0, GSDefinitions::GSDefID_AnimVelocBodyY);
+        auto* animWorker3 = new GSAnimSingle(0, initPosLoc3, GSDefinitions::GSDefID_AnimVelocBodyY);
         animWorker3->AddFrameSet({ 230, 267, 30.0 });
         ptrWalker3->SetAnimObj(animWorker3);
 

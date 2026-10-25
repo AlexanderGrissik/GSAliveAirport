@@ -48,6 +48,13 @@ double GSGeography::Azz(const GSCoord& coordA, const GSCoord& coordB)
     return NormDeg(std::atan2(eastMeters, northMeters) * RadToDeg);
 }
 
+bool GSGeography::DistanceCheckQuick(const GSCoord& coordA, const GSCoord& coordB, double tgtDistPow)
+{
+    const double dLat = coordB.Lat() - coordA.Lat();
+    const double dLong = coordB.Long() - coordA.Long();
+    return dLat * dLat + dLong * dLong < tgtDistPow;
+}
+
 GSCoord GSGeography::RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters)
 {
     const double heading = mainHeadingDegrees * DegToRad;

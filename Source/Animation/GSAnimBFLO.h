@@ -20,7 +20,7 @@ public:
     };
     #pragma pack(pop)
 
-    GSAnimBFLO(SIMCONNECT_OBJECT_ID objID) : GSAnimationObject(objID) {}
+    GSAnimBFLO(SIMCONNECT_OBJECT_ID objID, const GSCoord& initCoord) : GSAnimationObject(objID, initCoord, false) {}
 
     static void InitDatums(GSSimConnect& handler);
 

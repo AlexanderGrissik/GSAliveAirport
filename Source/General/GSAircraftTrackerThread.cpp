@@ -167,8 +167,10 @@ void GSAircraftTrackerThread::HandleAircraftUser(std::shared_ptr<GSAircraft>& ai
         RequestAirportScan();
     }
 
-    CmdPtr cmd(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER, aircraft));
-    m_singleObserver.PostCommand(cmd);
+    CmdPtr cmd1(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER, aircraft));
+    m_singleObserver.PostCommand(cmd1);
+    CmdPtr cmd2(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_USER, aircraft));
+    m_animThread.PostCommand(cmd2);
 }
 
 bool GSAircraftTrackerThread::HandleExistingAircraft(std::shared_ptr<GSAircraft> &aircraft, std::shared_ptr<GSAircraft> &exisitng)

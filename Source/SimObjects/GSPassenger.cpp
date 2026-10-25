@@ -69,7 +69,7 @@ bool GSPassenger::OnCreated()
     if (m_dynamic) {
         const auto& itr = s_ExtPassengerFrames.find(m_title);
         if (itr != s_ExtPassengerFrames.end()) {
-            auto* anim = new GSAnimMulti(m_simObjectID, true, GSDefinitions::GSDefID_AnimVelocBodyY);
+            auto* anim = new GSAnimMulti(m_simObjectID, m_stairBasePos, true, GSDefinitions::GSDefID_AnimVelocBodyY);
 
             anim->AddFrameSet(itr->second, m_departing);
             anim->SetAIWaypoints(&m_aiWaypoints);
