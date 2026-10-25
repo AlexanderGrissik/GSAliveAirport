@@ -22,11 +22,12 @@ void GSAircraftGroundLarge::BuildObjs(bool full)
     m_objs.emplace_back(new GSLavatoryTruck(m_simConnect, m_aircraft, *this));
 	m_objs.emplace_back(new GSBuggageLoader(m_simConnect, m_aircraft, *this, true, m_aircraft.IsDeparting()));
 	m_objs.emplace_back(new GSBuggageLoader(m_simConnect, m_aircraft, *this, false, m_aircraft.IsDeparting()));
-	m_objs.emplace_back(new GSMarshaller(m_simConnect, m_aircraft, *this));
 	m_objs.emplace_back(new GSWingmans(m_simConnect, m_aircraft, *this, GSWingmans::AIRLINE));
 
 	if (m_aircraft.IsDeparting()) {
 		m_objs.emplace_back(new GSCateringCart(m_simConnect, m_aircraft, *this));
+	} else {
+		m_objs.emplace_back(new GSMarshaller(m_simConnect, m_aircraft, *this));
 	}
 
 	const auto* prk = m_aircraft.GetParking();
