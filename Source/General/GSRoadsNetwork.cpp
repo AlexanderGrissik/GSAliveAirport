@@ -13,9 +13,11 @@
 namespace NS_GSAliveAirport
 {
 
-void GSRoadsNetwork::AddNode(DWORD id, const GSCoord& loc, float heading, GSRoadsNetwork::RoadNodeType tp, bool hasJetway)
+void GSRoadsNetwork::AddNode(
+    DWORD id, const GSCoord& loc, float heading, GSRoadsNetwork::RoadNodeType tp,
+    bool hasJetway, std::uint32_t parkingNumber)
 {
-	auto itr = m_roadNodes.try_emplace(id, loc, tp, heading, hasJetway);
+	auto itr = m_roadNodes.try_emplace(id, loc, tp, heading, hasJetway, parkingNumber);
 	if (!itr.second) {
         if (itr.first->second.m_pntType != tp) {
 		    GSLogStream::LogError("Duplicate Node ID with different type: ") << itr.first->second.m_pntType << " vs " << tp;

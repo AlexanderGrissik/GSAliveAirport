@@ -66,7 +66,8 @@ std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
     stream << ",\"from\":" << JsonString(CStr(d.fromAirport.data()))
         << ",\"to\":" << JsonString(CStr(d.toAirport.data()))
         << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
-    stream << ",\"parking\":" << JsonString(CStr(d.assignedParking.data()))
+    stream << ",\"parking\":" << (parking != nullptr ? std::to_string(parking->m_parkingNumber) : "null");
+    stream << ",\"aiParking\":" << JsonString(CStr(d.assignedParking.data()))
         << ",\"state\":" << JsonString(CStr(d.trafficState.data()))
         << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
     stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
@@ -103,8 +104,7 @@ std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac)
     stream << ",\"from\":" << JsonString(CStr(d.fromAirport.data()))
         << ",\"to\":" << JsonString(CStr(d.toAirport.data()))
         << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
-    stream << ",\"parking\":" << JsonString(CStr(d.assignedParking.data()))
-        << ",\"state\":" << JsonString(CStr(d.trafficState.data()))
+    stream << ",\"state\":" << JsonString(CStr(d.trafficState.data()))
         << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
     stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
         << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround;

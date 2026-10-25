@@ -283,7 +283,7 @@ function buildBody(rec) {
   const extraBody = document.createElement("div"); extraBody.className = "ac-extra-body";
   const extraFields = document.createElement("div"); extraFields.className = "ac-extra-fields";
   [["Airline", d.airline], ["Flight", d.flight], ["Current", d.curr], ["ETD (s)", sec(d.etdSec)], ["ETA (s)", sec(d.etaSec)],
-   ["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ], ["Heading (deg)", d.hdgDeg]]
+   ["Wing span (m)", d.wingSpanM], ["Engines", d.engines], ["Pushback wait", d.pushbackWait], ["Push contact X (m)", d.pushX], ["Push contact Z (m)", d.pushZ], ["Heading (deg)", d.hdgDeg], ["AI Parking", d.aiParking]]
     .forEach(([label, value]) => extraFields.appendChild(compactField(label, value)));
   const points = Array.isArray(d.interactivePoints) ? d.interactivePoints : [];
   const pointsGroup = document.createElement("div"); pointsGroup.className = "ac-interactive-points";

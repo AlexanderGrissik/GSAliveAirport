@@ -41,6 +41,7 @@ public:
 		RoadNodeType m_pntType;
 		float m_heading;
         bool m_hasJetway;
+		std::uint32_t m_parkingNumber;
 		std::vector<RoadPath*> m_paths;
 	};
 
@@ -52,7 +53,7 @@ public:
 		bool m_custom;
 	};
 
-	void AddNode(DWORD id, const GSCoord& loc, float heading, RoadNodeType tp, bool hasJetway);
+	void AddNode(DWORD id, const GSCoord& loc, float heading, RoadNodeType tp, bool hasJetway, std::uint32_t parkingNumber = 0);
 	void AddPath(DWORD idA, DWORD idB, RoadPathType pathType);
 	void AddPath(const RoadPath& path);
 	bool HasNode(DWORD id) const { return m_roadNodes.contains(id); }

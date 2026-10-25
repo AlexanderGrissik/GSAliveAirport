@@ -78,7 +78,7 @@ void GSAirport::OrganizeStructures()
 
             network.AddNode(
                 id, location, parking.headingDegTrue,
-                nodeType, m_jetways.contains(index));
+                nodeType, m_jetways.contains(parking.number), parking.number);
         } else {
             const auto& point = m_taxiPoints.at(index);
             const GSCoord location = GSGeography::RelativePosition(
