@@ -16,23 +16,24 @@ GSAircraftGround::GSAircraftGround(
 {
     if (m_airport) {
         m_aircraft.SetAirport(m_airport.get());
-        const auto prk = m_airport->GetRoadNet().GetClosestNormalParking(aircraft.GetLongLat());
-        if (prk.has_value()) {
-            m_aircraft.SetParking(prk.value());
-        }
     }
 }
 
 void GSAircraftGround::UpdateAircraft(const GSAircraft& aircraft)
 { 
     m_aircraft.CopyDynInfo(aircraft); 
-    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(aircraft)); 
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(m_aircraft)); 
+
+    if (!m_aircraft.GetParking() && m_aircraft.GetRawData().groundSpeedKnots < 0.5 && !m_aircraft.IsTaxing()) {
+        SetClosestParking(); // For UI. Aircrafts that currently do not receive services.
+    }
 }
 
 void GSAircraftGround::Spawning()
 {
     m_spawnState = SpawnState::SPAWNING;
     GSLogStream::Log("Services Spawning for: ") << m_aircraft.GetObjID();
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(m_aircraft));
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::Spawning)); 
 }
 
@@ -59,6 +60,16 @@ void GSAircraftGround::Unspawned()
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::None));
 }
 
+void GSAircraftGround::SetClosestParking()
+{
+    if (m_airport) {
+        const auto prk = m_airport->GetRoadNet().GetClosestNormalParking(aircraft.GetLongLat());
+        if (prk.has_value()) {
+            m_aircraft.SetParking(prk.value());
+        }
+    }
+}
+
 void GSAircraftGround::Spawn()
 {
     if (m_spawnState == SpawnState::SPAWNING || m_spawnState == SpawnState::SPAWNED) {
@@ -66,8 +77,12 @@ void GSAircraftGround::Spawn()
         return;
     }
 
+    m_aircraft.SetParking(nullptr);
+    SetClosestParking();
+
     Spawning(); 
 
+    // MSFS injects traffic with parking assigned. Skip MSFS already provided ground services.
     BuildObjs(!m_aircraft.HasParking());
 
     std::erase_if(m_objs, [](const auto& item) {

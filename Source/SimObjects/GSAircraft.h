@@ -138,7 +138,7 @@ private:
     std::string m_trafficState;
     std::string m_parkingState;
     const GSAirport* m_airport;
-    const GSRoadsNetwork::RoadNode* m_parkingNode;
+    const GSRoadsNetwork::RoadNode* m_parkingNode = nullptr;
     DWORD objectID{};
     bool m_departing = true;
 };

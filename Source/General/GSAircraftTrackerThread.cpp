@@ -189,7 +189,7 @@ bool GSAircraftTrackerThread::HandleExistingAircraft(std::shared_ptr<GSAircraft>
 bool GSAircraftTrackerThread::HandleNewAircraft(std::shared_ptr<GSAircraft> &aircraft)
 {
     const auto title = GSStringUtils::ToLower(aircraft->GetRawData().title);
-    if (title.find("jetwayhelper") != std::string::npos)
+    if (title.find("jetwayhelper") != std::string::npos || !aircraft->GetRawData().onGround)
         return false;
 
     m_tracked.emplace(aircraft->GetObjID(), aircraft);
@@ -296,7 +296,7 @@ GSRequest::SendResult GSAircraftTrackerThread::GSReqScanAirport::Process()
 {
     auto id = m_simHandle.NextRequestID();
     GSRequest::SendResult rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestFacilitiesList, SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, id), true };
+        m_simHandle.InvokeRequest(id, SimConnect_RequestFacilitiesList_EX1, SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, id), true };
     
     if (!rc.m_simRC.isOK()) {
         GSLogStream::LogError("GSAircraftTrackerThread::GSReqScanAirport::Process Failed call: ") << rc.m_simRC.rc;

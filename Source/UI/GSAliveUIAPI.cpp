@@ -52,7 +52,6 @@ std::string GSAliveUIAPI::CStr(const char *value)
 std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
 {
     const GSAircraft::AircraftWireData &d = ac.GetRawData();
-    const auto* parking = ac.GetParking();
     std::ostringstream stream;
     stream << "{\"op\":\"aircraft.add\",\"id\":" << ac.GetObjID();
     stream << ",\"atc\":" << JsonString(CStr(d.atcId.data()))
@@ -66,14 +65,12 @@ std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
     stream << ",\"from\":" << JsonString(CStr(d.fromAirport.data()))
         << ",\"to\":" << JsonString(CStr(d.toAirport.data()))
         << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
-    stream << ",\"parking\":" << (parking != nullptr ? std::to_string(parking->m_parkingNumber) : "null");
     stream << ",\"aiParking\":" << JsonString(CStr(d.assignedParking.data()))
         << ",\"state\":" << JsonString(CStr(d.trafficState.data()))
         << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
     stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
         << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround
-        << ",\"departing\":" << (ac.IsDeparting() ? "true" : "false")
-        << ",\"jetway\":" << (parking != nullptr && parking->m_hasJetway ? "true" : "false");
+        << ",\"departing\":" << (ac.IsDeparting() ? "true" : "false");
     stream << ",\"wingSpanM\":" << d.wingSpanMeters << ",\"engines\":" << d.numberOfEngines
         << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait;
     stream << ",\"pushX\":" << d.pushbackContactXMeters << ",\"pushZ\":" << d.pushbackContactZMeters
@@ -96,6 +93,7 @@ std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
 std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac)
 {
     const GSAircraft::AircraftWireData &d = ac.GetRawData();
+    const auto* parking = ac.GetParking();
     std::ostringstream stream;
     stream << "{\"op\":\"aircraft.update\",\"id\":" << ac.GetObjID();
     stream << ",\"lat\":" << d.latitude << ",\"lon\":" << d.longitude
@@ -108,7 +106,9 @@ std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac)
         << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
     stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
         << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround;
-    stream << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait << "}";
+    stream << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait
+        << ",\"parking\":" << (parking != nullptr ? std::to_string(parking->m_parkingNumber) : "null")
+        << ",\"jetway\":" << (parking != nullptr && parking->m_hasJetway ? "true" : "false") << "}";
     return stream.str();
 }
 

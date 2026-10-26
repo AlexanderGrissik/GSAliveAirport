@@ -19,7 +19,6 @@ namespace NS_GSAliveAirport
 class GSAircraftTrackerThread final : public GSSimConnect
 {
 public:
-    static constexpr double ActiveRadiusMeters = 1'000.0;
     static constexpr DWORD DiscoveryRadiusMeters = 5000;
     static constexpr double MinAirportRefreshDistMtr = 2000;
 

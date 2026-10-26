@@ -47,6 +47,7 @@ protected:
     void Spawned();
     void Despawning();
     void Unspawned();
+    void SetClosestParking();
 
     GSAircraft m_aircraft;
     std::shared_ptr<GSAirport> m_airport;
