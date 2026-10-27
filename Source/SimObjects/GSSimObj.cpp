@@ -186,7 +186,7 @@ void GSSimObj::FinalizeRoute()
 
     static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
     auto intrCoord = GSGeography::FindReverseCircleIntersection(
-        m_aircraft.GetLongLat(), m_aircraft.GetRawData().wingSpanMeters / 2.0,
+        m_aircraft.GetLongLat(), m_aircraft.GetWingSpanMeters() / 2.0,
         { m_initPos.Longitude, m_initPos.Latitude }, m_initPos.Heading + 180.0);
 
     m_aiWaypoints.emplace_back(intrCoord.Lat(), intrCoord.Long(), m_initPos.Altitude, flags, 30.0, 0.0);

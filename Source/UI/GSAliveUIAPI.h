@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <sstream>
 #include <string>
 
 namespace NS_GSAliveAirport
@@ -31,17 +32,15 @@ public:
     // Service state only — changes nothing else.
     static std::string UpdateAircraftServices(std::uint32_t id, AircraftService service);
     static std::string RemoveAircraft(std::uint32_t id);
-    // Compact snapshot for the dedicated user-aircraft pane: id + position fields + on-ground.
-    // Pass nullptr to clear aircraft fields ("Not Detected"); current airport is unchanged.
-    static std::string SetUserAircraft(const GSAircraft *ac);
-    // Current airport only; pass nullptr to clear the field.
-    static std::string SetUserAirport(const GSAirport *airport);
+    // Compact snapshot for the dedicated user-aircraft pane: id + position fields + current airport + on-ground.
+    static std::string SetUserAircraft(const GSAircraft& ac);
     // Global status for the top-bar title: true = connected (green), false = waiting (yellow).
     static std::string SetGlobalStatus(bool isConnected);
 
 private:
 
     static std::string JsonString(const std::string &value);
-    static std::string CStr(const char *value);
+    // Appends the dynamic aircraft fields (position/route/systems/parking) shared by add and update.
+    static void AircraftDynamicInfo(const GSAircraft &ac, std::ostringstream& stream);
 };
 } // namespace NS_GSAliveAirport

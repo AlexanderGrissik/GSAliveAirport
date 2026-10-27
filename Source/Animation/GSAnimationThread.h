@@ -5,6 +5,7 @@
 
 #include "GSAnimationObject.h"
 #include "../General/GSSimConnect.h"
+#include "../General/GSGeography.h"
 #include "../SimObjects/GSAircraft.h"
 
 #include <chrono>
@@ -19,6 +20,10 @@ namespace NS_GSAliveAirport
 class GSAnimationThread final : public GSSimConnect
 {
 public:
+
+	static constexpr double s_AnimDistDegPow = GSGeography::DegDistPowFromMeters(500.0);
+
+	GSAnimationThread(GSAircraft& userAircraft): m_userAircraft(userAircraft) {}
 
 	void Start();
 	void Stop();
@@ -36,12 +41,12 @@ private:
 	static void AnimationLoop(std::stop_token stopToken, GSAnimationThread* self);
 	void RunLoopAnimation(std::stop_token stopToken);
 	void DoAnimation();
-	void UserAircraft(const GSAircraft& aircraft);
 
 	std::unordered_map<SIMCONNECT_OBJECT_ID, std::unique_ptr<GSAnimationObject>> m_animObjs;
 	GSTimePoint m_lastAnimTime{};
 	GSCoord m_userPos{};
 	std::jthread m_thread;
+	GSAircraft& m_userAircraft;
 };
 
 }

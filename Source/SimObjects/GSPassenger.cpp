@@ -71,7 +71,7 @@ bool GSPassenger::OnCreated()
         if (itr != s_ExtPassengerFrames.end()) {
             auto* anim = new GSAnimMulti(m_simObjectID, m_stairBasePos, true, GSDefinitions::GSDefID_AnimVelocBodyY);
 
-            anim->AddFrameSet(itr->second, m_departing);
+            anim->AddFrameSet(itr->second, m_aircraft.IsDeparting());
             anim->SetAIWaypoints(&m_aiWaypoints);
             RegisterAnim(anim);
         }
@@ -82,8 +82,6 @@ bool GSPassenger::OnCreated()
 
 bool GSPassenger::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
-
     m_initPos.Airspeed = 0;
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
@@ -99,13 +97,13 @@ bool GSPassenger::PreSpawn()
         m_title = std::next(s_ExtPassengerFrames.begin(), static_cast<std::ptrdiff_t>(index))->first;
     }
 
-    auto halfWing = airData.wingSpanMeters / 5.0;
+    auto halfWing = m_aircraft.GetWingSpanMeters() / 5.0;
     double distX = GSRandom::RandDouble(-1.0, 1.0);
     double distY = GSRandom::RandDouble(halfWing, halfWing + 1.0);
     m_busPos = GSGeography::RelativePosition(m_stairBaseHeading, m_stairBasePos, distY, distX);
 
-    if (m_departing) {
-        m_initPos.Altitude = airData.groundAltitudeFeet;
+    if (m_aircraft.IsDeparting()) {
+        m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
         m_initPos.Longitude = m_busPos.Long();
         m_initPos.Latitude = m_busPos.Lat();
         m_initPos.Heading = GSGeography::Azz(m_busPos, m_stairBasePos);
@@ -131,14 +129,14 @@ void GSPassenger::BuildWalkPath()
     const GSCoord startPnt = { initPos.Longitude, initPos.Latitude };
     const float speedKTs = 2.2f;
 
-    if (m_departing) {
+    if (m_aircraft.IsDeparting()) {
         const float altGround = static_cast<float>(initPos.Altitude);
         AddWaypoint(m_busPos, altGround, speedKTs, 0.0, flags);
         AddWaypoint(m_stairBasePos, altGround, speedKTs, 0.0, flags);
         AddWaypoint(m_stairTopPos, m_doorAltFeet, speedKTs, 0.0, 0);
         AddWaypoint(m_doorPos, m_doorAltFeet, speedKTs, 0.0, 0);
     } else {
-        const float altGround = m_aircraft.GetRawData().groundAltitudeFeet;
+        const float altGround = m_aircraft.GetGroundAltitudeFeet();
         AddWaypoint(m_doorPos, m_doorAltFeet, speedKTs, 0.0, 0);
         AddWaypoint(m_stairTopPos, m_doorAltFeet, speedKTs, 0.0, 0);
         AddWaypoint(m_stairBasePos, altGround, speedKTs, 0.0, 0);

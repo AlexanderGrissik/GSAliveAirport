@@ -42,7 +42,6 @@ void GSCateringCart::OnArrived()
 
 bool GSCateringCart::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
     auto rearRightDoor = m_aircraft.GetRearRightDoor();
     auto frontRightDoor = m_aircraft.GetFrontRightDoor();
     const auto* cateringDoor = (rearRightDoor.has_value() ? &rearRightDoor->first.get() : (frontRightDoor.has_value() ? &frontRightDoor->first.get() : nullptr));
@@ -55,14 +54,14 @@ bool GSCateringCart::PreSpawn()
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Heading = GSGeography::NormDeg(airData.headingDegrees + cateringDoor->headingDegrees + 180.0);
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Heading = GSGeography::NormDeg(m_aircraft.GetHeading() + cateringDoor->headingDegrees + 180.0);
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
     
-    const auto doorPos = GSGeography::RelativePosition(airData.headingDegrees, m_aircraft.GetLongLat(), cateringDoor->posZMeter, cateringDoor->posXMeter);
+    const auto doorPos = GSGeography::RelativePosition(m_aircraft.GetHeading(), m_aircraft.GetLongLat(), cateringDoor->posZMeter, cateringDoor->posXMeter);
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 
-    m_doorPosElev = airData.alt_abv_grnd + cateringDoor->posYFeet;
+    m_doorPosElev = m_aircraft.GetAltitudeAboveGroundFeet() + cateringDoor->posYFeet;
     
     PrepareRoute();
 

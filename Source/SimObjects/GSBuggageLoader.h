@@ -31,8 +31,8 @@ public:
     };
     #pragma pack(pop)
 
-    GSBuggageLoader(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, bool front, bool departing) :
-        GSSimObj(simHandle, aircraft, parent), m_front(front), m_departing(departing) {}
+    GSBuggageLoader(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, bool front) :
+        GSSimObj(simHandle, aircraft, parent), m_front(front) {}
 
     static void InitDatums(GSSimConnect& handler);
 
@@ -51,7 +51,6 @@ private:
     DWORD m_doorIdx = 0;
     bool m_front = false;
     bool m_ext = true;
-    bool m_departing = true;
 
     class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {
     public:

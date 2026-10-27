@@ -3,33 +3,17 @@
 // See LICENSE for details
 #include "GSGeography.h"
 
-#include <cmath>
-
 namespace NS_GSAliveAirport
 {
 
-double GSGeography::PI = std::acos(-1.0);
-double GSGeography::DegToRad = GSGeography::PI / 180.0;
-double GSGeography::RadToDeg = 180.0 / GSGeography::PI;
-double GSGeography::MetersPerLatitudeDegree = 111'320.0;
-double GSGeography::FeetPerMeter = 3.2808399;
-double GSGeography::KnotsToMetersSecond = 0.514444;
-
-double GSGeography::MetersPerDegreeLat()
+double GSGeography::LongDistAdjust(double latitude)
 {
-    return MetersPerLatitudeDegree;
+    return std::cos(latitude * DegToRad);
 }
 
 double GSGeography::MetersPerDegreeLong(double latitude)
 {
-    return MetersPerLatitudeDegree * std::cos(latitude * DegToRad);
-}
-
-double GSGeography::NormDeg(double degrees)
-{
-    while (degrees >= 360.0) degrees -= 360.0;
-    while (degrees < 0.0) degrees += 360.0;
-    return degrees;
+    return MetersPerLatitudeDegree * LongDistAdjust(latitude);
 }
 
 double GSGeography::DistanceMeters(const GSCoord& coordA, const GSCoord& coordB)
@@ -40,19 +24,20 @@ double GSGeography::DistanceMeters(const GSCoord& coordA, const GSCoord& coordB)
     return std::hypot(latitudeMeters, longitudeMeters);
 }
 
+double GSGeography::DistanceDegPow(const GSCoord& coordA, const GSCoord& coordB)
+{
+    const double latitudeDelta = (coordB.Lat() - coordA.Lat());
+    const double averageLatitude = (coordA.Lat() + coordB.Lat()) / 2.0;
+    const double longitudeDelta = (coordB.Long() - coordA.Long()) * LongDistAdjust(averageLatitude);
+    return (latitudeDelta * latitudeDelta) + (longitudeDelta * longitudeDelta);
+}
+
 double GSGeography::Azz(const GSCoord& coordA, const GSCoord& coordB)
 {
     const double northMeters = (coordB.Lat() - coordA.Lat()) * MetersPerDegreeLat();
     const double averageLatitude = (coordA.Lat() + coordB.Lat()) / 2.0;
     const double eastMeters = (coordB.Long() - coordA.Long()) * MetersPerDegreeLong(averageLatitude);
     return NormDeg(std::atan2(eastMeters, northMeters) * RadToDeg);
-}
-
-bool GSGeography::DistanceCheckQuick(const GSCoord& coordA, const GSCoord& coordB, double tgtDistPow)
-{
-    const double dLat = coordB.Lat() - coordA.Lat();
-    const double dLong = coordB.Long() - coordA.Long();
-    return dLat * dLat + dLong * dLong < tgtDistPow;
 }
 
 GSCoord GSGeography::RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters)

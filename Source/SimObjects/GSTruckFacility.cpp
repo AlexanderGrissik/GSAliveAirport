@@ -23,19 +23,17 @@ void GSTruckFacility::OnArrived()
 
 bool GSTruckFacility::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
-
     m_title = GSCatalog::GetInstance().GetTruckFacility();
-    m_initPos.Heading = airData.headingDegrees;
+    m_initPos.Heading = m_aircraft.GetHeading();
     m_initPos.Airspeed = 0;
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
 
-    auto halfWing = airData.wingSpanMeters / 2.0;
+    auto halfWing = m_aircraft.GetWingSpanMeters() / 2.0;
     const auto conePos = GSGeography::RelativePosition(
-        airData.headingDegrees, m_aircraft.GetLongLat(), 0, halfWing + 6);
+        m_aircraft.GetHeading(), m_aircraft.GetLongLat(), 0, halfWing + 6);
     m_initPos.Longitude = conePos.Long();
     m_initPos.Latitude = conePos.Lat();
 

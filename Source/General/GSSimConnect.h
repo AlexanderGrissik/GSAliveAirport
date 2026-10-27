@@ -70,6 +70,7 @@ protected:
     bool IsLastLoopMessage() const { return m_lastLoopMsg; }
     bool IsSimStarted() const { return m_simStarted; }
     void Connect();
+    void AddRawRequestHandler(DWORD reqID, GSRequest& req) { m_reqIDToPtr.emplace(GSDefinitions::SendResultIDs{0, reqID}, req); }
     
 private:
     

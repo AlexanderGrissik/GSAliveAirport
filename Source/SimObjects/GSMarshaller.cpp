@@ -26,7 +26,6 @@ bool GSMarshaller::OnCreated()
 
 bool GSMarshaller::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
     auto& title = GSCatalog::GetInstance().GetMarshallerExt();
     if (title.empty()) {
         m_hasAnimMarshall = false;
@@ -35,15 +34,15 @@ bool GSMarshaller::PreSpawn()
         m_title = title;
     }
         
-    m_initPos.Heading = GSGeography::NormDeg(airData.headingDegrees + 180);
+    m_initPos.Heading = GSGeography::NormDeg(m_aircraft.GetHeading() + 180);
     m_initPos.Airspeed = 0;
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
     
-    auto halfWing = airData.wingSpanMeters / 2.0;
-    const auto locPos = GSGeography::RelativePosition(airData.headingDegrees, m_aircraft.GetLongLat(), halfWing + 7, 0);
+    auto halfWing = m_aircraft.GetWingSpanMeters() / 2.0;
+    const auto locPos = GSGeography::RelativePosition(m_aircraft.GetHeading(), m_aircraft.GetLongLat(), halfWing + 7, 0);
     m_initPos.Longitude = locPos.Long();
     m_initPos.Latitude = locPos.Lat();
 

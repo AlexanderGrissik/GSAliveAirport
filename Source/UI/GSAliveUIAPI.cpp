@@ -41,94 +41,72 @@ std::string GSAliveUIAPI::JsonString(const std::string &value)
     return result;
 }
 
-
-std::string GSAliveUIAPI::CStr(const char *value)
-{
-    std::size_t len = 0;
-    while (value[len] != '\0') ++len;
-    return std::string(value, len);
-}
-
 std::string GSAliveUIAPI::AddAircraft(const GSAircraft &ac)
 {
-    const GSAircraft::AircraftWireData &d = ac.GetRawData();
     std::ostringstream stream;
     stream << "{\"op\":\"aircraft.add\",\"id\":" << ac.GetObjID();
-    stream << ",\"atc\":" << JsonString(CStr(d.atcId.data()))
-        << ",\"airline\":" << JsonString(CStr(d.atcAirline.data()))
-        << ",\"flight\":" << JsonString(CStr(d.atcFlightNumber.data()));
-    stream << ",\"title\":" << JsonString(CStr(d.title.data()))
-        << ",\"category\":" << JsonString(GSAircraft::AircraftSizeName(ac.GetCategory()));
-    stream << ",\"lat\":" << d.latitude << ",\"lon\":" << d.longitude
-        << ",\"altFt\":" << d.altitudeFeet << ",\"gndAltFt\":" << d.groundAltitudeFeet;
-    stream << ",\"hdgDeg\":" << d.headingDegrees << ",\"gndSpdKt\":" << d.groundSpeedKnots;
-    stream << ",\"from\":" << JsonString(CStr(d.fromAirport.data()))
-        << ",\"to\":" << JsonString(CStr(d.toAirport.data()))
-        << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
-    stream << ",\"aiParking\":" << JsonString(CStr(d.assignedParking.data()))
-        << ",\"state\":" << JsonString(CStr(d.trafficState.data()))
-        << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
-    stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
-        << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround
-        << ",\"departing\":" << (ac.IsDeparting() ? "true" : "false");
-    stream << ",\"wingSpanM\":" << d.wingSpanMeters << ",\"engines\":" << d.numberOfEngines
-        << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait;
-    stream << ",\"pushX\":" << d.pushbackContactXMeters << ",\"pushZ\":" << d.pushbackContactZMeters
-        << ",\"service\":" << static_cast<unsigned int>(AircraftService::None);
+    stream << ",\"atc\":" << JsonString(ac.GetATCID())
+           << ",\"airline\":" << JsonString(ac.GetATCAirline())
+           << ",\"flight\":" << JsonString(ac.GetARCFlightNumber());
+    stream << ",\"title\":" << JsonString(ac.GetTitle())
+           << ",\"category\":" << JsonString(GSAircraft::AircraftSizeName(ac.GetCategory()));
+    AircraftDynamicInfo(ac, stream);
+    stream << ",\"aiParking\":" << JsonString(ac.GetAssignedParking())
+           << ",\"departing\":" << (ac.IsDeparting() ? "true" : "false");
+    stream << ",\"wingSpanM\":" << ac.GetWingSpanMeters() << ",\"engines\":" << ac.GetNumberOfEngines();
+    stream << ",\"pushX\":" << ac.GetPushbackContactXMeters() << ",\"pushZ\":" << ac.GetPushbackContactZMeters()
+           << ",\"service\":" << static_cast<unsigned int>(AircraftService::None);
     stream << ",\"interactivePoints\":[";
     bool first = true;
-    for (const auto &p : d.interactivePoints)
-    {
+    for (const auto &p : ac.GetInteractivePoints()) {
         if (!GSAircraft::IsValidInteractivePointType(p.type)) continue;
         if (p.posXMeter == 0.0f && p.posYFeet == 0.0f && p.posZMeter == 0.0f) continue;
         if (!first) stream << ",";
         first = false;
         stream << "{\"type\":" << JsonString(GSAircraft::InteractivePointTypeName(p.type))
-            << ",\"x\":" << p.posXMeter << ",\"y\":" << p.posYFeet << ",\"z\":" << p.posZMeter << ",\"hdg\":" << p.headingDegrees << "}";
+               << ",\"x\":" << p.posXMeter << ",\"y\":" << p.posYFeet << ",\"z\":" << p.posZMeter << ",\"hdg\":" << p.headingDegrees << "}";
     }
     stream << "]}";
     return stream.str();
 }
 
+void GSAliveUIAPI::AircraftDynamicInfo(const GSAircraft &ac, std::ostringstream& stream)
+{
+    const auto* parking = ac.GetParking();
+    stream << ",\"lat\":" << ac.GetLongLat().Lat() << ",\"lon\":" << ac.GetLongLat().Long()
+           << ",\"altFt\":" << ac.GetAltitudeFeet() << ",\"gndAltFt\":" << ac.GetGroundAltitudeFeet();
+    stream << ",\"hdgDeg\":" << ac.GetHeading() << ",\"gndSpdKt\":" << ac.GetGroundSpeedKnots();
+    stream << ",\"from\":" << JsonString(ac.GetFromAirport())
+           << ",\"to\":" << JsonString(ac.GetToAirport())
+           << ",\"curr\":" << JsonString(ac.GetAICurrAirport() + "/" + ac.GetAirport()->GetICAO());
+    stream << ",\"state\":" << JsonString(ac.GetTrafficState())
+           << ",\"etdSec\":" << ac.GetETDSeconds() << ",\"etaSec\":" << ac.GetETASeconds();
+    stream << ",\"beacon\":" << ac.IsLightBeaconOn() << ",\"nav\":" << ac.IsLightNavOn() << ",\"taxi\":" << ac.IsLightTaxiOn()
+           << ",\"parkBrake\":" << ac.IsParkingBrakeSet() << ",\"onGround\":" << (ac.IsOnGround() ? "true" : "false");
+    stream << ",\"pushbackAttached\":" << ac.IsPushbackAttached() << ",\"pushbackWait\":" << ac.IsPushbackWait();
+    stream << ",\"parking\":" << (parking != nullptr ? std::to_string(parking->m_parkingNumber) : "null")
+           << ",\"jetway\":" << (parking != nullptr && parking->m_hasJetway ? "true" : "false");
+}
+
 std::string GSAliveUIAPI::UpdateAircraft(const GSAircraft &ac)
 {
-    const GSAircraft::AircraftWireData &d = ac.GetRawData();
-    const auto* parking = ac.GetParking();
     std::ostringstream stream;
     stream << "{\"op\":\"aircraft.update\",\"id\":" << ac.GetObjID();
-    stream << ",\"lat\":" << d.latitude << ",\"lon\":" << d.longitude
-        << ",\"altFt\":" << d.altitudeFeet << ",\"gndAltFt\":" << d.groundAltitudeFeet;
-    stream << ",\"hdgDeg\":" << d.headingDegrees << ",\"gndSpdKt\":" << d.groundSpeedKnots;
-    stream << ",\"from\":" << JsonString(CStr(d.fromAirport.data()))
-        << ",\"to\":" << JsonString(CStr(d.toAirport.data()))
-        << ",\"curr\":" << JsonString(CStr(d.currentAirport.data()));
-    stream << ",\"state\":" << JsonString(CStr(d.trafficState.data()))
-        << ",\"etdSec\":" << d.etdSeconds << ",\"etaSec\":" << d.etaSeconds;
-    stream << ",\"beacon\":" << d.lightBeacon << ",\"nav\":" << d.lightNav << ",\"taxi\":" << d.lightTaxi
-        << ",\"parkBrake\":" << d.parkingBrake << ",\"onGround\":" << d.onGround;
-    stream << ",\"pushbackAttached\":" << d.pushbackAttached << ",\"pushbackWait\":" << d.pushbackWait
-        << ",\"parking\":" << (parking != nullptr ? std::to_string(parking->m_parkingNumber) : "null")
-        << ",\"jetway\":" << (parking != nullptr && parking->m_hasJetway ? "true" : "false") << "}";
+    AircraftDynamicInfo(ac, stream);
+    stream << "}";
     return stream.str();
 }
 
-std::string GSAliveUIAPI::SetUserAircraft(const GSAircraft *ac)
+std::string GSAliveUIAPI::SetUserAircraft(const GSAircraft& ac)
 {
-    if (ac == nullptr) return std::string("{\"op\":\"user.clear\"}");
-    const GSAircraft::AircraftWireData &d = ac->GetRawData();
     std::ostringstream stream;
-    stream << "{\"op\":\"user.set\",\"id\":" << ac->GetObjID();
-    stream << ",\"lat\":" << d.latitude << ",\"lon\":" << d.longitude
-        << ",\"altFt\":" << d.altitudeFeet << ",\"gndAltFt\":" << d.groundAltitudeFeet;
-    stream << ",\"hdgDeg\":" << d.headingDegrees << ",\"gndSpdKt\":" << d.groundSpeedKnots;
-    stream << ",\"onGround\":" << d.onGround << "}";
+    stream << "{\"op\":\"user.set\",\"id\":" << ac.GetObjID();
+    stream << ",\"lat\":" << ac.GetLongLat().Lat() << ",\"lon\":" << ac.GetLongLat().Long()
+           << ",\"altFt\":" << ac.GetAltitudeFeet() << ",\"gndAltFt\":" << ac.GetGroundAltitudeFeet();
+    stream << ",\"hdgDeg\":" << ac.GetHeading() << ",\"gndSpdKt\":" << ac.GetGroundSpeedKnots();
+    stream << (",\"curr\":" + JsonString(ac.GetAICurrAirport() + "/" + ac.GetAirport()->GetICAO()));
+    stream << ",\"onGround\":" << (ac.IsOnGround() ? "true" : "false") << "}";
     return stream.str();
-}
-
-std::string GSAliveUIAPI::SetUserAirport(const GSAirport *airport)
-{
-    return std::string("{\"op\":\"user.airport\",\"curr\":")
-        + JsonString(airport != nullptr ? airport->GetICAO() : std::string()) + "}";
 }
 
 std::string GSAliveUIAPI::SetGlobalStatus(bool isConnected)

@@ -48,15 +48,34 @@ void GSAirport::InitDatums(GSSimConnect& handler)
     handler.InvokeAddFacilityDatums(GSDatums_AirportInfo, GSDefinitions::GSDefID_AirportInfo);
 }
 
-void GSAirport::LoadInfo(GSSimConnect& handler)
+void GSAirport::LoadInfo(const SIMCONNECT_RECV_FACILITY_DATA& entry)
 {
-    handler.PostReqCommand(new GSReqInfo(handler, *this));
+    switch (entry.Type) {
+    case SIMCONNECT_FACILITY_DATA_TAXI_PARKING:
+        m_parkings.try_emplace(entry.ItemIndex, *reinterpret_cast<const ParkingSlot*>(&entry.Data));
+        break;
+    case SIMCONNECT_FACILITY_DATA_TAXI_POINT:
+        m_taxiPoints.try_emplace(entry.ItemIndex, *reinterpret_cast<const TaxiPoint*>(&entry.Data));
+        break;
+    case SIMCONNECT_FACILITY_DATA_JETWAY: {
+        const auto& path = *reinterpret_cast<const Jetway*>(&entry.Data);
+        m_jetways.try_emplace(path.parkingSpot, path);
+        break;
+        }
+    case SIMCONNECT_FACILITY_DATA_TAXI_PATH: {
+        const auto& path = *reinterpret_cast<const TaxiPath*>(&entry.Data);
+        if (path.type == 4 || path.type == 3 || path.type == 6 || path.type == 7) // If ROAD/SERVICE/PATH/PARKING
+            m_taxiPaths.emplace_back(path);
+        break;
+        }
+    }
 }
 
 void GSAirport::OrganizeStructures()
 {
     constexpr DWORD ParkingFlag = 0x80000000u;
 
+    m_isFinalized = true;
     std::list<GSRoadsNetwork> roadNetworks;
     
     const auto nodeExists = [this, ParkingFlag](DWORD id) {
@@ -162,62 +181,6 @@ void GSAirport::MergeAllRoadNetworks(std::list<GSRoadsNetwork>& roadNetworks)
     m_roadNetwork = std::move(roadNetworks.front());
 
     m_roadNetwork.Print();
-}
-
-GSRequest::SendResult GSAirport::GSReqInfo::Process()
-{
-    auto id = m_simHandle.NextRequestID();
-    GSRequest::SendResult rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestFacilityData, GSDefinitions::GSDefID_AirportInfo, id, m_airport.GetICAO().c_str(), ""), true};
-    
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSAirport::GSReqInfo::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
-    } 
-
-    return rc;
-}
-
-bool GSAirport::GSReqInfo::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
-{
-    (void)messageSize;
-    if (message->dwID == SIMCONNECT_RECV_ID_FACILITY_DATA_END) {
-        m_airport.OrganizeStructures();
-        return true;
-    }
-
-    if (message->dwID != SIMCONNECT_RECV_ID_FACILITY_DATA) {
-        GSLogStream::LogError("GSAirport::GSReqInfo unexpected message: ") << message->dwID;
-        return true;
-    }
-
-    const auto& entry = *reinterpret_cast<const SIMCONNECT_RECV_FACILITY_DATA*>(message);
-    switch (entry.Type) {
-    case SIMCONNECT_FACILITY_DATA_TAXI_PARKING:
-        m_airport.m_parkings.try_emplace(entry.ItemIndex, *reinterpret_cast<const ParkingSlot*>(&entry.Data));
-        break;
-    case SIMCONNECT_FACILITY_DATA_TAXI_POINT:
-        m_airport.m_taxiPoints.try_emplace(entry.ItemIndex, *reinterpret_cast<const TaxiPoint*>(&entry.Data));
-        break;
-    case SIMCONNECT_FACILITY_DATA_JETWAY: {
-        const auto& path = *reinterpret_cast<const Jetway*>(&entry.Data);
-        m_airport.m_jetways.try_emplace(path.parkingSpot, path);
-        break;
-    }
-    case SIMCONNECT_FACILITY_DATA_TAXI_PATH: {
-        const auto& path = *reinterpret_cast<const TaxiPath*>(&entry.Data);
-        if (path.type == 4 || path.type == 3 || path.type == 6 || path.type == 7) // If ROAD/SERVICE/PATH/PARKING
-            m_airport.m_taxiPaths.emplace_back(path);
-        break;
-    }
-    }
-
-    return false;
-}
-
-void GSAirport::GSReqInfo::OnException(SIMCONNECT_RECV_EXCEPTION* message)
-{
-    GSLogStream::LogError("GSAirport request failed: ") << message->dwException;
 }
 
 }

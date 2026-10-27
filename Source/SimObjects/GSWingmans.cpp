@@ -25,30 +25,28 @@ bool GSWingmans::OnCreated()
 
 bool GSWingmans::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
-
     m_title = GSCatalog::GetInstance().GetWingwalker();
     if (m_title.empty())
         return false;
 
-    m_initPos.Heading = airData.headingDegrees;
+    m_initPos.Heading = m_aircraft.GetHeading();
     m_initPos.Airspeed = 0;
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
 
     double YShift = (m_countTP == GSWingmans::AIRLINE ? 8 : 5);
-    auto halfWing = airData.wingSpanMeters / 2.0;
+    auto halfWing = m_aircraft.GetWingSpanMeters() / 2.0;
     const auto locPos = GSGeography::RelativePosition(
-        airData.headingDegrees, m_aircraft.GetLongLat(), -halfWing - YShift - 6, 0);
+        m_aircraft.GetHeading(), m_aircraft.GetLongLat(), -halfWing - YShift - 6, 0);
     m_initPos.Longitude = locPos.Long();
     m_initPos.Latitude = locPos.Lat();
     
     const auto wp1 = GSGeography::RelativePosition(
-        airData.headingDegrees, m_aircraft.GetLongLat(), -halfWing - YShift, -halfWing / 2);
+        m_aircraft.GetHeading(), m_aircraft.GetLongLat(), -halfWing - YShift, -halfWing / 2);
     const auto wp2 = GSGeography::RelativePosition(
-        airData.headingDegrees, m_aircraft.GetLongLat(), -halfWing - YShift, halfWing / 2);
+        m_aircraft.GetHeading(), m_aircraft.GetLongLat(), -halfWing - YShift, halfWing / 2);
     BuildWalkPath(wp1, wp2, *this);
     
     if (m_countTP == GSWingmans::AIRLINE) {
@@ -63,9 +61,9 @@ bool GSWingmans::PreSpawn()
         ptrWalker2->SetAnimObj(animWorker2);
 
         const auto wp21 = GSGeography::RelativePosition(
-            airData.headingDegrees, m_aircraft.GetLongLat(), 0, halfWing);
+            m_aircraft.GetHeading(), m_aircraft.GetLongLat(), 0, halfWing);
         const auto wp22 = GSGeography::RelativePosition(
-            airData.headingDegrees, m_aircraft.GetLongLat(), -halfWing, halfWing);
+            m_aircraft.GetHeading(), m_aircraft.GetLongLat(), -halfWing, halfWing);
         BuildWalkPath(wp21, wp22, *ptrWalker2);
 
         m_attached.emplace_back(ptrWalker2);
@@ -81,9 +79,9 @@ bool GSWingmans::PreSpawn()
         ptrWalker3->SetAnimObj(animWorker3);
 
         const auto wp31 = GSGeography::RelativePosition(
-            airData.headingDegrees, m_aircraft.GetLongLat(), 0, -halfWing);
+            m_aircraft.GetHeading(), m_aircraft.GetLongLat(), 0, -halfWing);
         const auto wp32 = GSGeography::RelativePosition(
-            airData.headingDegrees, m_aircraft.GetLongLat(), -halfWing, -halfWing);
+            m_aircraft.GetHeading(), m_aircraft.GetLongLat(), -halfWing, -halfWing);
         BuildWalkPath(wp31, wp32, *ptrWalker3);
 
         m_attached.emplace_back(ptrWalker3);

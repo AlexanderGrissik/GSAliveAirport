@@ -20,9 +20,9 @@ public:
 
     GSPassenger(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent,
                 const GSCoord& stairBasePos, const GSCoord& stairTopPos, const GSCoord& doorPos,
-                float stairBaseHeading, float doorAltFeet, bool departing):
+                float stairBaseHeading, float doorAltFeet):
         GSSimObj(simHandle, aircraft, parent), m_stairBasePos(stairBasePos), m_stairTopPos(stairTopPos), m_doorPos(doorPos),
-        m_stairBaseHeading(stairBaseHeading), m_doorAltFeet(doorAltFeet), m_departing(departing) {}
+        m_stairBaseHeading(stairBaseHeading), m_doorAltFeet(doorAltFeet) {}
 
     bool PreSpawn() override;
 
@@ -45,7 +45,6 @@ private:
     float m_doorAltFeet = 0.0f;
     float m_stairBaseHeading = 0.0f;
     bool m_dynamic = true;
-    bool m_departing = true;
 };
 
 }

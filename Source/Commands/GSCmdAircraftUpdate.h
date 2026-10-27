@@ -13,13 +13,13 @@ class GSCmdAircraftUpdate : public GSCommand
 {
 public:
 
-    GSCmdAircraftUpdate(int cmd, std::shared_ptr<GSAircraft>& ac): GSCommand(cmd), m_aircraft(ac) {}
+    GSCmdAircraftUpdate(int cmd, DWORD aircraftID): GSCommand(cmd), m_aircraftID(aircraftID) {}
     virtual ~GSCmdAircraftUpdate() {}
 
-    const std::shared_ptr<GSAircraft>& GetAircraft() const { return m_aircraft; }
+    DWORD GetAircraftID() const { return m_aircraftID; }
 
 private:
 
-    std::shared_ptr<GSAircraft> m_aircraft;
+    DWORD m_aircraftID;
 };
 } // namespace NS_GSAliveAirport

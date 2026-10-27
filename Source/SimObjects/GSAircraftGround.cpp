@@ -10,31 +10,23 @@
 namespace NS_GSAliveAirport
 {
 
-GSAircraftGround::GSAircraftGround(
-    const GSAircraft& aircraft, GSSimConnect& simConn, std::shared_ptr<GSAirport>& airport, GSAliveUI& ui):
-    m_aircraft(aircraft), m_simConnect(simConn), m_airport(airport), m_ui(ui)
-{
-    if (m_airport) {
-        m_aircraft.SetAirport(m_airport.get());
-    }
-}
-
-void GSAircraftGround::UpdateAircraft(const GSAircraft& aircraft)
+void GSAircraftGround::UpdateAircraft()
 { 
-    m_aircraft.CopyDynInfo(aircraft); 
-    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(m_aircraft)); 
-
-    if (!m_aircraft.GetParking() && m_aircraft.GetRawData().groundSpeedKnots < 0.5 && !m_aircraft.IsTaxing()) {
-        SetClosestParking(); // For UI. Aircrafts that currently do not receive services.
+    if (m_spawnState == SpawnState::UNSPAWNED) {
+        if (!m_aircraft->GetParking() && m_aircraft->GetGroundSpeedKnots() < 0.5 && !m_aircraft->IsTaxing()) {
+            SetClosestParking(); // For UI. Aircrafts that currently do not receive services.
+        }
     }
+
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(*m_aircraft));
 }
 
 void GSAircraftGround::Spawning()
 {
     m_spawnState = SpawnState::SPAWNING;
-    GSLogStream::Log("Services Spawning for: ") << m_aircraft.GetObjID();
-    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(m_aircraft));
-    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::Spawning)); 
+    GSLogStream::Log("Services Spawning for: ") << m_aircraft->GetObjID();
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraft(*m_aircraft));
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft->GetObjID(), GSAliveUIAPI::AircraftService::Spawning)); 
 }
 
 void GSAircraftGround::Spawned()
@@ -42,48 +34,46 @@ void GSAircraftGround::Spawned()
     m_spawnState = SpawnState::SPAWNED;
     // A completed spawn attempt can have no objects (filtered out or all failed).
     const bool hasServices = m_spawnedObjs > 0;
-    GSLogStream::Log(hasServices ? "Services InPlace for: " : "No Services Spawned for: ") << m_aircraft.GetObjID();
+    GSLogStream::Log(hasServices ? "Services InPlace for: " : "No Services Spawned for: ") << m_aircraft->GetObjID();
     const auto service = hasServices ? GSAliveUIAPI::AircraftService::Inplace : GSAliveUIAPI::AircraftService::None;
-    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), service));
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft->GetObjID(), service));
 }
 
 void GSAircraftGround::Despawning()
 {
     m_spawnState = SpawnState::DESPAWNING;
-    GSLogStream::Log("Services Despawning for: ") << m_aircraft.GetObjID();
+    GSLogStream::Log("Services Despawning for: ") << m_aircraft->GetObjID();
 }
 
 void GSAircraftGround::Unspawned()
 {
     m_spawnState = SpawnState::UNSPAWNED;
-    GSLogStream::Log("Services Despawned for: ") << m_aircraft.GetObjID();
-    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::None));
+    GSLogStream::Log("Services Despawned for: ") << m_aircraft->GetObjID();
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft->GetObjID(), GSAliveUIAPI::AircraftService::None));
 }
 
 void GSAircraftGround::SetClosestParking()
 {
-    if (m_airport) {
-        const auto prk = m_airport->GetRoadNet().GetClosestNormalParking(aircraft.GetLongLat());
-        if (prk.has_value()) {
-            m_aircraft.SetParking(prk.value());
-        }
+    const auto prk = m_aircraft->GetAirport()->GetRoadNet().GetClosestNormalParking(m_aircraft->GetLongLat());
+    if (prk.has_value()) {
+        m_aircraft->SetParking(prk.value());
     }
 }
 
 void GSAircraftGround::Spawn()
 {
     if (m_spawnState == SpawnState::SPAWNING || m_spawnState == SpawnState::SPAWNED) {
-        GSLogStream::LogError("Double Spawn: ") << m_aircraft.GetObjID();
+        GSLogStream::LogError("Double Spawn: ") << m_aircraft->GetObjID();
         return;
     }
 
-    m_aircraft.SetParking(nullptr);
+    m_aircraft->SetParking(nullptr);
     SetClosestParking();
 
     Spawning(); 
 
     // MSFS injects traffic with parking assigned. Skip MSFS already provided ground services.
-    BuildObjs(!m_aircraft.HasParking());
+    BuildObjs(!m_aircraft->HasParking());
 
     std::erase_if(m_objs, [](const auto& item) {
         return !item->PreSpawn(); // remove items that do not match
@@ -100,7 +90,7 @@ void GSAircraftGround::Spawn()
 void GSAircraftGround::Despawn()
 {
     if (m_spawnState == SpawnState::DESPAWNING || m_spawnState == SpawnState::UNSPAWNED) {
-        GSLogStream::LogError("Double Despawn: ") << m_aircraft.GetObjID();
+        GSLogStream::LogError("Double Despawn: ") << m_aircraft->GetObjID();
         return;
     }
 

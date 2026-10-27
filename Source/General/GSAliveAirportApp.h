@@ -20,7 +20,10 @@ class GSAliveAirportApp final
 {
 public:
     static constexpr const char* s_Version = APP_VERSION;
-    GSAliveAirportApp(): m_aircraftTracker(m_spawner, m_animThread), m_spawner(m_animThread, m_mvmntThread, m_ui) {}
+    GSAliveAirportApp():
+        m_aircraftTracker(m_spawner, m_animThread, m_userAircraft), 
+        m_spawner(m_animThread, m_mvmntThread, m_ui, m_userAircraft),
+        m_animThread(m_userAircraft) {}
     ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
 
     GSAliveAirportApp(const GSAliveAirportApp &) = delete;
@@ -52,5 +55,6 @@ private:
     GSSpawnerThread m_spawner;
     GSMovementThread m_mvmntThread;
     GSAliveUI m_ui;
+    GSAircraft m_userAircraft;
 };
 } // namespace NS_GSAliveAirport

@@ -70,13 +70,13 @@ void GSStaircase::TrySpawnPassengers()
         return;
     }
 
-    float totDoorAltFeet = m_aircraft.GetRawData().groundAltitudeFeet + m_doorPosElev;
+    float totDoorAltFeet = m_aircraft.GetGroundAltitudeFeet() + m_doorPosElev;
     float stairBaseHeading = static_cast<float>(GSGeography::NormDeg(m_initPos.Heading + 180.0));
 
     GSTimePoint incrDelta = std::chrono::steady_clock::now();
     std::generate_n(std::back_inserter(m_attached), PASSANGER_COUNT, [this, stairBaseHeading, totDoorAltFeet, &incrDelta] {
         auto passenger = std::make_unique<GSPassenger>(
-            m_simHandle, m_aircraft, *this, m_stairBasePos, m_stairTopPos, m_doorPos, stairBaseHeading, totDoorAltFeet, m_departing);
+            m_simHandle, m_aircraft, *this, m_stairBasePos, m_stairTopPos, m_doorPos, stairBaseHeading, totDoorAltFeet);
         passenger->SetDeferredSpawn(incrDelta);
         passenger->PreSpawn();
         incrDelta += DELTA_SPAWN;
@@ -98,7 +98,6 @@ void GSStaircase::OnDespawning()
 
 bool GSStaircase::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
     auto paxDoor = m_front ? m_aircraft.GetFrontLeftDoor() : m_aircraft.GetRearLeftDoor();
     if (!paxDoor.has_value()) {
         return false;
@@ -112,14 +111,14 @@ bool GSStaircase::PreSpawn()
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Heading = GSGeography::NormDeg(airData.headingDegrees + paxDoor->first.get().headingDegrees + 180.0);
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Heading = GSGeography::NormDeg(m_aircraft.GetHeading() + paxDoor->first.get().headingDegrees + 180.0);
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
 
-    m_doorPos = GSGeography::RelativePosition(airData.headingDegrees, m_aircraft.GetLongLat(), paxDoor->first.get().posZMeter, paxDoor->first.get().posXMeter);
+    m_doorPos = GSGeography::RelativePosition(m_aircraft.GetHeading(), m_aircraft.GetLongLat(), paxDoor->first.get().posZMeter, paxDoor->first.get().posXMeter);
     m_initPos.Longitude = m_doorPos.Long();
     m_initPos.Latitude = m_doorPos.Lat();
 
-    m_doorPosElev = airData.alt_abv_grnd + paxDoor->first.get().posYFeet; 
+    m_doorPosElev = m_aircraft.GetAltitudeAboveGroundFeet() + paxDoor->first.get().posYFeet; 
 
     PrepareRoute();
 
@@ -155,7 +154,7 @@ void GSStaircase::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry
 
     FinalizeRoute();
 
-    auto halfWing = m_aircraft.GetRawData().wingSpanMeters / 5.0;
+    auto halfWing = m_aircraft.GetWingSpanMeters() / 5.0;
     double distY = GSRandom::RandDouble(halfWing, halfWing + 1.0);
     auto busPos = GSGeography::RelativePosition(m_initPos.Heading, m_stairBasePos, -distY - 3, 0.0);
     

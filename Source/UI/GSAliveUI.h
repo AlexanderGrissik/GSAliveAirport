@@ -83,8 +83,6 @@ private:
         Microsoft::WRL::ComPtr<ICoreWebView2Controller> m_controller;
     Microsoft::WRL::ComPtr<ICoreWebView2> m_webView;
     
-
-
     bool m_pageReady{false};
     bool m_failed{false};
     std::wstring m_errorMessage;

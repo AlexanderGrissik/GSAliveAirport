@@ -47,7 +47,6 @@ void GSGroundPower::OnArrived()
 bool GSGroundPower::PreSpawn()
 {
     double YMeters = 0.0, XMeters = 0.0;
-    const auto& airData = m_aircraft.GetRawData();
     auto groundPowerDoor = m_aircraft.GetGroundPowerDoor();
     auto frontLeftDoor = m_aircraft.GetFrontLeftDoor();
     if (groundPowerDoor.has_value()) {
@@ -69,15 +68,15 @@ bool GSGroundPower::PreSpawn()
 
     if (m_gpuType == GPU_LARGE && !GSCatalog::GetInstance().GetGPULargeExt().empty()) {
         m_title = GSCatalog::GetInstance().GetGPULargeExt();
-        m_initPos.Heading = airData.headingDegrees;
+        m_initPos.Heading = m_aircraft.GetHeading();
         driver = true;
     } else if (m_gpuType == GPU_MEDIUM && !GSCatalog::GetInstance().GetGPUMediumExt().empty()) {
         m_title = GSCatalog::GetInstance().GetGPUMediumExt();
-        m_initPos.Heading = airData.headingDegrees;
+        m_initPos.Heading = m_aircraft.GetHeading();
         driver = true;
     } else {
         m_title = "Car Ground Power Unit";
-        m_initPos.Heading = GSGeography::NormDeg(airData.headingDegrees + 180.0);
+        m_initPos.Heading = GSGeography::NormDeg(m_aircraft.GetHeading() + 180.0);
     }
         
     m_initPos.Heading -= 45.0;
@@ -86,10 +85,10 @@ bool GSGroundPower::PreSpawn()
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
     
     const auto doorPos = GSGeography::RelativePosition(
-        airData.headingDegrees, m_aircraft.GetLongLat(), YMeters, XMeters);
+        m_aircraft.GetHeading(), m_aircraft.GetLongLat(), YMeters, XMeters);
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 

@@ -122,22 +122,28 @@ void GSAliveAirportApp::SendSampleAircraft()
     // Sample aircraft data to exercise the Aircrafts page until live tracking is wired.
     auto fill = [](auto &dst, const char *value) { std::snprintf(dst.data(), dst.size(), "%s", value); };
 
-    auto makeAircraft = [](std::uint32_t id, GSAircraft::AircraftWireData data) {
-        std::vector<std::uint8_t> buffer(sizeof(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE) + sizeof(GSAircraft::AircraftWireData), 0);
+    // Build a self-contained SIMOBJECT_DATA entry whose payload starts at dwData.
+    // GSSimConnect::ReadMsgData always copies from the start of dwData, so each
+    // loader is given a payload sliced to exactly the range it reads.
+    auto withEntry = [](DWORD id, const void *payload, std::size_t payloadSize, auto &&load) {
+        std::vector<std::uint8_t> buffer(sizeof(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE) + payloadSize, 0);
         auto *entry = reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE *>(buffer.data());
         const std::size_t offset = reinterpret_cast<const std::uint8_t *>(&entry->dwData) - reinterpret_cast<const std::uint8_t *>(entry);
-        entry->dwSize = static_cast<DWORD>(offset + sizeof(GSAircraft::AircraftWireData));
+        entry->dwSize = static_cast<DWORD>(offset + payloadSize);
         entry->dwObjectID = id;
-        std::memcpy(&entry->dwData, &data, sizeof(GSAircraft::AircraftWireData));
+        std::memcpy(&entry->dwData, payload, payloadSize);
+        load(*entry);
+    };
+
+    auto makeAircraft = [&](std::uint32_t id, GSAircraft::AircraftWireData dyn, GSAircraft::AircraftWireDataConst cons) {
         GSAircraft ac;
-        ac.LoadFullState(*entry);
+        withEntry(id, &dyn, GSAircraft::AIRCRAFT_WIREDATA_INITSIZE, [&ac](const auto &e) { ac.LoadInitState(e); });
+        withEntry(id, &dyn.altitudeFeet, GSAircraft::AIRCRAFT_WIREDATA_DYNSIZE, [&ac](const auto &e) { ac.LoadDynamicState(e); });
+        withEntry(id, &cons, sizeof(cons), [&ac](const auto &e) { ac.LoadFullState(e); });
         return ac;
     };
 
     GSAircraft::AircraftWireData d1{};
-    fill(d1.atcId, "EI320");
-    fill(d1.atcAirline, "Aer Lingus");
-    fill(d1.atcFlightNumber, "EI320");
     fill(d1.title, "Airbus A320-214");
     d1.latitude = 48.8571;
     d1.longitude = 2.3413;
@@ -151,17 +157,19 @@ void GSAliveAirportApp::SendSampleAircraft()
     d1.lightNav = 1;
     d1.parkingBrake = 1;
     d1.onGround = 1;
-    d1.wingSpanMeters = 35.8;
-    d1.numberOfEngines = 2;
-    d1.interactivePoints[0] = GSAircraft::InteractivePointWireData{ 0, 12.1f, 3.0f, -1.4f, 90.0f };
-    d1.interactivePoints[1] = GSAircraft::InteractivePointWireData{ 1, 14.2f, 3.1f, -0.8f, 90.0f };
-    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(237, d1)));
+
+    GSAircraft::AircraftWireDataConst c1{};
+    fill(c1.atcId, "EI320");
+    fill(c1.atcAirline, "Aer Lingus");
+    fill(c1.atcFlightNumber, "EI320");
+    c1.wingSpanMeters = 35.8;
+    c1.numberOfEngines = 2;
+    c1.interactivePoints[0] = GSAircraft::InteractivePointWireData{ 0, 12.1f, 3.0f, -1.4f, 90.0f };
+    c1.interactivePoints[1] = GSAircraft::InteractivePointWireData{ 1, 14.2f, 3.1f, -0.8f, 90.0f };
+    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(237, d1, c1)));
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(237, GSAliveUIAPI::AircraftService::Inplace));
 
     GSAircraft::AircraftWireData d2{};
-    fill(d2.atcId, "EI874");
-    fill(d2.atcAirline, "Ryanair");
-    fill(d2.atcFlightNumber, "FRE874");
     fill(d2.title, "Boeing 737-8AS");
     d2.latitude = 48.8645;
     d2.longitude = 2.3275;
@@ -177,19 +185,21 @@ void GSAliveAirportApp::SendSampleAircraft()
     d2.lightNav = 1;
     d2.lightTaxi = 1;
     d2.onGround = 1;
-    d2.wingSpanMeters = 35.8;
-    d2.numberOfEngines = 2;
     d2.pushbackAttached = 1;
-    d2.pushbackContactXMeters = 21.3f;
-    d2.pushbackContactZMeters = -0.4f;
-    d2.interactivePoints[0] = GSAircraft::InteractivePointWireData{ 0, 11.8f, 3.0f, -1.2f, 12.0f };
-    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(1042, d2)));
+
+    GSAircraft::AircraftWireDataConst c2{};
+    fill(c2.atcId, "EI874");
+    fill(c2.atcAirline, "Ryanair");
+    fill(c2.atcFlightNumber, "FRE874");
+    c2.wingSpanMeters = 35.8;
+    c2.numberOfEngines = 2;
+    c2.pushbackContactXMeters = 21.3f;
+    c2.pushbackContactZMeters = -0.4f;
+    c2.interactivePoints[0] = GSAircraft::InteractivePointWireData{ 0, 11.8f, 3.0f, -1.2f, 12.0f };
+    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(1042, d2, c2)));
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(1042, GSAliveUIAPI::AircraftService::Spawning));
 
     GSAircraft::AircraftWireData d3{};
-    fill(d3.atcId, "AF1452");
-    fill(d3.atcAirline, "Air France");
-    fill(d3.atcFlightNumber, "AF1452");
     fill(d3.title, "Airbus A321-253NX");
     d3.latitude = 48.8702;
     d3.longitude = 2.3589;
@@ -202,9 +212,14 @@ void GSAliveAirportApp::SendSampleAircraft()
     d3.etaSeconds = 120;
     d3.lightBeacon = 1;
     d3.lightNav = 1;
-    d3.wingSpanMeters = 35.8;
-    d3.numberOfEngines = 2;
-    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(4096, d3)));
+
+    GSAircraft::AircraftWireDataConst c3{};
+    fill(c3.atcId, "AF1452");
+    fill(c3.atcAirline, "Air France");
+    fill(c3.atcFlightNumber, "AF1452");
+    c3.wingSpanMeters = 35.8;
+    c3.numberOfEngines = 2;
+    m_ui.PostMessageUI(GSAliveUIAPI::AddAircraft(makeAircraft(4096, d3, c3)));
 }
 } // namespace NS_GSAliveAirport
 

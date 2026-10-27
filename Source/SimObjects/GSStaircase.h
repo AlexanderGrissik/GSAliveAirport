@@ -31,8 +31,8 @@ public:
     };
     #pragma pack(pop)
 
-    GSStaircase(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, bool front, bool departing) :
-        GSSimObj(simHandle, aircraft, parent), m_front(front), m_departing(departing) {}
+    GSStaircase(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, bool front) :
+        GSSimObj(simHandle, aircraft, parent), m_front(front) {}
         
     static void InitDatums(GSSimConnect& handler);
 
@@ -57,7 +57,6 @@ private:
     bool m_stairsArrived = false;
     bool m_busArrived = false;
     bool m_paxSpawned = false;
-    bool m_departing = true;
 
     class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {
     public:

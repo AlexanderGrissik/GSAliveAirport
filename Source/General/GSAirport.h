@@ -56,43 +56,32 @@ public:
     static_assert(sizeof(TaxiPath) == 16);
     static_assert(sizeof(Jetway) == 12);
 
-    GSAirport(const std::string& icao, const GSCoord& loc): m_icao(icao), m_location(loc)  {}
+    GSAirport(const std::string& icao, const GSCoord& loc, DWORD loadingReqID): 
+        m_icao(icao), m_location(loc), m_loadingReqID(loadingReqID)  {}
 
     static void InitDatums(GSSimConnect& handler);
 
-    void LoadInfo(GSSimConnect& handler);
+    void LoadInfo(const SIMCONNECT_RECV_FACILITY_DATA& entry);
     void OrganizeStructures();
     const std::string& GetICAO() const { return m_icao; } 
     const GSCoord& GetLongLat() const { return m_location; }
     const GSRoadsNetwork& GetRoadNet() const { return m_roadNetwork; } 
-   
+    DWORD LoadingReqID() const { return m_loadingReqID; }
+    bool IsFinalized() const { return m_isFinalized; }
+
 private:
 
     void MergeAllRoadNetworks(std::list<GSRoadsNetwork>& roadNetworks);
 
-    std::string m_icao;
-    GSCoord m_location;
     std::unordered_map<DWORD, ParkingSlot> m_parkings;
     std::unordered_map<DWORD, TaxiPoint> m_taxiPoints;
     std::unordered_map<DWORD, Jetway> m_jetways;
     std::vector<TaxiPath> m_taxiPaths;
     GSRoadsNetwork m_roadNetwork;
-
-    class GSReqInfo : public GSRequest
-    {
-    public:
-        GSReqInfo(GSSimConnect& handler, GSAirport& airport)
-            : GSRequest(handler), m_airport(airport) {}
-
-        GSRequest::SendResult Process() override;
-        bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
-
-    private:
-        GSAirport& m_airport;
-    };
-
-    friend GSReqInfo;
+    std::string m_icao;
+    GSCoord m_location;
+    DWORD m_loadingReqID;
+    bool m_isFinalized = false;
 };
 
 }

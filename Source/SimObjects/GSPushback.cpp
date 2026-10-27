@@ -23,8 +23,7 @@ void GSPushback::OnArrived()
 
 bool GSPushback::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
-    m_initPos.Heading = GSGeography::NormDeg(airData.headingDegrees + 180.0);
+    m_initPos.Heading = GSGeography::NormDeg(m_aircraft.GetHeading() + 180.0);
 
     double zshift = 5.0;
     double xshift = 5.0;
@@ -42,10 +41,10 @@ bool GSPushback::PreSpawn()
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
     
     const auto doorPos = GSGeography::RelativePosition(
-        airData.headingDegrees, m_aircraft.GetLongLat(), airData.wingSpanMeters / 2.0 + zshift, xshift);
+        m_aircraft.GetHeading(), m_aircraft.GetLongLat(), m_aircraft.GetWingSpanMeters() / 2.0 + zshift, xshift);
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 

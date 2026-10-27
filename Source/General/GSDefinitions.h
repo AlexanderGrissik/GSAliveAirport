@@ -35,6 +35,7 @@ public:
 
     enum GSDefID : SIMCONNECT_DATA_DEFINITION_ID {
         GSDefID_Aircraft = 1,
+        GSDefID_AircraftConst,
         GSDefID_Position,
         GSDefID_AIWaypoints,
         GSDefID_AirportInfo,
@@ -61,7 +62,7 @@ public:
         CMD_SPAWNER_AIRCRAFT_ADDED,
         CMD_SPAWNER_AIRCRAFT_REMOVED,
         CMD_SPAWNER_AIRCRAFT_MODIFIED,
-        CMD_SPAWNER_AIRCRAFT_USER,
+        CMD_AIRCRAFT_USER,
         CMD_ANIM_OBJ_ADD,
         CMD_ANIM_OBJ_REM,
         CMD_ANIM_OBJ_REM_DONE,

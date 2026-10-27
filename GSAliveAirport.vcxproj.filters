@@ -162,9 +162,6 @@
     <ClInclude Include="Source\Commands\GSCmdSimObj.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Commands\GSCmdAirport.h">
-      <Filter>Source\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="Source\SimObjects\GSCateringCart.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>

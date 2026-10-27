@@ -48,7 +48,7 @@ void GSBuggageLoader::OnArrived()
     if (m_ext) {
         GSCoord initPosLoc = { m_initPos.Longitude, m_initPos.Latitude };
         auto* anim = new GSAnimBFLO(m_simObjectID, initPosLoc);
-        if (m_departing) {
+        if (m_aircraft.IsDeparting()) {
             anim->AddFrameSet({ 4213, 0, 30.0 }, { 650, 0, 30.0 });
         } else {
             anim->AddFrameSet({ 0, 4213, 30.0 }, { 0, 650, 30.0 });
@@ -65,7 +65,7 @@ void GSBuggageLoader::OnArrived()
         ptrWorker->PreSpawn();
         
         auto* animWorker = new GSAnimSingle(0, initPosLoc, GSDefinitions::GSDefID_AnimWagonBLO);
-        if (m_departing) {
+        if (m_aircraft.IsDeparting()) {
             animWorker->AddFrameSet({ 4213, 0, 30.0 });
         } else {
             animWorker->AddFrameSet({ 0, 4213, 30.0 });
@@ -93,7 +93,6 @@ void GSBuggageLoader::OnDespawning()
 
 bool GSBuggageLoader::PreSpawn()
 {
-    const auto& airData = m_aircraft.GetRawData();
     auto cargoDoor = m_front ? m_aircraft.GetFrontCargoDoor() : m_aircraft.GetRearCargoDoor();
     if (!cargoDoor.has_value()) {
         return false;
@@ -111,14 +110,14 @@ bool GSBuggageLoader::PreSpawn()
     m_initPos.Bank = 0.0;
     m_initPos.Pitch = 0.0;
     m_initPos.OnGround = 1;
-    m_initPos.Heading = GSGeography::NormDeg(airData.headingDegrees + cargoDoor->first.get().headingDegrees + 180.0);
-    m_initPos.Altitude = airData.groundAltitudeFeet;
+    m_initPos.Heading = GSGeography::NormDeg(m_aircraft.GetHeading() + cargoDoor->first.get().headingDegrees + 180.0);
+    m_initPos.Altitude = m_aircraft.GetGroundAltitudeFeet();
 
-    const auto doorPos = GSGeography::RelativePosition(airData.headingDegrees, m_aircraft.GetLongLat(), cargoDoor->first.get().posZMeter, cargoDoor->first.get().posXMeter);
+    const auto doorPos = GSGeography::RelativePosition(m_aircraft.GetHeading(), m_aircraft.GetLongLat(), cargoDoor->first.get().posZMeter, cargoDoor->first.get().posXMeter);
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 
-    m_doorPosElev = airData.alt_abv_grnd + cargoDoor->first.get().posYFeet; 
+    m_doorPosElev = m_aircraft.GetAltitudeAboveGroundFeet() + cargoDoor->first.get().posYFeet;
 
     PrepareRoute();
 
