@@ -84,19 +84,19 @@ void GSAircraft::CopyDynInfo(const GSAircraft& another)
 
 void GSAircraft::LoadInitState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry)
 {
-    GSSimConnect::ReadMsgData(&m_rawData, AIRCRAFT_WIREDATA_INITSIZE, entry);
+    GSSimConnect::ReadMsgData(&m_rawData, 0, AIRCRAFT_WIREDATA_INITSIZE, entry);
     objectID = entry.dwObjectID;
     m_location = {m_rawData.longitude,m_rawData.latitude};
 }
 
 void GSAircraft::LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry)
 {
-    GSSimConnect::ReadMsgData(&(m_rawData.altitudeFeet), AIRCRAFT_WIREDATA_DYNSIZE, entry);
+    GSSimConnect::ReadMsgData(&m_rawData, offsetof(decltype(m_rawData), altitudeFeet), AIRCRAFT_WIREDATA_DYNSIZE, entry);
 }
 
 void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 {
-    GSSimConnect::ReadMsgData(&m_rawConstData, sizeof(m_rawConstData), entry);
+    GSSimConnect::ReadMsgData(&m_rawConstData, 0, sizeof(m_rawConstData), entry);
 
     m_departing = (m_rawData.onGround && m_rawData.groundSpeedKnots < 2.0);
 

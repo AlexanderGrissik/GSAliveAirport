@@ -71,7 +71,7 @@ bool GSCateringCart::PreSpawn()
 void GSCateringCart::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 {
     StateWireDataGet rawStateGet;
-    GSSimConnect::ReadMsgData(&rawStateGet, sizeof(rawStateGet), entry);
+    GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
     GSCoord out = GSGeography::RepositionZOffset({ m_initPos.Longitude, m_initPos.Latitude }, m_initPos.Heading, -rawStateGet.doorContactOffsetZ);
     m_initPos.Longitude = out.Long();
     m_initPos.Latitude = out.Lat();

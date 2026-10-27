@@ -122,9 +122,9 @@ void GSAliveAirportApp::SendSampleAircraft()
     // Sample aircraft data to exercise the Aircrafts page until live tracking is wired.
     auto fill = [](auto &dst, const char *value) { std::snprintf(dst.data(), dst.size(), "%s", value); };
 
-    // Build a self-contained SIMOBJECT_DATA entry whose payload starts at dwData.
-    // GSSimConnect::ReadMsgData always copies from the start of dwData, so each
-    // loader is given a payload sliced to exactly the range it reads.
+    // Build a self-contained SIMOBJECT_DATA entry whose dwData holds the full
+    // aircraft wire payload. Each loader applies its own source offset inside
+    // GSSimConnect::ReadMsgData (init: from payload start, dyn: from altitudeFeet).
     auto withEntry = [](DWORD id, const void *payload, std::size_t payloadSize, auto &&load) {
         std::vector<std::uint8_t> buffer(sizeof(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE) + payloadSize, 0);
         auto *entry = reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE *>(buffer.data());
@@ -137,9 +137,12 @@ void GSAliveAirportApp::SendSampleAircraft()
 
     auto makeAircraft = [&](std::uint32_t id, GSAircraft::AircraftWireData dyn, GSAircraft::AircraftWireDataConst cons) {
         GSAircraft ac;
-        withEntry(id, &dyn, GSAircraft::AIRCRAFT_WIREDATA_INITSIZE, [&ac](const auto &e) { ac.LoadInitState(e); });
-        withEntry(id, &dyn.altitudeFeet, GSAircraft::AIRCRAFT_WIREDATA_DYNSIZE, [&ac](const auto &e) { ac.LoadDynamicState(e); });
+        const std::size_t fullDynSize = GSAircraft::AIRCRAFT_WIREDATA_INITSIZE + GSAircraft::AIRCRAFT_WIREDATA_DYNSIZE;
+        withEntry(id, &dyn, fullDynSize, [&ac](const auto &e) { ac.LoadInitState(e); ac.LoadDynamicState(e); });
         withEntry(id, &cons, sizeof(cons), [&ac](const auto &e) { ac.LoadFullState(e); });
+        // Dummy airport so UI serialization (GetAirport()->GetICAO()) stays safe if this debug path is re-enabled.
+        auto airport = std::make_shared<GSAirport>("LFPG", GSCoord(dyn.longitude, dyn.latitude), 0);
+        ac.SetAirport(airport);
         return ac;
     };
 

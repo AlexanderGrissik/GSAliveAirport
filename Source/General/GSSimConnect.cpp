@@ -328,13 +328,12 @@ GSDefinitions::SendResult GSSimConnect::CaptureResult(HRESULT result, DWORD requ
     return {sendId, requestID, result};
 }
 
-void GSSimConnect::ReadMsgData(void* dest, size_t destSize, const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
+void GSSimConnect::ReadMsgData(void* dest, size_t offset, size_t destSize, const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 {
     const auto* begin = reinterpret_cast<const BYTE*>(&entry);
     const auto* data = reinterpret_cast<const BYTE*>(&entry.dwData);
-    const size_t offset = data - begin;
-    const size_t payloadSize = entry.dwSize - offset;
-    std::memcpy(dest, data, std::min(payloadSize, destSize));
+    const size_t payloadSize = entry.dwSize - (data - begin);
+    std::memcpy(static_cast<std::byte*>(dest) + offset, data + offset, std::min(payloadSize - offset, destSize));
 }
 
 void GSSimConnect::PostReqCommand(GSRequest* req)

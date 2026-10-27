@@ -107,7 +107,7 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
 {
     static double ArrivalDistanceMtr = 10.0;
     StateWireDataGet rawStateGet;
-    GSSimConnect::ReadMsgData(&rawStateGet, sizeof(rawStateGet), entry);
+    GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
     const auto nowTime = std::chrono::steady_clock::now();
     const auto& dst = track.m_simObj->GetDestPoint();

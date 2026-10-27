@@ -24,7 +24,7 @@ public:
         m_aircraftTracker(m_spawner, m_animThread, m_userAircraft), 
         m_spawner(m_animThread, m_mvmntThread, m_ui, m_userAircraft),
         m_animThread(m_userAircraft) {}
-    ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); }
+    ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); m_animThread.Stop(); m_mvmntThread.Stop(); }
 
     GSAliveAirportApp(const GSAliveAirportApp &) = delete;
     GSAliveAirportApp &operator=(const GSAliveAirportApp &) = delete;

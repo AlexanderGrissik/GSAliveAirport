@@ -41,3 +41,7 @@ If the user asks to compile or build and there are errors or warnings, report th
 ## 7. Execute Exactly What Is Requested
 
 Execute exactly what the user specifies, nothing more, nothing less. No assumed next steps, no "while I'm here" extras, no unrequested fixes. Each action only when you explicitly request it.
+
+## 8. Concise Confirmation of Verified Fixes
+
+When verifying an issue or previously reported bug and you confirm it is fixed with no remaining issues in that same matter, respond with only "Fixed" — no re-explanation, re-derivation, or extra detail. Elaborate only when the issue is not fixed, is partially fixed, or new problems were found.

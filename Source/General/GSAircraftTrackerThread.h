@@ -85,7 +85,7 @@ public:
     std::jthread m_thread;
     GSAircraft& m_userAircraft;
     AirportScanCache m_airportCache;
-    std::unordered_map<std::string, std::pair<size_t, std::shared_ptr<GSAirport>>> m_aciveAirports;
+    std::unordered_map<std::string, std::pair<size_t, std::shared_ptr<GSAirport>>> m_activeAirports;
     DWORD m_airportAddedReqID = 0;
     DWORD m_airportRemovedReqID = 0;
 
@@ -121,7 +121,7 @@ public:
 
     private:
         DWORD m_objectID;
-        const AirportScanCache::value_type& m_airportInfo;
+        AirportScanCache::value_type m_airportInfo;
     };
 
     class GSReqScanAirport : public GSRequest {
@@ -161,6 +161,6 @@ public:
     };
 
     GSReqAirportAdded m_airportAddedReq;
-    GSReqAirportAdded m_airportRemovedReq;
+    GSReqAirportRemoved m_airportRemovedReq;
 };
 } // namespace NS_GSAliveAirport

@@ -44,7 +44,6 @@ private:
 
 	std::unordered_map<SIMCONNECT_OBJECT_ID, std::unique_ptr<GSAnimationObject>> m_animObjs;
 	GSTimePoint m_lastAnimTime{};
-	GSCoord m_userPos{};
 	std::jthread m_thread;
 	GSAircraft& m_userAircraft;
 };

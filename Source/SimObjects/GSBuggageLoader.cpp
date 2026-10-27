@@ -127,7 +127,7 @@ bool GSBuggageLoader::PreSpawn()
 void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 {
     StateWireDataGet rawStateGet;
-    GSSimConnect::ReadMsgData(&rawStateGet, sizeof(rawStateGet), entry);
+    GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
     std::array updateData{ StateWireDataSet{ CalcLoaderOpenAngle(rawStateGet) } };
     m_simHandle.PostReqCommand(new GSReqSetDataSimObj(m_simHandle, *this, std::move(updateData)));

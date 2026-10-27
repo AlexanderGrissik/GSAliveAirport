@@ -88,7 +88,6 @@ public:
 
     static constexpr std::size_t AIRCRAFT_WIREDATA_INITSIZE = offsetof(AircraftWireData, altitudeFeet);
     static constexpr std::size_t AIRCRAFT_WIREDATA_DYNSIZE = sizeof(AircraftWireData) - AIRCRAFT_WIREDATA_INITSIZE;
-    static constexpr std::size_t AIRCRAFT_USER_DYNSIZE = offsetof(AircraftWireData, fromAirport);
 
     using InterPntRef = std::reference_wrapper<const InteractivePointWireData>;
     

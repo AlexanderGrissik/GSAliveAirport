@@ -128,7 +128,7 @@ bool GSStaircase::PreSpawn()
 void GSStaircase::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 {
     StateWireDataGet rawStateGet;
-    GSSimConnect::ReadMsgData(&rawStateGet, sizeof(rawStateGet), entry);
+    GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
     // Clamp if the door is beneath or above the Staircase Y range.
     const float yRelation = std::clamp(

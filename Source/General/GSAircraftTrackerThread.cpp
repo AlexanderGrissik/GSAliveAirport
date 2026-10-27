@@ -99,7 +99,7 @@ void GSAircraftTrackerThread::OnSimStop()
     UnsubscribeAirportList();
     m_tracked.clear();
     m_airportCache.clear();
-    m_aciveAirports.clear();
+    m_activeAirports.clear();
 }
 
 void GSAircraftTrackerThread::RequestScan()
@@ -131,10 +131,12 @@ void GSAircraftTrackerThread::HandleRemoved()
 
     std::for_each(toRemove.begin(), toRemove.end(), [this](DWORD id) {
         auto node = m_tracked.extract(id);
-        auto itrAirport = m_aciveAirports.find(node.mapped()->GetAirport()->GetICAO());
-        if (--itrAirport->second.first == 0 && m_aciveAirports.size() > 10) {
-            m_aciveAirports.erase(itrAirport);
-            GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Airport erased: ") << node.mapped()->GetAirport()->GetICAO();
+        if (node.mapped()->GetAirport()) {
+            auto itrAirport = m_activeAirports.find(node.mapped()->GetAirport()->GetICAO());
+            if (--itrAirport->second.first == 0 && m_activeAirports.size() > 10) {
+                m_activeAirports.erase(itrAirport);
+                GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Airport erased: ") << node.mapped()->GetAirport()->GetICAO();
+            }
         }
 
         CmdPtr cmd(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_REMOVED, node.mapped()->GetObjID()));
@@ -284,8 +286,8 @@ void GSAircraftTrackerThread::HandleAircraftConstScan(const SIMCONNECT_RECV_SIMO
     GSAircraft& aircraft = *itr->second;
     aircraft.LoadFullState(entry);
 
-    auto itrAirport = m_aciveAirports.find(airportInfo.first);
-    if (itrAirport != m_aciveAirports.end()) {
+    auto itrAirport = m_activeAirports.find(airportInfo.first);
+    if (itrAirport != m_activeAirports.end()) {
         ++itrAirport->second.first;
         aircraft.SetAirport(itrAirport->second.second);
         if (itrAirport->second.second->IsFinalized()) {
@@ -294,7 +296,7 @@ void GSAircraftTrackerThread::HandleAircraftConstScan(const SIMCONNECT_RECV_SIMO
             PostReqCommand(new GSReqAirportInfo(*this, entry.dwObjectID, airportInfo)); // Wait to be loaded.
         }
     } else {
-        aircraft.SetAirport(m_aciveAirports.emplace(
+        aircraft.SetAirport(m_activeAirports.emplace(
             airportInfo.first, std::make_pair<size_t, std::shared_ptr<GSAirport>>(
                 1, std::make_shared<GSAirport>(airportInfo.first, airportInfo.second, entry.dwObjectID))).first->second.second);
         PostReqCommand(new GSReqAirportInfo(*this, entry.dwObjectID, airportInfo));
@@ -303,8 +305,8 @@ void GSAircraftTrackerThread::HandleAircraftConstScan(const SIMCONNECT_RECV_SIMO
 
 void GSAircraftTrackerThread::HandleAirportInfoMessage(const SIMCONNECT_RECV_FACILITY_DATA& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo)
 {
-    auto itrAirport = m_aciveAirports.find(airportInfo.first);
-    if (itrAirport == m_aciveAirports.end())
+    auto itrAirport = m_activeAirports.find(airportInfo.first);
+    if (itrAirport == m_activeAirports.end())
         return;
 
     if (itrAirport->second.second->LoadingReqID() == aircraftID) { // Another aircraft may load the airport simultaneously.
