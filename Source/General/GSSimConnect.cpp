@@ -165,7 +165,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
         OnDisconnect();
         break;
     case SIMCONNECT_RECV_ID_EVENT: {
-        const auto &event = *reinterpret_cast<SIMCONNECT_RECV_EVENT *>(message);
+        const auto &event = *static_cast<SIMCONNECT_RECV_EVENT *>(message);
         if (event.uEventID == GSEventID_SimState) {
             if (event.dwData != 0) {
                 GSLogStream::Log("Simulation detected.");
@@ -229,7 +229,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
     m_lastDispatch = true;
 }
 
-void CALLBACK GSSimConnect::DispatchThunk(SIMCONNECT_RECV *message, DWORD messageSize, void *context)
+void CALLBACK GSSimConnect::DispatchThunk(SIMCONNECT_RECV *message, DWORD messageSize, void *context) noexcept
 {
     reinterpret_cast<GSSimConnect *>(context)->OnSimConnectMessage(message, messageSize);
 }
@@ -325,15 +325,19 @@ GSInvokeRC GSSimConnect::CaptureResult(HRESULT result, DWORD requestID) const
             sendId = 0;
         }
     }
-    return {sendId, requestID, result};
+    return {{sendId, requestID}, result};
 }
 
 void GSSimConnect::ReadMsgData(void* dest, size_t offset, size_t destSize, const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 {
     const auto* begin = reinterpret_cast<const BYTE*>(&entry);
     const auto* data = reinterpret_cast<const BYTE*>(&entry.dwData);
-    const size_t payloadSize = entry.dwSize - (data - begin);
-    std::memcpy(static_cast<std::byte*>(dest) + offset, data + offset, std::min(payloadSize - offset, destSize));
+    const auto dataOffset = static_cast<size_t>(data - begin);
+    if (entry.dwSize >= dataOffset) {
+        const size_t payloadSize = entry.dwSize - dataOffset;
+        if (payloadSize >= offset)
+            std::memcpy(static_cast<std::byte*>(dest) + offset, data + offset, std::min(payloadSize - offset, destSize));
+    }
 }
 
 void GSSimConnect::PostCommand(GSCommand* cmd)

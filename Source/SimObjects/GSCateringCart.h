@@ -4,8 +4,8 @@
 #pragma once
 
 #include "GSSimObj.h"
-#include "../General/GSDefinitions.h"
-#include "../General/GSLogStream.h"
+#include "General/GSDefinitions.h"
+#include "General/GSLogStream.h"
 #include <array>
 #include <utility>
 

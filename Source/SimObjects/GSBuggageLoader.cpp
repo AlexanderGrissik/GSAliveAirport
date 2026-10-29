@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSBuggageLoader.h"
-#include "../Requests/GSReqBuggageLoaderGetData.h"
-#include "../Requests/GSReqBuggageLoaderSetData.h"
-#include "../Requests/GSReqSimObjTxClientEventEX1.h"
-#include "../General/GSGeography.h"
-#include "../General/GSCatalog.h"
+#include "Requests/GSReqBuggageLoaderGetData.h"
+#include "Requests/GSReqBuggageLoaderSetData.h"
+#include "Requests/GSReqSimObjTxClientEventEX1.h"
+#include "General/GSGeography.h"
+#include "General/GSCatalog.h"
 #include "GSStatic.h"
 #include "GSBuggageTrain.h"
-#include "../Animation/GSAnimBFLO.h"
-#include "../Animation/GSAnimSingle.h"
+#include "Animation/GSAnimBFLO.h"
+#include "Animation/GSAnimSingle.h"
 #include <algorithm>
 
 namespace NS_GSAliveAirport

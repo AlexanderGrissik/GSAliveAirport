@@ -7,6 +7,7 @@ namespace NS_GSAliveAirport
 class GSSimObj;
 
 struct GSSimObjUpdate {
+    virtual ~GSSimObjUpdate() = default;
     virtual void OnSpawned(bool ok, GSSimObj& obj) = 0;
     virtual void OnDespawned() = 0;
 };

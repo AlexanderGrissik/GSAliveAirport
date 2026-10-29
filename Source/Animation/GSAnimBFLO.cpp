@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAnimBFLO.h"
-#include "../General/GSLogStream.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {
@@ -31,7 +31,7 @@ void GSAnimBFLO::Animate(GSSimConnect& handler, float elapsedMilli)
     StateWireDataSet valSet { m_BLO.m_currFrame, m_FLO.m_currFrame };
     auto simRC = handler.Invoke(
         SimConnect_SetDataOnSimObject, GSDatumID_AnimWagonBFLO, m_simObjectID,
-        0, 1, static_cast<DWORD>(sizeof(valSet)), &valSet);
+        0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSAnimBFLO::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
     }

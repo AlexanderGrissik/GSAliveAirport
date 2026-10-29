@@ -3,11 +3,11 @@
 // See LICENSE for details
 #pragma once
 
-#include "../General/GSDefinitions.h"
-#include "../General/GSCoord.h"
-#include "../General/GSSimConnect.h"
-#include "../General/GSAirport.h"
-#include "../General/GSStringUtils.h"
+#include "General/GSDefinitions.h"
+#include "General/GSCoord.h"
+#include "General/GSSimConnect.h"
+#include "General/GSAirport.h"
+#include "General/GSStringUtils.h"
 #include <array>
 #include <cstddef>
 #include <cstdint>

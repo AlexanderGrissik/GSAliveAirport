@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAircraft.h"
-#include "../General/GSSimConnect.h"
-#include "../General/GSDefinitions.h"
-#include "../General/GSGeography.h"
-#include "../General/GSLogStream.h"
+#include "General/GSSimConnect.h"
+#include "General/GSDefinitions.h"
+#include "General/GSGeography.h"
+#include "General/GSLogStream.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>

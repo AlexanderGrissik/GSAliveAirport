@@ -3,8 +3,8 @@
 // See LICENSE for details
 #pragma once
 
-#include "../General/GSDefinitions.h"
-#include "../General/GSQuickQueue.h"
+#include "General/GSDefinitions.h"
+#include "General/GSQuickQueue.h"
 #include <memory>
 #include <optional>
 

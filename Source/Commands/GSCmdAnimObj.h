@@ -3,8 +3,8 @@
 // See LICENSE for details
 #pragma once
 
-#include "../Animation/GSAnimationObject.h"
-#include "../General/GSSimConnect.h"
+#include "Animation/GSAnimationObject.h"
+#include "General/GSSimConnect.h"
 #include "GSCmdReq.h"
 
 namespace NS_GSAliveAirport
@@ -15,7 +15,7 @@ class GSCmdAnimObj : public GSCommand
 public:
 
     GSCmdAnimObj(GSCommandID cmd, GSSimConnect& retSimConnect, GSAnimationObject* animObj):
-        GSCommand(cmd), m_retSimConnect(retSimConnect), m_animObj(animObj) {
+        GSCommand(cmd), m_animObj(animObj), m_retSimConnect(retSimConnect) {
         m_objID = animObj->GetObjID();
     }
     GSCmdAnimObj(GSCommandID cmd, GSSimConnect& retSimConnect, SIMCONNECT_OBJECT_ID animObj, GSRequest* retReq):

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqCatalog.h"
-#include "../General/GSCatalog.h"
-#include "../General/GSLogStream.h"
+#include "General/GSCatalog.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {
@@ -24,8 +24,14 @@ GSReqRC GSReqCatalog::Process()
 
 bool GSReqCatalog::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
 {
-    const auto& entry = *reinterpret_cast<const SIMCONNECT_RECV_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST*>(message);
-    if (entry.dwOutOf == 0 || message->dwID != SIMCONNECT_RECV_ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST) { // Empty Scan
+    if (message->dwID != SIMCONNECT_RECV_ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST) {
+        static_cast<GSCatalog&>(m_simHandle).Done();
+        GSLogStream::LogError("GSReqCatalog::OnMessage Unexpected Message: ") << message->dwID;
+        return true;
+    }
+
+    const auto& entry = *static_cast<const SIMCONNECT_RECV_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST*>(message);
+    if (entry.dwOutOf == 0) { // Empty Scan
         static_cast<GSCatalog&>(m_simHandle).Done();
         GSLogStream::LogError("GSReqCatalog::OnMessage Empty Catalog. ID: ") << message->dwID << ", Count: " << entry.dwOutOf;
         return true;

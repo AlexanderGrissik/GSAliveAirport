@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSPassenger.h"
-#include "../General/GSGeography.h"
-#include "../General/GSCatalog.h"
-#include "../General/GSRandom.h"
-#include "../Animation/GSAnimMulti.h"
+#include "General/GSGeography.h"
+#include "General/GSCatalog.h"
+#include "General/GSRandom.h"
+#include "Animation/GSAnimMulti.h"
 #include <cstddef>
 #include <iterator>
 

@@ -126,8 +126,8 @@ void GSLogStream::SetLoggingEnabled(bool enabled)
 
 std::string GSLogStream::Lower(std::string value)
 {
-    std::ranges::transform(value, value.begin(), [](unsigned char character) {
-        return static_cast<char>(std::tolower(character));
+    std::ranges::transform(value, value.begin(), [](char character) {
+        return static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
     });
     return value;
 }

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqTrackerAircraftsInfo.h"
-#include "../General/GSAircraftTrackerThread.h"
-#include "../General/GSLogStream.h"
+#include "General/GSAircraftTrackerThread.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {
@@ -15,7 +15,7 @@ GSReqRC GSReqTrackerAircraftsInfo::Process()
     auto id = m_simHandle.NextRequestID();
     GSReqRC rc = {
         m_simHandle.InvokeRequest(
-            id, SimConnect_RequestDataOnSimObject, id, GSDatumID_AircraftConst, m_objectID, SIMCONNECT_PERIOD_ONCE, 0, 0, 0, 0), true };
+            id, SimConnect_RequestDataOnSimObject, id, GSDatumID_AircraftConst, m_objectID, SIMCONNECT_PERIOD_ONCE, 0U, 0U, 0U, 0U), true };
     
     if (!rc.isOK()) {
         GSAircraftTrackerThread &tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
@@ -37,7 +37,7 @@ bool GSReqTrackerAircraftsInfo::OnMessage(SIMCONNECT_RECV *message, DWORD messag
         return false;
     }
 
-    tracker.HandleAircraftConstScan(*reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message), m_airportInfo);
+    tracker.HandleAircraftConstScan(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message), m_airportInfo);
     return true;
 }
 

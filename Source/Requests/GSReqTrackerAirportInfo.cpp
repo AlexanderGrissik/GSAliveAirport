@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqTrackerAirportInfo.h"
-#include "../General/GSAircraftTrackerThread.h"
-#include "../General/GSLogStream.h"
+#include "General/GSAircraftTrackerThread.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {
@@ -26,22 +26,15 @@ GSReqRC GSReqTrackerAirportInfo::Process()
 
 bool GSReqTrackerAirportInfo::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
 {
-    const auto& entry = *reinterpret_cast<const SIMCONNECT_RECV_FACILITY_DATA*>(message);
-
     GSAircraftTrackerThread& tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
-    if (message->dwID == SIMCONNECT_RECV_ID_FACILITY_DATA_END) {
-        tracker.HandleAirportInfoMessage(entry, m_objectID, m_airportInfo);
-        return true;
-    }
-
-    if (message->dwID != SIMCONNECT_RECV_ID_FACILITY_DATA) {
+    if (message->dwID != SIMCONNECT_RECV_ID_FACILITY_DATA && message->dwID != SIMCONNECT_RECV_ID_FACILITY_DATA_END) {
         GSLogStream::LogError("GSReqTrackerAirportInfo unexpected message: ") << message->dwID;
         tracker.ClearFailedAircraft(m_objectID);
         return true;
     }
 
-    tracker.HandleAirportInfoMessage(entry, m_objectID, m_airportInfo);
-    return false;
+    tracker.HandleAirportInfoMessage(*message, m_objectID, m_airportInfo);
+    return message->dwID == SIMCONNECT_RECV_ID_FACILITY_DATA_END;
 }
 
 void GSReqTrackerAirportInfo::OnException(SIMCONNECT_RECV_EXCEPTION* message)

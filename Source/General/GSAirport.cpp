@@ -12,7 +12,7 @@
 namespace NS_GSAliveAirport
 {
 
-constexpr std::array GSDatums_AirportInfo{
+constexpr auto GSDatums_AirportInfo = std::to_array<const char*>({
     "OPEN AIRPORT",
     "OPEN TAXI_PARKING",
     "TYPE",
@@ -41,7 +41,7 @@ constexpr std::array GSDatums_AirportInfo{
     "PARKING_SPOT",
     "CLOSE JETWAY",
     "CLOSE AIRPORT"
-};
+});
 
 void GSAirport::InitDatums(GSSimConnect& handler)
 {
@@ -59,7 +59,9 @@ void GSAirport::LoadInfo(const SIMCONNECT_RECV_FACILITY_DATA& entry)
         break;
     case SIMCONNECT_FACILITY_DATA_JETWAY: {
         const auto& path = *reinterpret_cast<const Jetway*>(&entry.Data);
-        m_jetways.try_emplace(path.parkingSpot, path);
+        if (path.parkingSpot >= 0) {
+            m_jetways.try_emplace(static_cast<DWORD>(path.parkingSpot), path);
+        }
         break;
         }
     case SIMCONNECT_FACILITY_DATA_TAXI_PATH: {
@@ -78,14 +80,14 @@ void GSAirport::OrganizeStructures()
     m_isFinalized = true;
     std::list<GSRoadsNetwork> roadNetworks;
     
-    const auto nodeExists = [this, ParkingFlag](DWORD id) {
+    const auto nodeExists = [this](DWORD id) {
         const DWORD index = id & ~ParkingFlag;
         return (id & ParkingFlag)
             ? m_parkings.contains(index)
             : m_taxiPoints.contains(index);
     };
 
-    const auto addNode = [this, ParkingFlag](GSRoadsNetwork& network, DWORD id) {
+    const auto addNode = [this](GSRoadsNetwork& network, DWORD id) {
         const DWORD index = id & ~ParkingFlag;
 
         if (id & ParkingFlag) {

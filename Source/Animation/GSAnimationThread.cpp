@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAnimationThread.h"
-#include "../Commands/GSCmdAnimObj.h"
-#include "../Commands/GSCmdAircraftUpdate.h"
-#include "../General/GSLogStream.h"
-#include "../General/GSGeography.h"
+#include "Commands/GSCmdAnimObj.h"
+#include "Commands/GSCmdAircraftUpdate.h"
+#include "General/GSLogStream.h"
+#include "General/GSGeography.h"
 #include "GSAnimBFLO.h"
 #include "GSAnimBFLOT.h"
 #include "GSAnimSingle.h"

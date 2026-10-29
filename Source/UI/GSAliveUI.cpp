@@ -5,6 +5,7 @@
 #include "resources.h"
 #include <chrono>
 #include <cwchar>
+#include <limits>
 #include <thread>
 #include <utility>
 
@@ -19,10 +20,7 @@ bool GSAliveUI::Initialize(const CommandHandler &commandHandler)
     m_pageReady = false;
     m_errorMessage.clear();
 
-    using SetDpiAwarenessContext_t = BOOL(WINAPI *)(DPI_AWARENESS_CONTEXT);
-    if (auto *setter = reinterpret_cast<SetDpiAwarenessContext_t>(GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetProcessDpiAwarenessContext"))) {
-        setter(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-    }
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     if (!RegisterWindowClass()) return false;
     m_hwnd = CreateHostWindow();
@@ -390,18 +388,20 @@ LRESULT GSAliveUI::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam
 
 std::wstring GSAliveUI::ToWideUtf8(std::string_view text)
 {
-    if (text.empty()) return {};
+    if (text.empty() || text.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) return {};
     const int size = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
-    std::wstring result(size, L'\0');
+    if (size <= 0) return {};
+    std::wstring result(static_cast<std::size_t>(size), L'\0');
     MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), size);
     return result;
 }
 
 std::string GSAliveUI::ToNarrowUtf8(std::wstring_view text)
 {
-    if (text.empty()) return {};
+    if (text.empty() || text.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) return {};
     const int size = WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
-    std::string result(size, '\0');
+    if (size <= 0) return {};
+    std::string result(static_cast<std::size_t>(size), '\0');
     WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), size, nullptr, nullptr);
     return result;
 }

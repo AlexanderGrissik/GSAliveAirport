@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAircraftTrackerThread.h"
-#include "../Requests/GSReqTrackerScanAircrafts.h"
-#include "../Requests/GSReqTrackerAircraftsInfo.h"
-#include "../Requests/GSReqTrackerAirportInfo.h"
-#include "../Requests/GSReqTrackerScanAirports.h"
-#include "../Requests/GSReqTrackerSpawnAircraft.h"
-#include "../SimObjects/GSAircraft.h"
+#include "Requests/GSReqTrackerScanAircrafts.h"
+#include "Requests/GSReqTrackerAircraftsInfo.h"
+#include "Requests/GSReqTrackerAirportInfo.h"
+#include "Requests/GSReqTrackerScanAirports.h"
+#include "Requests/GSReqTrackerSpawnAircraft.h"
+#include "SimObjects/GSAircraft.h"
 #include "GSDefinitions.h"
 #include "GSGeography.h"
 #include "GSLogStream.h"
-#include "../Commands/GSCmdAircraftUpdate.h"
-#include "../Commands/GSCmdAircraftAdd.h"
+#include "Commands/GSCmdAircraftUpdate.h"
+#include "Commands/GSCmdAircraftAdd.h"
 #include "GSSpawnerThread.h"
 #include "GSStringUtils.h"
 #include <algorithm>
@@ -181,7 +181,7 @@ void GSAircraftTrackerThread::SubscribeAirportList()
 void GSAircraftTrackerThread::UnsubscribeAirportList()
 {
     GSInvokeRC rc = Invoke(SimConnect_UnsubscribeToFacilities_EX1,
-        SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, TRUE, TRUE);
+        SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, true, true);
     if (!rc.isOK())
         GSLogStream::LogError("SimConnect_UnsubscribeToFacilities_EX1 failed: ") << rc.rc;
 }
@@ -299,14 +299,14 @@ void GSAircraftTrackerThread::HandleAircraftConstScan(const SIMCONNECT_RECV_SIMO
     }
 }
 
-void GSAircraftTrackerThread::HandleAirportInfoMessage(const SIMCONNECT_RECV_FACILITY_DATA& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo)
+void GSAircraftTrackerThread::HandleAirportInfoMessage(const SIMCONNECT_RECV& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo)
 {
     auto itrAirport = m_activeAirports.find(airportInfo.first);
     if (itrAirport == m_activeAirports.end())
         return;
 
-    if (itrAirport->second.second->LoadingReqID() == aircraftID) { // Another aircraft may load the airport simultaneously.
-        itrAirport->second.second->LoadInfo(entry);
+    if (entry.dwID == SIMCONNECT_RECV_ID_FACILITY_DATA && itrAirport->second.second->LoadingReqID() == aircraftID) { // Another aircraft may load the airport simultaneously.
+        itrAirport->second.second->LoadInfo(static_cast<const SIMCONNECT_RECV_FACILITY_DATA&>(entry));
     }
 
     if (entry.dwID == SIMCONNECT_RECV_ID_FACILITY_DATA_END) {
@@ -375,7 +375,7 @@ GSReqRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INI
     const auto posUser = m_userAircraft.GetLongLat();
     if (posUser.Long() < 900.0 || !m_userAircraft.GetAirport()) {
         GSLogStream::LogError("GSAircraftTrackerThread::GSReqTrackerSpawnAircraft::Process No User Aircrat/Airport");
-        return { {0,0,E_FAIL}, false };
+        return { {{0,0},E_FAIL}, false };
     }
 
     pos.Altitude = m_userAircraft.GetAltitudeFeet();

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSStandingHuman.h"
-#include "../General/GSGeography.h"
-#include "../General/GSCatalog.h"
-#include "../SimObjects/GSAircraft.h"
+#include "General/GSGeography.h"
+#include "General/GSCatalog.h"
+#include "SimObjects/GSAircraft.h"
 
 namespace NS_GSAliveAirport
 {

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAnimMulti.h"
-#include "../General/GSLogStream.h"
+#include "General/GSLogStream.h"
 #include <algorithm>
 #include <cmath>
 
@@ -23,7 +23,7 @@ void GSAnimMulti::Animate(GSSimConnect& handler, float elapsedMilli)
     StateWireDataSet valSet { m_frameRanges[m_activeFrameRange].m_currFrame };
     auto simRC = handler.Invoke(
         SimConnect_SetDataOnSimObject, m_defID, m_simObjectID,
-        0, 1, static_cast<DWORD>(sizeof(valSet)), &valSet);
+        0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSAnimMulti::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
     }

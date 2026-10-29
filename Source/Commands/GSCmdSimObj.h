@@ -3,8 +3,8 @@
 // See LICENSE for details
 #pragma once
 
-#include "../SimObjects/GSSimObj.h"
-#include "../General/GSSimConnect.h"
+#include "SimObjects/GSSimObj.h"
+#include "General/GSSimConnect.h"
 
 namespace NS_GSAliveAirport
 {

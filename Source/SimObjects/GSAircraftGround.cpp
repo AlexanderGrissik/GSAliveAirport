@@ -3,9 +3,9 @@
 // See LICENSE for details
 #include "GSAircraftGround.h"
 #include <algorithm>
-#include "../General/GSLogStream.h"
-#include "../General/GSRandom.h"
-#include "../UI/GSAliveUIAPI.h"
+#include "General/GSLogStream.h"
+#include "General/GSRandom.h"
+#include "UI/GSAliveUIAPI.h"
 
 namespace NS_GSAliveAirport
 {

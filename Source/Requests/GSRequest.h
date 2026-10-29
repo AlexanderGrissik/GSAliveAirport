@@ -3,7 +3,7 @@
 // See LICENSE for details
 #pragma once
 
-#include "../General/GSDefinitions.h"
+#include "General/GSDefinitions.h"
 
 namespace NS_GSAliveAirport {
 

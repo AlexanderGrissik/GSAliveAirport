@@ -3,12 +3,12 @@
 // See LICENSE for details
 #pragma once
 
-#include "../General/GSCoord.h"
-#include "../General/GSLogStream.h"
-#include "../Requests/GSSimObjReq.h"
-#include "../General/GSSimConnect.h"
-#include "../Animation/GSAnimationObject.h"
-#include "../General/GSRoadsNetwork.h"
+#include "General/GSCoord.h"
+#include "General/GSLogStream.h"
+#include "Requests/GSSimObjReq.h"
+#include "General/GSSimConnect.h"
+#include "Animation/GSAnimationObject.h"
+#include "General/GSRoadsNetwork.h"
 #include "GSAircraft.h"
 #include "GSSimObjUpdate.h"
 #include <array>

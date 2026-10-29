@@ -4,9 +4,9 @@
 #pragma once
 
 #include "GSSimObjReq.h"
-#include "../SimObjects/GSSimObj.h"
-#include "../General/GSSimConnect.h"
-#include "../General/GSLogStream.h"
+#include "SimObjects/GSSimObj.h"
+#include "General/GSSimConnect.h"
+#include "General/GSLogStream.h"
 #include <array>
 #include <utility>
 
@@ -31,7 +31,7 @@ template <typename T, DWORD N>
 GSReqRC GSReqSimObjSetData<T,N>::Process()
 {
     auto simRC = m_simHandle.Invoke(
-        SimConnect_SetDataOnSimObject, m_definitionID, m_simObj.GetSimObjectID(), 0, N, static_cast<DWORD>(sizeof(T)), m_data.data());
+        SimConnect_SetDataOnSimObject, m_definitionID, m_simObj.GetSimObjectID(), 0U, N, static_cast<DWORD>(sizeof(T)), m_data.data());
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSReqSimObjSetData::Process Failed call: ") << simRC.rc;
     }

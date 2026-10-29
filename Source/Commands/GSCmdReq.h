@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GSCommand.h"
-#include "../Requests/GSRequest.h"
+#include "Requests/GSRequest.h"
 
 namespace NS_GSAliveAirport
 {

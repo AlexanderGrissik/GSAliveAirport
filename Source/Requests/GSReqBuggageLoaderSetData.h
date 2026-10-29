@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GSReqSimObjSetData.h"
-#include "../SimObjects/GSBuggageLoader.h"
+#include "SimObjects/GSBuggageLoader.h"
 #include <array>
 #include <utility>
 

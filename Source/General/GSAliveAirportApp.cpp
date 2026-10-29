@@ -3,7 +3,7 @@
 // See LICENSE for details
 #include "GSAliveAirportApp.h"
 #include "GSLogStream.h"
-#include "../UI/GSAliveUIAPI.h"
+#include "UI/GSAliveUIAPI.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -121,7 +121,7 @@ void GSAliveAirportApp::SendSampleAircraft()
     auto withEntry = [](DWORD id, const void *payload, std::size_t payloadSize, auto &&load) {
         std::vector<std::uint8_t> buffer(sizeof(SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE) + payloadSize, 0);
         auto *entry = reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE *>(buffer.data());
-        const std::size_t offset = reinterpret_cast<const std::uint8_t *>(&entry->dwData) - reinterpret_cast<const std::uint8_t *>(entry);
+        const std::size_t offset = static_cast<std::size_t>(reinterpret_cast<const std::uint8_t *>(&entry->dwData) - reinterpret_cast<const std::uint8_t *>(entry));
         entry->dwSize = static_cast<DWORD>(offset + payloadSize);
         entry->dwObjectID = id;
         std::memcpy(&entry->dwData, payload, payloadSize);

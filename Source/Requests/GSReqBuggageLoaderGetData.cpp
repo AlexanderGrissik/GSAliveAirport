@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqBuggageLoaderGetData.h"
-#include "../SimObjects/GSBuggageLoader.h"
-#include "../General/GSLogStream.h"
+#include "SimObjects/GSBuggageLoader.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {

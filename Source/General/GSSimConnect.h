@@ -3,8 +3,8 @@
 // See LICENSE for details
 #pragma once
 
-#include "../Commands/GSCmdReq.h"
-#include "../Commands/GSCmdReqIdent.h"
+#include "Commands/GSCmdReq.h"
+#include "Commands/GSCmdReqIdent.h"
 #include "GSDefinitions.h"
 #include <array>
 #include <cstddef>
@@ -78,7 +78,7 @@ private:
     void HandleCmdReqProcess(GSCmdReq& cmd);
     void HandleCmdReqIdentProcess(GSCmdReqIdent& cmd);
     
-    static void CALLBACK DispatchThunk(SIMCONNECT_RECV *message, DWORD messageSize, void *context);
+    static void CALLBACK DispatchThunk(SIMCONNECT_RECV *message, DWORD messageSize, void *context) noexcept;
     static std::size_t HashReqID(const GSInvokeID& key) noexcept { return std::hash<DWORD>{}(key.requestID); }
     static bool EqualReqID(const GSInvokeID& lhs, const GSInvokeID& rhs) noexcept { return lhs.requestID == rhs.requestID; }
     static std::size_t HashSendID(const GSInvokeID& key) noexcept { return std::hash<DWORD>{}(key.sendID); }

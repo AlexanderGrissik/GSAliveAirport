@@ -3,8 +3,8 @@
 // See LICENSE for details
 #include "GSAliveUIAPI.h"
 
-#include "../General/GSAirport.h"
-#include "../SimObjects/GSAircraft.h"
+#include "General/GSAirport.h"
+#include "SimObjects/GSAircraft.h"
 
 #include <cstddef>
 #include <sstream>

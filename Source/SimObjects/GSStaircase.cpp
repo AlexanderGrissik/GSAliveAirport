@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSStaircase.h"
-#include "../Requests/GSReqStaircaseGetData.h"
-#include "../Requests/GSReqStaircaseSetData.h"
-#include "../Requests/GSReqSimObjTxClientEventEX1.h"
+#include "Requests/GSReqStaircaseGetData.h"
+#include "Requests/GSReqStaircaseSetData.h"
+#include "Requests/GSReqSimObjTxClientEventEX1.h"
 #include <chrono>
-#include "../General/GSGeography.h"
-#include "../General/GSCatalog.h"
-#include "../General/GSRandom.h"
+#include "General/GSGeography.h"
+#include "General/GSCatalog.h"
+#include "General/GSRandom.h"
 #include "GSPassenger.h"
 #include "GSPaxBus.h"
 #include <algorithm>

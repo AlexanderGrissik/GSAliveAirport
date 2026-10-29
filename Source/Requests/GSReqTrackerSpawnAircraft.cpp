@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqTrackerSpawnAircraft.h"
-#include "../General/GSAircraftTrackerThread.h"
-#include "../General/GSLogStream.h"
+#include "General/GSAircraftTrackerThread.h"
+#include "General/GSLogStream.h"
 #include <chrono>
 #include <thread>
 
@@ -25,17 +25,17 @@ bool GSReqTrackerSpawnAircraft::OnMessage(SIMCONNECT_RECV* message, DWORD messag
         
         auto requestId = m_simHandle.NextRequestID();
         auto aiRC = m_simHandle.InvokeRequest(requestId, SimConnect_AIReleaseControl, msg->dwObjectID, requestId);
-        auto beaconRC = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_BeaconLights, 0,
+        auto beaconRC = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_BeaconLights, 0U,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
 
         std::this_thread::sleep_for(100ms);
         m_pos.Airspeed = 0;
 
-        auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Freeze_LongLat, 1,
+        auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Freeze_LongLat, 1U,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
-        auto simRC2 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Freeze_Altitude, 1,
+        auto simRC2 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Freeze_Altitude, 1U,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
-        auto simRC = m_simHandle.Invoke(SimConnect_SetDataOnSimObject, GSDatumID_Position, msg->dwObjectID, 0, 1,
+        auto simRC = m_simHandle.Invoke(SimConnect_SetDataOnSimObject, GSDatumID_Position, msg->dwObjectID, 0U, 1U,
             static_cast<DWORD>(sizeof(m_pos)), &m_pos);
         
         if (!simRC1.isOK() || !simRC2.isOK() || !simRC.isOK() || !aiRC.isOK() || !beaconRC.isOK()) {
@@ -48,7 +48,7 @@ bool GSReqTrackerSpawnAircraft::OnMessage(SIMCONNECT_RECV* message, DWORD messag
         if (m_type == 2) {
             m_simHandle.Invoke(
                 SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Jetway,
-                0, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
+                0U, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
         }
     } else {
         GSLogStream::LogError("GSReqTrackerSpawnAircraft::OnMessage Unexpected Message: ") << message->dwID;

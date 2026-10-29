@@ -4,8 +4,8 @@
 #pragma once
 
 #include "GSSimObj.h"
-#include "../General/GSCoord.h"
-#include "../Animation/GSAnimationObject.h"
+#include "General/GSCoord.h"
+#include "Animation/GSAnimationObject.h"
 
 #include <array>
 #include <string>
@@ -22,7 +22,7 @@ public:
                 const GSCoord& stairBasePos, const GSCoord& stairTopPos, const GSCoord& doorPos,
                 float stairBaseHeading, float doorAltFeet):
         GSSimObj(simHandle, aircraft, parent), m_stairBasePos(stairBasePos), m_stairTopPos(stairTopPos), m_doorPos(doorPos),
-        m_stairBaseHeading(stairBaseHeading), m_doorAltFeet(doorAltFeet) {}
+        m_doorAltFeet(doorAltFeet), m_stairBaseHeading(stairBaseHeading) {}
 
     bool PreSpawn() override;
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqMvmntObjPos.h"
-#include "../General/GSLogStream.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {
@@ -29,7 +29,7 @@ bool GSReqMvmntObjPos::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
     if (!message || message->dwID != SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
         GSLogStream::LogError("Unexpected message: ") << (message ? message->dwID : -1) << ", Size: " << messageSize;
     } else {
-        tracker.HandlePosMessage(*reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message), *m_track);
+        tracker.HandlePosMessage(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message), *m_track);
     }
 
     return true;

@@ -3,20 +3,7 @@
 // See LICENSE for details
 #pragma once
 
-// WebView2.h is a MIDL-generated COM header: it needs the full <windows.h>
-// (combaseapi.h defines the `interface` macro) plus the SDK "winrt" include
-// directory for EventToken.h. So WIN32_LEAN_AND_MEAN must not be active here.
-#ifdef WIN32_LEAN_AND_MEAN
-# undef WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <Windows.h>
-#include <combaseapi.h>
-#include <WebView2.h>
-#include <wrl.h>
-
+#include "General/GSDefinitions.h"
 #include <atomic>
 #include <deque>
 #include <functional>

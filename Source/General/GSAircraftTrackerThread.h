@@ -3,12 +3,12 @@
 // See LICENSE for details
 #pragma once
 
-#include "../SimObjects/GSAircraft.h"
-#include "../General/GSGeography.h"
+#include "SimObjects/GSAircraft.h"
+#include "General/GSGeography.h"
 #include "GSSimConnect.h"
 #include "GSAirport.h"
-#include "../Requests/GSReqTrackerEventAirportAdded.h"
-#include "../Requests/GSReqTrackerEventAirportRemoved.h"
+#include "Requests/GSReqTrackerEventAirportAdded.h"
+#include "Requests/GSReqTrackerEventAirportRemoved.h"
 #include <chrono>
 #include <memory>
 #include <stop_token>
@@ -28,10 +28,13 @@ public:
     static constexpr double MinAirportRefreshDistDegPow = GSGeography::DegDistPowFromMeters(MinAirportRefreshDistMtr);
 
     ~GSAircraftTrackerThread() override {}
+#pragma warning(push)
+#pragma warning(disable : 4355)
     GSAircraftTrackerThread(GSSimConnect& singleObserver, GSSimConnect& animThread, GSAircraft& userAircraft):
         m_singleObserver(singleObserver), m_animThread(animThread), m_userAircraft(userAircraft),
         m_airportAddedReqID(NextRequestID()), m_airportRemovedReqID(NextRequestID()),
         m_airportAddedReq(*this), m_airportRemovedReq(*this) {}
+#pragma warning(pop)
     GSAircraftTrackerThread(const GSAircraftTrackerThread &) = delete;
     GSAircraftTrackerThread &operator=(const GSAircraftTrackerThread &) = delete;
 
@@ -55,7 +58,7 @@ public:
     void HandleAircraftConstScan(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry, const AirportScanCache::value_type& airportInfo);
     bool HandleScanAirportMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
     void HandleScanAirportRemovedMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
-    void HandleAirportInfoMessage(const SIMCONNECT_RECV_FACILITY_DATA& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo);
+    void HandleAirportInfoMessage(const SIMCONNECT_RECV& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo);
     GSReqRC SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos);
 
   private:

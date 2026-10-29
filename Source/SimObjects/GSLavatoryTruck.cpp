@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSLavatoryTruck.h"
-#include "../General/GSGeography.h"
-#include "../General/GSCatalog.h"
-#include "../Animation/GSAnimBFLOT.h"
-#include "../SimObjects/GSAircraft.h"
+#include "General/GSGeography.h"
+#include "General/GSCatalog.h"
+#include "Animation/GSAnimBFLOT.h"
+#include "SimObjects/GSAircraft.h"
 
 namespace NS_GSAliveAirport
 {

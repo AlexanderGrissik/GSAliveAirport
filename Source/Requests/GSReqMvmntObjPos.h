@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GSSimObjReq.h"
-#include "../SimObjects/GSMovementThread.h"
+#include "SimObjects/GSMovementThread.h"
 
 namespace NS_GSAliveAirport
 {

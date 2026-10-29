@@ -2,23 +2,19 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSSimObj.h"
-#include "../Commands/GSCmdReq.h"
-#include "../Commands/GSCmdAnimObj.h"
-#include "../General/GSSimConnect.h"
-#include "../General/GSGeography.h"
-#include "../Commands/GSCmdSimObj.h"
-#include "../Requests/GSReqSimObjCreate.h"
-#include "../Requests/GSReqSimObjDelete.h"
-#include "../Requests/GSReqSimObjSetData.h"
-#include "../Requests/GSReqSimObjTxClientEvent.h"
-#include "../Requests/GSReqSimObjContDespawn.h"
+#include "Commands/GSCmdReq.h"
+#include "Commands/GSCmdAnimObj.h"
+#include "General/GSSimConnect.h"
+#include "General/GSGeography.h"
+#include "Commands/GSCmdSimObj.h"
+#include "Requests/GSReqSimObjCreate.h"
+#include "Requests/GSReqSimObjDelete.h"
+#include "Requests/GSReqSimObjSetData.h"
+#include "Requests/GSReqSimObjTxClientEvent.h"
+#include "Requests/GSReqSimObjContDespawn.h"
 
 namespace NS_GSAliveAirport
 {
-
-constexpr std::array GSDatums_Position{
-    GSDatum{"Initial Position", nullptr, SIMCONNECT_DATATYPE_INITPOSITION},
-};
 
 constexpr std::array GSDatums_AIWaypoints{
     GSDatum{"AI WAYPOINT LIST", "number", SIMCONNECT_DATATYPE_WAYPOINT},
@@ -130,7 +126,7 @@ void GSSimObj::ShootWaypoints()
     //}
 
     m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
-        GSDatumID_AIWaypoints, m_simObjectID, 0, static_cast<DWORD>(m_aiWaypoints.size()),
+        GSDatumID_AIWaypoints, m_simObjectID, 0U, static_cast<DWORD>(m_aiWaypoints.size()),
         static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), m_aiWaypoints.data());
 
     m_startMoveTime = std::chrono::steady_clock::now();

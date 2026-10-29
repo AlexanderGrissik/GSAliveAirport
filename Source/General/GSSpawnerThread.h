@@ -4,8 +4,8 @@
 #pragma once
 
 #include "GSSimConnect.h"
-#include "../SimObjects/GSAircraftGround.h"
-#include "../UI/GSAliveUI.h"
+#include "SimObjects/GSAircraftGround.h"
+#include "UI/GSAliveUI.h"
 #include "GSCoord.h"
 #include <cstddef>
 #include <cstdint>

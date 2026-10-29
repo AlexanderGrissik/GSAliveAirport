@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqCateringCartGetData.h"
-#include "../SimObjects/GSCateringCart.h"
-#include "../General/GSLogStream.h"
+#include "SimObjects/GSCateringCart.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {

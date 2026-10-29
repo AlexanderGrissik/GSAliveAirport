@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqTrackerScanAirports.h"
-#include "../General/GSAircraftTrackerThread.h"
-#include "../General/GSLogStream.h"
+#include "General/GSAircraftTrackerThread.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {
@@ -31,7 +31,7 @@ bool GSReqTrackerScanAirports::OnMessage(SIMCONNECT_RECV *message, DWORD message
         return false;
     }
 
-    if (tracker.HandleScanAirportMessage(*reinterpret_cast<SIMCONNECT_RECV_AIRPORT_LIST *>(message))) {
+    if (tracker.HandleScanAirportMessage(*static_cast<SIMCONNECT_RECV_AIRPORT_LIST *>(message))) {
         tracker.SetAirportScanInProgress(false);
         return true;
     }

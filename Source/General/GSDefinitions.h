@@ -3,10 +3,19 @@
 // See LICENSE for details
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+#pragma warning(push)
+#pragma warning(disable : 4265 4365 4625 4626 4668 4820 4865 5026 5027 5039 5204 5220)
 #include <Windows.h>
 #include <intsafe.h>
+#include <intrin.h>
+#include <combaseapi.h>
+#include <WebView2.h>
+#include <wrl.h>
+#include <xutility>
+#pragma warning(pop)
 #pragma warning(push)
 #pragma warning(disable : 4245)
 #include <SimConnect.h>

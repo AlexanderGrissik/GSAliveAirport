@@ -4,9 +4,9 @@
 #pragma once
 
 #include "GSAnimationObject.h"
-#include "../General/GSSimConnect.h"
-#include "../General/GSGeography.h"
-#include "../SimObjects/GSAircraft.h"
+#include "General/GSSimConnect.h"
+#include "General/GSGeography.h"
+#include "SimObjects/GSAircraft.h"
 
 #include <chrono>
 #include <memory>

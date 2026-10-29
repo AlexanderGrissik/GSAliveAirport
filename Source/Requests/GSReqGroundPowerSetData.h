@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GSReqSimObjSetData.h"
-#include "../SimObjects/GSGroundPower.h"
+#include "SimObjects/GSGroundPower.h"
 #include <array>
 #include <utility>
 

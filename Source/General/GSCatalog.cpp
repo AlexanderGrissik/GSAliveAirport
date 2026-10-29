@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSCatalog.h"
-#include "../Requests/GSReqCatalog.h"
+#include "Requests/GSReqCatalog.h"
 #include "GSLogStream.h"
 #include "GSRandom.h"
 #include <random>

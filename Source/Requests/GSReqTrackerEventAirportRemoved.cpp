@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqTrackerEventAirportRemoved.h"
-#include "../General/GSAircraftTrackerThread.h"
-#include "../General/GSLogStream.h"
+#include "General/GSAircraftTrackerThread.h"
+#include "General/GSLogStream.h"
 
 namespace NS_GSAliveAirport
 {
@@ -17,7 +17,7 @@ bool GSReqTrackerEventAirportRemoved::OnMessage(SIMCONNECT_RECV *message, DWORD 
         return false;
     }
 
-    tracker.HandleScanAirportRemovedMessage(*reinterpret_cast<SIMCONNECT_RECV_AIRPORT_LIST *>(message));
+    tracker.HandleScanAirportRemovedMessage(*static_cast<SIMCONNECT_RECV_AIRPORT_LIST *>(message));
     return false;
 }
 

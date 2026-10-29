@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSReqSimObjCreate.h"
-#include "../SimObjects/GSSimObj.h"
-#include "../General/GSSimConnect.h"
+#include "SimObjects/GSSimObj.h"
+#include "General/GSSimConnect.h"
 
 namespace NS_GSAliveAirport
 {

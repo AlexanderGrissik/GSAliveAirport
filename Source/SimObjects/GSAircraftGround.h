@@ -4,8 +4,8 @@
 #pragma once
 
 #include "GSAircraft.h"
-#include "../General/GSAirport.h"
-#include "../UI/GSAliveUI.h"
+#include "General/GSAirport.h"
+#include "UI/GSAliveUI.h"
 #include "GSSimObj.h"
 #include <cstddef>
 #include <list>

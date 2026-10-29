@@ -3,7 +3,7 @@
 // See LICENSE for details
 #pragma once
 
-#include "../General/GSSimConnect.h"
+#include "General/GSSimConnect.h"
 #include "GSSimObj.h"
 
 #include <chrono>

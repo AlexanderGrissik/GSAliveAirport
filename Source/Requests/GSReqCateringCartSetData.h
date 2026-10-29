@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GSReqSimObjSetData.h"
-#include "../SimObjects/GSCateringCart.h"
+#include "SimObjects/GSCateringCart.h"
 #include <array>
 #include <utility>
 

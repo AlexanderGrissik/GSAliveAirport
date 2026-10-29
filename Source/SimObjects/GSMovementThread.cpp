@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSMovementThread.h"
-#include "../Requests/GSReqMvmntObjPos.h"
-#include "../General/GSLogStream.h"
-#include "../Commands/GSCmdSimObj.h"
-#include "../General/GSGeography.h"
+#include "Requests/GSReqMvmntObjPos.h"
+#include "General/GSLogStream.h"
+#include "Commands/GSCmdSimObj.h"
+#include "General/GSGeography.h"
 
 namespace NS_GSAliveAirport
 {
@@ -48,7 +48,7 @@ void GSMovementThread::RunLoopMoveTracking(std::stop_token stopToken)
                 RequestTracking();
         }
 
-        std::this_thread::sleep_for(m_trackObjs.size() ? 500ms : 5s);
+        std::this_thread::sleep_for(m_trackObjs.size() ? 500ms : 2s);
     }
 
     OnDisconnect();

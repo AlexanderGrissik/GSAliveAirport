@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAnimationObject.h"
-#include "../General/GSLogStream.h"
-#include "../General/GSGeography.h"
+#include "General/GSLogStream.h"
+#include "General/GSGeography.h"
 
 namespace NS_GSAliveAirport
 {
@@ -78,7 +78,7 @@ void GSAnimationObject::Move(GSSimConnect& handler, float elapsedMilli)
 
     const auto rcSim = handler.Invoke(
         SimConnect_SetDataOnSimObject, GSDatumID_Position,
-        m_simObjectID, 0, 1, static_cast<DWORD>(sizeof(position)), &position);
+        m_simObjectID, 0U, 1U, static_cast<DWORD>(sizeof(position)), &position);
 
     if (!rcSim.isOK()) {
         GSLogStream::LogError("GSAnimationObject::Move failed to update object position: ") << rcSim.rc;

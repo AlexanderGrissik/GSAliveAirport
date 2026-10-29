@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <optional>
 #include <new>
-#include <intrin.h>
+#include "General/GSDefinitions.h"
 #include <utility>
 
 template <typename T, std::size_t CAP>

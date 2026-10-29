@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GSRequest.h"
-#include "../General/GSCoord.h"
+#include "General/GSCoord.h"
 #include <string>
 #include <utility>
 

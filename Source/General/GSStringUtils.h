@@ -25,9 +25,9 @@ std::string GSStringUtils::ToLower(const std::array<char, N> &value)
 {
     std::string result;
     result.reserve(N);
-    for (unsigned char c : value) {
+    for (char c : value) {
         if (c == '\0') break;
-        result.push_back(static_cast<char>(std::tolower(c)));
+        result.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
     }
     return result;
 }
