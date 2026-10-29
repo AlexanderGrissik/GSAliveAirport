@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" ExcludeAssets="build;buildTransitive" />
     <!-- VS 2026 (v180) C++ targets renamed the .rc item type from RC to ResourceCompile;
          the legacy <RC> item is silently ignored there. -->
-    <ResourceCompile Include="App.rc" />
+    <ResourceCompile Include="Source\General\App.rc" />
   </ItemGroup>
   <PropertyGroup>
     <RestorePackagesPath>$(ProjectDir)Packages</RestorePackagesPath>
@@ -54,6 +54,29 @@
     <ClInclude Include="Source\General\GSRoadsNetwork.h" />
     <ClInclude Include="Source\General\GSSimConnect.h" />
     <ClInclude Include="Source\General\GSSpawnerThread.h" />
+    <ClInclude Include="Source\Requests\GSReqSimObjCreate.h" />
+    <ClInclude Include="Source\Requests\GSReqSimObjDelete.h" />
+    <ClInclude Include="Source\Requests\GSReqSimObjGetData.h" />
+    <ClInclude Include="Source\Requests\GSReqSimObjSetData.h" />
+    <ClInclude Include="Source\Requests\GSReqCatalog.h" />
+    <ClInclude Include="Source\Requests\GSReqMvmntObjPos.h" />
+    <ClInclude Include="Source\Requests\GSReqBuggageLoaderGetData.h" />
+    <ClInclude Include="Source\Requests\GSReqBuggageLoaderSetData.h" />
+    <ClInclude Include="Source\Requests\GSReqCateringCartGetData.h" />
+    <ClInclude Include="Source\Requests\GSReqCateringCartSetData.h" />
+    <ClInclude Include="Source\Requests\GSReqGroundPowerSetData.h" />
+    <ClInclude Include="Source\Requests\GSReqStaircaseGetData.h" />
+    <ClInclude Include="Source\Requests\GSReqStaircaseSetData.h" />
+    <ClInclude Include="Source\Requests\GSReqTrackerScanAircrafts.h" />
+    <ClInclude Include="Source\Requests\GSReqTrackerAircraftsInfo.h" />
+    <ClInclude Include="Source\Requests\GSReqTrackerAirportInfo.h" />
+    <ClInclude Include="Source\Requests\GSReqTrackerScanAirports.h" />
+    <ClInclude Include="Source\Requests\GSReqTrackerSpawnAircraft.h" />
+    <ClInclude Include="Source\Requests\GSReqTrackerEventAirportAdded.h" />
+    <ClInclude Include="Source\Requests\GSReqTrackerEventAirportRemoved.h" />
+    <ClInclude Include="Source\Requests\GSReqSimObjTxClientEvent.h" />
+    <ClInclude Include="Source\Requests\GSReqSimObjTxClientEventEX1.h" />
+    <ClInclude Include="Source\Requests\GSReqSimObjContDespawn.h" />
     <ClInclude Include="Source\Requests\GSRequest.h" />
     <ClInclude Include="Source\Requests\GSSimObjReq.h" />
     <ClInclude Include="Source\SimObjects\GSStaircase.h" />
@@ -99,6 +122,23 @@
     <ClCompile Include="Source\General\GSRoadsNetwork.cpp" />
     <ClCompile Include="Source\General\GSSimConnect.cpp" />
     <ClCompile Include="Source\General\GSSpawnerThread.cpp" />
+    <ClCompile Include="Source\Requests\GSReqSimObjCreate.cpp" />
+    <ClCompile Include="Source\Requests\GSReqSimObjDelete.cpp" />
+    <ClCompile Include="Source\Requests\GSReqSimObjGetData.cpp" />
+    <ClCompile Include="Source\Requests\GSReqCatalog.cpp" />
+    <ClCompile Include="Source\Requests\GSReqMvmntObjPos.cpp" />
+    <ClCompile Include="Source\Requests\GSReqBuggageLoaderGetData.cpp" />
+    <ClCompile Include="Source\Requests\GSReqCateringCartGetData.cpp" />
+    <ClCompile Include="Source\Requests\GSReqStaircaseGetData.cpp" />
+    <ClCompile Include="Source\Requests\GSReqTrackerScanAircrafts.cpp" />
+    <ClCompile Include="Source\Requests\GSReqTrackerAircraftsInfo.cpp" />
+    <ClCompile Include="Source\Requests\GSReqTrackerAirportInfo.cpp" />
+    <ClCompile Include="Source\Requests\GSReqTrackerScanAirports.cpp" />
+    <ClCompile Include="Source\Requests\GSReqTrackerSpawnAircraft.cpp" />
+    <ClCompile Include="Source\Requests\GSReqTrackerEventAirportAdded.cpp" />
+    <ClCompile Include="Source\Requests\GSReqTrackerEventAirportRemoved.cpp" />
+    <ClCompile Include="Source\Requests\GSReqSimObjTxClientEvent.cpp" />
+    <ClCompile Include="Source\Requests\GSReqSimObjTxClientEventEX1.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraft.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraftGround.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraftGroundLarge.cpp" />

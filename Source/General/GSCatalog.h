@@ -27,6 +27,7 @@ public:
     void OnSimStop() override {}
     void OnCommand(GSCommand& cmd) override { (void)cmd; }
     void Done();
+    void AddEntry(const char* title, const char* livery) { m_entires.emplace_back(title, livery); }
 
     bool Exists(const char* str) const;
     const std::string& GetGPULargeExt() const { return m_extGPULarge; }
@@ -72,11 +73,5 @@ private:
     std::string m_extGPUMedium;
     std::string m_extLavatory;
     std::string m_empty;
-    class GSCatalogReq : public GSRequest {
-        using GSRequest::GSRequest;
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
-    };
 };
 } // namespace NS_GSAliveAirport

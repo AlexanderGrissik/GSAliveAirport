@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSBuggageLoader.h"
+#include "../Requests/GSReqBuggageLoaderGetData.h"
+#include "../Requests/GSReqBuggageLoaderSetData.h"
+#include "../Requests/GSReqSimObjTxClientEventEX1.h"
 #include "../General/GSGeography.h"
 #include "../General/GSCatalog.h"
 #include "GSStatic.h"
@@ -32,14 +35,14 @@ void GSBuggageLoader::InitDatums(GSSimConnect& handler)
 
 bool GSBuggageLoader::OnCreated()
 {
-    m_simHandle.PostReqCommand(new GSReqGetDataSimObj(m_simHandle, *this));
+    m_simHandle.PostReqCommand(new GSReqBuggageLoaderGetData(m_simHandle, *this));
     return false;
 }
 
 void GSBuggageLoader::OnArrived()
 {
     m_simHandle.PostReqIdentCommand(
-        new GSReqTxEventEx1(m_simHandle, *this, GSEventID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        new GSReqSimObjTxClientEventEX1(m_simHandle, *this, GSEventID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: OpenDoors, ") << message->dwException; });
 
@@ -84,7 +87,7 @@ void GSBuggageLoader::OnArrived()
 
 void GSBuggageLoader::OnDespawning()
 {
-    m_simHandle.PostReqIdentCommand(new GSReqTxEventEx1(
+    m_simHandle.PostReqIdentCommand(new GSReqSimObjTxClientEventEX1(
         m_simHandle, *this, GSEventID_CloseDoors,
         m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
@@ -130,7 +133,7 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
     GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
     std::array updateData{ StateWireDataSet{ CalcLoaderOpenAngle(rawStateGet) } };
-    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(m_simHandle, *this, std::move(updateData)));
+    m_simHandle.PostReqCommand(new GSReqBuggageLoaderSetData(m_simHandle, *this, std::move(updateData)));
 
     const auto loaderPos = GSGeography::RelativePosition(m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -rawStateGet.endRampZMeters - 0.5, 0.0);
     m_initPos.Longitude = loaderPos.Long();

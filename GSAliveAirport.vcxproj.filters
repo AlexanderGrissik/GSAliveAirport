@@ -1,29 +1,71 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <Filter Include="Source">
       <UniqueIdentifier>{9ea2224f-b283-4195-84af-dd25e59d8ee1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Animation">
+      <UniqueIdentifier>{b3fb47c2-5913-4188-83a5-514ff77cf730}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Commands">
       <UniqueIdentifier>{A83A264E-3C64-4D45-9D3F-B3F6D39C4E6D}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\SimObjects">
-      <UniqueIdentifier>{5DD2C2D3-D1F0-4737-87EA-CC7F2448D855}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\General">
       <UniqueIdentifier>{5a1318ce-6ae9-4575-8e73-b79f201a037f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Animation">
-      <UniqueIdentifier>{b3fb47c2-5913-4188-83a5-514ff77cf730}</UniqueIdentifier>
+    <Filter Include="Source\Requests">
+      <UniqueIdentifier>{2dee33ab-2696-44b2-9f8c-a26e087c9d71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SimObjects">
+      <UniqueIdentifier>{5DD2C2D3-D1F0-4737-87EA-CC7F2448D855}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\UI">
       <UniqueIdentifier>{D3A6F0C2-9E41-4B7A-8C2D-5E1F9B3A6D20}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Requests">
-      <UniqueIdentifier>{2dee33ab-2696-44b2-9f8c-a26e087c9d71}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="Source\General\App.rc">
+      <Filter>Source\General</Filter>
+    </ResourceCompile>
+    <ClCompile Include="Source\Animation\GSAnimationObject.cpp">
+      <Filter>Source\Animation</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Animation\GSAnimationObject.h">
+      <Filter>Source\Animation</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Animation\GSAnimationThread.cpp">
+      <Filter>Source\Animation</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Animation\GSAnimationThread.h">
+      <Filter>Source\Animation</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Animation\GSAnimBFLO.cpp">
+      <Filter>Source\Animation</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Animation\GSAnimBFLO.h">
+      <Filter>Source\Animation</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Animation\GSAnimBFLOT.cpp">
+      <Filter>Source\Animation</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Animation\GSAnimBFLOT.h">
+      <Filter>Source\Animation</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Animation\GSAnimMulti.cpp">
+      <Filter>Source\Animation</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Animation\GSAnimMulti.h">
+      <Filter>Source\Animation</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Animation\GSAnimSingle.cpp">
+      <Filter>Source\Animation</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Animation\GSAnimSingle.h">
+      <Filter>Source\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Commands\GSCmdAircraftAdd.h">
+      <Filter>Source\Commands</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Commands\GSCmdAircraftUpdate.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
@@ -33,12 +75,36 @@
     <ClInclude Include="Source\Commands\GSCmdReq.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Commands\GSCmdReqIdent.h">
+      <Filter>Source\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Commands\GSCmdSimObj.h">
+      <Filter>Source\Commands</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Commands\GSCommand.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
+    <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
     <ClInclude Include="Source\General\GSAircraftTrackerThread.h">
       <Filter>Source\General</Filter>
     </ClInclude>
+    <ClCompile Include="Source\General\GSAirport.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\General\GSAirport.h">
+      <Filter>Source\General</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\General\GSAliveAirportApp.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\General\GSAliveAirportApp.h">
+      <Filter>Source\General</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\General\GSCatalog.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
     <ClInclude Include="Source\General\GSCatalog.h">
       <Filter>Source\General</Filter>
     </ClInclude>
@@ -48,277 +114,335 @@
     <ClInclude Include="Source\General\GSDefinitions.h">
       <Filter>Source\General</Filter>
     </ClInclude>
+    <ClCompile Include="Source\General\GSGeography.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
     <ClInclude Include="Source\General\GSGeography.h">
       <Filter>Source\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\General\GSAliveAirportApp.h">
+    <ClCompile Include="Source\General\GSLogStream.cpp">
       <Filter>Source\General</Filter>
-    </ClInclude>
+    </ClCompile>
     <ClInclude Include="Source\General\GSLogStream.h">
       <Filter>Source\General</Filter>
     </ClInclude>
     <ClInclude Include="Source\General\GSQuickQueue.h">
       <Filter>Source\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\General\GSSimConnect.h">
+    <ClInclude Include="Source\General\GSRandom.h">
       <Filter>Source\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\General\GSSpawnerThread.h">
+    <ClCompile Include="Source\General\GSRoadsNetwork.cpp">
       <Filter>Source\General</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Animation\GSAnimationObject.h">
-      <Filter>Source\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Animation\GSAnimationThread.h">
-      <Filter>Source\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Animation\GSAnimBFLO.h">
-      <Filter>Source\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Animation\GSAnimBFLOT.h">
-      <Filter>Source\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Animation\GSAnimMulti.h">
-      <Filter>Source\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Animation\GSAnimSingle.h">
-      <Filter>Source\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSAircraft.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSAircraftGround.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundLarge.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundMedium.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundSmall.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundXL.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSBuggageLoader.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSBuggageTrain.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSLavatoryTruck.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSLinerCones.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSMarshaller.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSPassenger.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSPaxBus.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSPushback.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSSimObj.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSSmallCones.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSStandingHuman.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSStatic.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSTruckFacility.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSWingmans.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\General\GSAirport.h">
-      <Filter>Source\General</Filter>
-    </ClInclude>
+    </ClCompile>
     <ClInclude Include="Source\General\GSRoadsNetwork.h">
       <Filter>Source\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\General\GSRandom.h">
+    <ClCompile Include="Source\General\GSSimConnect.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\General\GSSimConnect.h">
+      <Filter>Source\General</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\General\GSSpawnerThread.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\General\GSSpawnerThread.h">
       <Filter>Source\General</Filter>
     </ClInclude>
     <ClInclude Include="Source\General\GSStringUtils.h">
       <Filter>Source\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSMovementThread.h">
-      <Filter>Source\SimObjects</Filter>
+    <ClCompile Include="Source\Requests\GSReqSimObjCreate.cpp">
+      <Filter>Source\Requests</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Requests\GSReqSimObjCreate.h">
+      <Filter>Source\Requests</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Commands\GSCmdSimObj.h">
-      <Filter>Source\Commands</Filter>
+    <ClCompile Include="Source\Requests\GSReqSimObjDelete.cpp">
+      <Filter>Source\Requests</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Requests\GSReqSimObjDelete.h">
+      <Filter>Source\Requests</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSCateringCart.h">
-      <Filter>Source\SimObjects</Filter>
+    <ClCompile Include="Source\Requests\GSReqSimObjGetData.cpp">
+      <Filter>Source\Requests</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Requests\GSReqSimObjGetData.h">
+      <Filter>Source\Requests</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSGroundPower.h">
-      <Filter>Source\SimObjects</Filter>
+    <ClInclude Include="Source\Requests\GSRequest.h">
+      <Filter>Source\Requests</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Commands\GSCmdReqIdent.h">
-      <Filter>Source\Commands</Filter>
+    <ClInclude Include="Source\Requests\GSReqSimObjSetData.h">
+      <Filter>Source\Requests</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SimObjects\GSStaircase.h">
-      <Filter>Source\SimObjects</Filter>
+    <ClInclude Include="Source\Requests\GSReqSimObjTxClientEvent.h">
+      <Filter>Source\Requests</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Commands\GSCmdAircraftAdd.h" />
-    <ClInclude Include="Source\Requests\GSRequest.h" />
-    <ClInclude Include="Source\Requests\GSSimObjReq.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Source\General\GSAircraftTrackerThread.cpp">
-      <Filter>Source\General</Filter>
+    <ClInclude Include="Source\Requests\GSReqSimObjTxClientEventEX1.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Requests\GSReqSimObjContDespawn.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqSimObjTxClientEvent.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSCatalog.cpp">
-      <Filter>Source\General</Filter>
+    <ClCompile Include="Source\Requests\GSReqSimObjTxClientEventEX1.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSGeography.cpp">
-      <Filter>Source\General</Filter>
+    <ClInclude Include="Source\Requests\GSReqTrackerScanAircrafts.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqTrackerScanAircrafts.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSAliveAirportApp.cpp">
-      <Filter>Source\General</Filter>
+    <ClInclude Include="Source\Requests\GSReqTrackerAircraftsInfo.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqTrackerAircraftsInfo.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSLogStream.cpp">
-      <Filter>Source\General</Filter>
+    <ClInclude Include="Source\Requests\GSReqTrackerAirportInfo.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqTrackerAirportInfo.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSSimConnect.cpp">
-      <Filter>Source\General</Filter>
+    <ClInclude Include="Source\Requests\GSReqTrackerScanAirports.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqTrackerScanAirports.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\General\GSSpawnerThread.cpp">
-      <Filter>Source\General</Filter>
+    <ClInclude Include="Source\Requests\GSReqTrackerSpawnAircraft.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqTrackerSpawnAircraft.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Animation\GSAnimationObject.cpp">
-      <Filter>Source\Animation</Filter>
+    <ClInclude Include="Source\Requests\GSReqTrackerEventAirportAdded.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqTrackerEventAirportAdded.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Animation\GSAnimationThread.cpp">
-      <Filter>Source\Animation</Filter>
+    <ClInclude Include="Source\Requests\GSReqTrackerEventAirportRemoved.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqTrackerEventAirportRemoved.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Animation\GSAnimBFLO.cpp">
-      <Filter>Source\Animation</Filter>
+    <ClInclude Include="Source\Requests\GSReqCatalog.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqCatalog.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Animation\GSAnimBFLOT.cpp">
-      <Filter>Source\Animation</Filter>
+    <ClInclude Include="Source\Requests\GSReqMvmntObjPos.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqMvmntObjPos.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Animation\GSAnimMulti.cpp">
-      <Filter>Source\Animation</Filter>
+    <ClInclude Include="Source\Requests\GSReqBuggageLoaderGetData.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqBuggageLoaderGetData.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Animation\GSAnimSingle.cpp">
-      <Filter>Source\Animation</Filter>
+    <ClInclude Include="Source\Requests\GSReqBuggageLoaderSetData.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Requests\GSReqCateringCartGetData.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqCateringCartGetData.cpp">
+      <Filter>Source\Requests</Filter>
     </ClCompile>
+    <ClInclude Include="Source\Requests\GSReqCateringCartSetData.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Requests\GSReqGroundPowerSetData.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Requests\GSReqStaircaseGetData.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\Requests\GSReqStaircaseGetData.cpp">
+      <Filter>Source\Requests</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\Requests\GSReqStaircaseSetData.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Requests\GSSimObjReq.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSAircraft.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSAircraft.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSAircraftGround.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSAircraftGround.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSAircraftGroundLarge.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundLarge.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSAircraftGroundMedium.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundMedium.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSAircraftGroundSmall.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundSmall.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSAircraftGroundXL.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSAircraftGroundXL.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSBuggageLoader.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSBuggageLoader.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSBuggageTrain.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSBuggageTrain.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSCateringCart.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSLavatoryTruck.cpp">
+    <ClInclude Include="Source\SimObjects\GSCateringCart.h">
       <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSLinerCones.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSMarshaller.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSPassenger.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSPaxBus.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSPushback.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSSimObj.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSSmallCones.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSStandingHuman.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSStatic.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSTruckFacility.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSWingmans.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\General\GSAirport.cpp">
-      <Filter>Source\General</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\General\GSRoadsNetwork.cpp">
-      <Filter>Source\General</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\SimObjects\GSMovementThread.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSGroundPower.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSGroundPower.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSLavatoryTruck.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSLavatoryTruck.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSLinerCones.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSLinerCones.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSMarshaller.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSMarshaller.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSMovementThread.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSMovementThread.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSPassenger.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSPassenger.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSPaxBus.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSPaxBus.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSPushback.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSPushback.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSSimObj.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSSimObj.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSSmallCones.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSSmallCones.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSStaircase.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Source\UI\GSAliveUI.h">
-      <Filter>Source\UI</Filter>
+    <ClInclude Include="Source\SimObjects\GSStaircase.h">
+      <Filter>Source\SimObjects</Filter>
     </ClInclude>
-    <ClInclude Include="Source\UI\GSAliveUIAPI.h">
-      <Filter>Source\UI</Filter>
+    <ClCompile Include="Source\SimObjects\GSStandingHuman.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSStandingHuman.h">
+      <Filter>Source\SimObjects</Filter>
     </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSStatic.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSStatic.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSTruckFacility.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSTruckFacility.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSWingmans.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSWingmans.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <None Include="Source\UI\app.js">
+      <Filter>Source\UI</Filter>
+    </None>
     <ClCompile Include="Source\UI\GSAliveUI.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
+    <ClInclude Include="Source\UI\GSAliveUI.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
     <ClCompile Include="Source\UI\GSAliveUIAPI.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
+    <ClInclude Include="Source\UI\GSAliveUIAPI.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
     <None Include="Source\UI\index.html">
       <Filter>Source\UI</Filter>
     </None>
     <None Include="Source\UI\style.css">
       <Filter>Source\UI</Filter>
     </None>
-    <None Include="Source\UI\app.js">
-      <Filter>Source\UI</Filter>
-    </None>
-    <ResourceCompile Include="App.rc" />
   </ItemGroup>
 </Project>

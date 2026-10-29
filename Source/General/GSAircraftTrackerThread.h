@@ -7,6 +7,8 @@
 #include "../General/GSGeography.h"
 #include "GSSimConnect.h"
 #include "GSAirport.h"
+#include "../Requests/GSReqTrackerEventAirportAdded.h"
+#include "../Requests/GSReqTrackerEventAirportRemoved.h"
 #include <chrono>
 #include <memory>
 #include <stop_token>
@@ -45,9 +47,18 @@ public:
     void SetInProgress(bool v) { m_scanInProgress = v; }
     void SetAirportScanInProgress(bool v) { m_scanAirportInProgress = v; }
 
-  private:
+    using AirportScanCache = std::unordered_map<std::string, GSCoord>;
 
-    typedef std::unordered_map<std::string, GSCoord> AirportScanCache;
+    void HandleRemoved();
+    void ClearFailedAircraft(DWORD objectID) { m_tracked.extract(objectID); }
+    bool HandleScanMessage(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
+    void HandleAircraftConstScan(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry, const AirportScanCache::value_type& airportInfo);
+    bool HandleScanAirportMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
+    void HandleScanAirportRemovedMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
+    void HandleAirportInfoMessage(const SIMCONNECT_RECV_FACILITY_DATA& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo);
+    GSReqRC SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos);
+
+  private:
 
     const char* GetDebugName() const override { return "GSAircraftTrackerThread"; }
 
@@ -56,20 +67,12 @@ public:
 
     void RequestScan();
     void RequestAirportScan();
-    void HandleRemoved();
-    void ClearFailedAircraft(DWORD objectID) { m_tracked.extract(objectID); }
     bool HandleExistingAircraft(GSAircraft& aircraft, std::shared_ptr<GSAircraft>& exisitng, const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
     void PostNewAircraft(std::shared_ptr<GSAircraft>& aircraft);
     void HandleAircraftUser(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry);
-    bool HandleScanMessage(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
-    void HandleAircraftConstScan(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry, const AirportScanCache::value_type& airportInfo);
-    bool HandleScanAirportMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
-    void HandleScanAirportRemovedMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
-    void HandleAirportInfoMessage(const SIMCONNECT_RECV_FACILITY_DATA& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo);
     void SpawnTestAircrafts();
     void SubscribeAirportList();
     void UnsubscribeAirportList();
-    GSReqRC SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos);
     const AirportScanCache::value_type* FindClosesAirportToAircraft(const GSAircraft& aircraft) const;
     const AirportScanCache::value_type* IsNewAircraftEligable(const GSAircraft& aircraft) const;
 
@@ -89,78 +92,7 @@ public:
     DWORD m_airportAddedReqID = 0;
     DWORD m_airportRemovedReqID = 0;
 
-    class GSReqScan : public GSRequest {
-    public:
-        using GSRequest::GSRequest;
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    };
-
-    class GSReqAircraftConstInfo : public GSRequest {
-    public:
-        GSReqAircraftConstInfo(GSSimConnect& simHandle, DWORD objID, const AirportScanCache::value_type& airportInfo):
-            GSRequest(simHandle), m_objectID(objID), m_airportInfo(airportInfo) {}
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    private:
-        DWORD m_objectID;
-        AirportScanCache::value_type m_airportInfo;
-    };
-
-    class GSReqAirportInfo : public GSRequest
-    {
-    public:
-        GSReqAirportInfo(GSSimConnect& handler, DWORD objID, const AirportScanCache::value_type& airportInfo)
-            : GSRequest(handler), m_objectID(objID), m_airportInfo(airportInfo) {}
-
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
-
-    private:
-        DWORD m_objectID;
-        AirportScanCache::value_type m_airportInfo;
-    };
-
-    class GSReqScanAirport : public GSRequest {
-    public:
-        using GSRequest::GSRequest;
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    };
-
-    class GSReqSpawnAircraft : public GSRequest {
-    public:
-        GSReqSpawnAircraft(GSSimConnect& simHandle, int t):
-            GSRequest(simHandle), m_type(t) {}
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
-    private:
-        SIMCONNECT_DATA_INITPOSITION m_pos{};
-        int m_type;
-    };
-
-    class GSReqAirportAdded : public GSRequest {
-    public:
-        using GSRequest::GSRequest;
-        GSReqRC Process() override { return {{0,0,E_FAIL}, false}; } // Never called. AddRawRequestHandler.
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    };
-
-    class GSReqAirportRemoved : public GSRequest {
-    public:
-        using GSRequest::GSRequest;
-        GSReqRC Process() override { return {{0,0,E_FAIL}, false}; } // Never called. AddRawRequestHandler.
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    };
-
-    GSReqAirportAdded m_airportAddedReq;
-    GSReqAirportRemoved m_airportRemovedReq;
+    GSReqTrackerEventAirportAdded m_airportAddedReq;
+    GSReqTrackerEventAirportRemoved m_airportRemovedReq;
 };
 } // namespace NS_GSAliveAirport

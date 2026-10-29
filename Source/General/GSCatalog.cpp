@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSCatalog.h"
+#include "../Requests/GSReqCatalog.h"
 #include "GSLogStream.h"
 #include "GSRandom.h"
 #include <random>
@@ -78,7 +79,7 @@ void GSCatalog::LoadCatalog()
 
 void GSCatalog::OnConnect()
 {
-    PostReqCommand(new GSCatalogReq(*this));
+    PostReqCommand(new GSReqCatalog(*this));
 }
 
 void GSCatalog::Done()
@@ -104,50 +105,6 @@ const std::string& GSCatalog::GetEntry(EntiresVec& entires)
 
     return entires[GSRandom::RandSizeT(0, entires.size() - 1)]->first;
 }
-
-GSReqRC GSCatalog::GSCatalogReq::Process()
-{
-    const DWORD requestId = m_simHandle.NextRequestID();
-    GSReqRC rc = {
-        m_simHandle.InvokeRequest(requestId, SimConnect_EnumerateSimObjectsAndLiveries, requestId, SIMCONNECT_SIMOBJECT_TYPE_ALL), true };
-    if (!rc.isOK()) {
-        GSLogStream::LogError("GSCatalog::GSCatalogReq::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
-        static_cast<GSCatalog&>(m_simHandle).Done();
-    }
-
-    return rc;
-}
-
-bool GSCatalog::GSCatalogReq::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
-{
-    (void)messageSize;
-    const auto& entry = *reinterpret_cast<const SIMCONNECT_RECV_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST*>(message);
-    if (entry.dwOutOf == 0 || message->dwID != SIMCONNECT_RECV_ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST) { // Empty Scan
-        static_cast<GSCatalog&>(m_simHandle).Done();
-        GSLogStream::LogError("GSCatalog::GSCatalogReq::OnMessage Empty Catalog. ID: ") << message->dwID << ", Count: " << entry.dwOutOf;
-        return true;
-    }
-
-    auto &catalog = static_cast<GSCatalog&>(m_simHandle);
-    for (DWORD index = 0; index < entry.dwArraySize; ++index) {
-        catalog.m_entires.emplace_back(entry.rgData[index].AircraftTitle, entry.rgData[index].LiveryName);
-    }
-
-    if (entry.dwOutOf == entry.dwEntryNumber + 1) {
-        static_cast<GSCatalog&>(m_simHandle).Done();
-        return true;
-    }
-
-    return false;
-}
-
-void GSCatalog::GSCatalogReq::OnException(SIMCONNECT_RECV_EXCEPTION* message)
-{
-    static_cast<GSCatalog&>(m_simHandle).Done();
-    GSLogStream::LogError("GSCatalog::GSCatalogReq::OnException Catalog Error. ID: ") << message->dwSendID << ", Err: " << message->dwException;
-}
-
 
 
 }

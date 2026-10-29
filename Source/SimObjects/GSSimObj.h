@@ -33,10 +33,11 @@ public:
     
     virtual bool PreSpawn() = 0;
     virtual void OnArrived() = 0;
-    
+    virtual bool OnCreated() = 0;
+
     void OnSpawned(bool ok, GSSimObj& obj) override;
     void OnDespawned() override; 
-    
+
     void Spawn();
     void Despawn();
     void SpawnAttached();
@@ -70,7 +71,6 @@ public:
 
 protected:
 
-    virtual bool OnCreated() = 0;
     virtual void OnDespawning() = 0;
     
     GSSimConnect& m_simHandle;
@@ -88,115 +88,8 @@ protected:
     bool m_hasAnim = false;
     bool m_routePrepared = false;
     bool m_spawnRequested = false;
-
-    class GSReqCreate : public GSSimObjReq {
-    public:
-        using GSSimObjReq::GSSimObjReq;
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    };
-
-    class GSReqDelete : public GSSimObjReq {
-    public:
-        using GSSimObjReq::GSSimObjReq;
-        GSReqRC Process() override;        
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
-    };
-
-    class GSReqGetDataSimObj : public GSSimObjReq {
-    public:
-        GSReqGetDataSimObj(GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID):
-            GSSimObjReq(simHandle, simObj), m_definitionID(definitionID) {}
-        GSReqRC Process() override;
-    private:
-        SIMCONNECT_DATA_DEFINITION_ID m_definitionID;
-    };
-
-    template <typename T, DWORD N>
-    class GSReqSetDataSimObj : public GSSimObjReq {
-    public:
-        GSReqSetDataSimObj(GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID, std::array<T,N>&& data):
-            GSSimObjReq(simHandle, simObj), m_definitionID(definitionID), m_data(std::forward<std::array<T,N>>(data)) {}
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { 
-            (void)message;
-            (void)messageSize;
-            return true; 
-        }
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override { (void)message; }
-    private:
-        SIMCONNECT_DATA_DEFINITION_ID m_definitionID;
-        std::array<T,N> m_data;
-    };
-
-    class GSReqTxClientEvent : public GSSimObjReq {
-    public:
-        GSReqTxClientEvent(GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_CLIENT_EVENT_ID eventID, DWORD data):
-            GSSimObjReq(simHandle, simObj), m_eventID(eventID), m_data(data) {}
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { 
-            (void)message;
-            (void)messageSize;
-            return true; 
-        }
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override { (void)message; }
-    private:
-        SIMCONNECT_CLIENT_EVENT_ID m_eventID;
-        DWORD m_data;
-    };
-
-    class GSReqTxEventEx1 : public GSSimObjReq {
-    public:
-        GSReqTxEventEx1(
-            GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_CLIENT_EVENT_ID eventID,
-            SIMCONNECT_OBJECT_ID objID, DWORD data0, DWORD data1):
-            GSSimObjReq(simHandle, simObj), m_eventID(eventID), m_data0(data0), m_data1(data1), m_objID(objID) {}
-        GSReqRC Process() override;
-        bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { 
-            (void)message;
-            (void)messageSize;
-            return true; 
-        }
-        void OnException(SIMCONNECT_RECV_EXCEPTION *message) override { (void)message; }
-    private:
-        SIMCONNECT_CLIENT_EVENT_ID m_eventID;
-        DWORD m_data0;
-        DWORD m_data1;
-        SIMCONNECT_OBJECT_ID m_objID;
-    };
-
-    class GSReqSetPos : public GSReqSetDataSimObj<SIMCONNECT_DATA_INITPOSITION, 1> {
-    public:
-        GSReqSetPos(
-            GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID,
-            std::array<SIMCONNECT_DATA_INITPOSITION, 1>&& data) :
-            GSSimObj::GSReqSetDataSimObj<SIMCONNECT_DATA_INITPOSITION, 1>(
-                simHandle, simObj, definitionID, std::forward<std::array<SIMCONNECT_DATA_INITPOSITION, 1>>(data)) {
-        }
-    };
-
-    class GSReqRemAnim : public GSSimObjReq {
-        using GSSimObjReq::GSSimObjReq;
-        GSReqRC Process() override { m_simObj.Despawn(); return { {0,0,NOERROR},false }; }
-        bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override { VD(message); VD(messageSize); return true; };
-        void OnException(SIMCONNECT_RECV_EXCEPTION* message) override { VD(message); };
-    };
-
-    friend GSReqCreate;
 };
 
-template <typename T, DWORD N>
-GSReqRC GSSimObj::GSReqSetDataSimObj<T,N>::Process()
-{
-    auto simRC = m_simHandle.Invoke(
-        SimConnect_SetDataOnSimObject, m_definitionID, m_simObj.GetSimObjectID(), 0, N, static_cast<DWORD>(sizeof(T)), m_data.data());
-    if (!simRC.isOK()) {
-        GSLogStream::LogError("GSReqSetDataSimObj::Process Failed call: ") << simRC.rc;
-    }
 
-    return {simRC, false};
-}
 
 }

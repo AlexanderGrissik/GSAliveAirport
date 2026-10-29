@@ -52,35 +52,6 @@ private:
     bool m_front = false;
     bool m_ext = true;
 
-    class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {
-    public:
-        GSReqGetDataSimObj(GSSimConnect& simHandle, GSSimObj& simObj) :
-            GSSimObj::GSReqGetDataSimObj(simHandle, simObj, GSDatumID_BuggageLoaderExtStateGet) {}
 
-        bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override {
-            (void)messageSize;
-            if (message->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
-                static_cast<GSBuggageLoader&>(m_simObj).SetFinalPositionAndState(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message));
-            } else {
-                GSLogStream::LogError("GSBuggageLoader::GSReqGetDataSimObj::OnMessage Unexpected Message: ") << message->dwID;
-                m_simObj.OnObjSpawned(true);
-            }
-            return true;
-        }
-
-        void OnException(SIMCONNECT_RECV_EXCEPTION* message) override {
-            m_simObj.OnObjSpawned(true);
-            GSLogStream::LogError("GSBuggageLoader::GSReqGetDataSimObj::OnException: ") << message->dwException << ", " << message->dwIndex;
-        }
-    };
-
-    class GSReqSetDataSimObj : public GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1> {
-    public:
-        GSReqSetDataSimObj(GSSimConnect& simHandle, GSSimObj& simObj, std::array<StateWireDataSet, 1>&& data) :
-            GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1>(
-                simHandle, simObj, GSDatumID_BuggageLoaderExtStateSet,
-                std::forward<std::array<StateWireDataSet, 1>>(data)) {
-        }
-    };
 };
 }

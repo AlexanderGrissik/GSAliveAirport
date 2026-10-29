@@ -42,13 +42,6 @@ private:
     
     GPUType m_gpuType;
 
-    class GSReqSetDataSimObj : public GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1> {
-    public:
-        GSReqSetDataSimObj(
-            GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID, 
-            std::array<StateWireDataSet, 1>&& data): 
-            GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1>(
-                simHandle, simObj, definitionID, std::forward<std::array<StateWireDataSet, 1>>(data)) {}
-    };
+
 };
 }

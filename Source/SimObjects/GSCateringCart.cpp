@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSCateringCart.h"
+#include "../Requests/GSReqCateringCartGetData.h"
+#include "../Requests/GSReqCateringCartSetData.h"
 #include "../General/GSGeography.h"
 #include "../SimObjects/GSAircraft.h"
 
@@ -27,14 +29,14 @@ void GSCateringCart::InitDatums(GSSimConnect& handler)
 
 bool GSCateringCart::OnCreated()
 {
-    m_simHandle.PostReqCommand(new GSReqGetDataSimObj(m_simHandle, *this));
+    m_simHandle.PostReqCommand(new GSReqCateringCartGetData(m_simHandle, *this));
     return false;
 }
 
 void GSCateringCart::OnArrived()
 {
     std::array updateData{ StateWireDataSet{ m_initPos.Longitude, m_initPos.Latitude, m_doorPosElev, 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(m_simHandle, *this, std::move(updateData)));
+    m_simHandle.PostReqCommand(new GSReqCateringCartSetData(m_simHandle, *this, std::move(updateData)));
 
     Freeze();
     ContinueSpawn();

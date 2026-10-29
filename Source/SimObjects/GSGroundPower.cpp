@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSGroundPower.h"
+#include "../Requests/GSReqGroundPowerSetData.h"
 #include "../General/GSGeography.h"
 #include "../General/GSCatalog.h"
 #include "GSStatic.h"
@@ -33,11 +34,11 @@ bool GSGroundPower::OnCreated()
 void GSGroundPower::OnArrived()
 {
     std::array updateData1{ StateWireDataSet{ 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
+    m_simHandle.PostReqCommand(new GSReqGroundPowerSetData(
         m_simHandle, *this, GSDatumID_GroundPowerStateSet, std::move(updateData1)));
 
     std::array updateData2{ StateWireDataSet{ 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
+    m_simHandle.PostReqCommand(new GSReqGroundPowerSetData(
         m_simHandle, *this, GSDatumID_GroundPowerExtStateSet, std::move(updateData2)));
 
     Freeze();
