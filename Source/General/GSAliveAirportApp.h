@@ -21,9 +21,8 @@ class GSAliveAirportApp final
 public:
     static constexpr const char* s_Version = APP_VERSION;
     GSAliveAirportApp():
-        m_animThread(m_userAircraft),
-        m_spawner(m_animThread, m_mvmntThread, m_ui, m_userAircraft),
-        m_aircraftTracker(m_spawner, m_animThread, m_userAircraft) {}
+        m_spawner(m_animThread, m_mvmntThread, m_ui),
+        m_aircraftTracker(m_spawner, m_animThread) {}
     ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); m_animThread.Stop(); m_mvmntThread.Stop(); }
 
     GSAliveAirportApp(const GSAliveAirportApp &) = delete;
@@ -48,7 +47,6 @@ private:
     static std::optional<AppCommand> ParseCommand(std::string_view line);
     void SendSampleAircraft();
 
-    GSAircraft m_userAircraft;
     GSAliveUI m_ui;
     GSMovementThread m_mvmntThread;
     GSAnimationThread m_animThread;

@@ -11,8 +11,7 @@
 #include "GSDefinitions.h"
 #include "GSGeography.h"
 #include "GSLogStream.h"
-#include "Commands/GSCmdAircraftUpdate.h"
-#include "Commands/GSCmdAircraftAdd.h"
+#include "Commands/GSCmdAircraft.h"
 #include "GSSpawnerThread.h"
 #include "GSStringUtils.h"
 #include <algorithm>
@@ -97,7 +96,7 @@ void GSAircraftTrackerThread::OnSimStart()
 void GSAircraftTrackerThread::OnSimStop()
 {
     std::for_each(m_tracked.begin(), m_tracked.end(), [this](auto& aircraft) { 
-        m_singleObserver.PostCommand(new GSCmdAircraftUpdate(GS_CMD_SPAWNER_AIRCRAFT_REMOVED, aircraft.second->GetObjID()));
+        m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_SPAWNER_AIRCRAFT_REMOVED, aircraft.second));
     }); 
 
     UnsubscribeAirportList();
@@ -143,7 +142,7 @@ void GSAircraftTrackerThread::HandleRemoved()
             }
         }
 
-        m_singleObserver.PostCommand(new GSCmdAircraftUpdate(GS_CMD_SPAWNER_AIRCRAFT_REMOVED, node.mapped()->GetObjID()));
+        m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_SPAWNER_AIRCRAFT_REMOVED, node.mapped()));
     }); 
 
     m_lastScanIDs.clear();
@@ -186,11 +185,10 @@ void GSAircraftTrackerThread::UnsubscribeAirportList()
         GSLogStream::LogError("SimConnect_UnsubscribeToFacilities_EX1 failed: ") << rc.rc;
 }
 
-void GSAircraftTrackerThread::HandleAircraftUser(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry)
+void GSAircraftTrackerThread::HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft)
 { 
-    m_userAircraft.LoadInitState(entry);
-    m_userAircraft.LoadDynamicState(entry);
-
+    m_userAircraft.CopyDynInfo(*aircraft);
+    
     if (!m_userAircraft.GetAirport() || 
         GSGeography::DistanceDegPow(m_userAircraft.GetAirport()->GetLongLat(), m_userAircraft.GetLongLat()) > (MinAirportRefreshDistDegPow / 2.0)) {
         const auto* airportInfo = FindClosesAirportToAircraft(m_userAircraft);
@@ -202,20 +200,23 @@ void GSAircraftTrackerThread::HandleAircraftUser(const SIMCONNECT_RECV_SIMOBJECT
         }
     }
 
-    m_singleObserver.PostCommand(new GSCommand(GS_CMD_AIRCRAFT_USER));
-    m_animThread.PostCommand(new GSCommand(GS_CMD_AIRCRAFT_USER));
+    aircraft->SetAirport(m_userAircraft.GetAirportPtr());
+    if (m_userAircraft.GetAirport()) {
+        m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_AIRCRAFT_USER, aircraft));
+        m_animThread.PostCommand(new GSCmdAircraft(GS_CMD_AIRCRAFT_USER, aircraft));
+    }
 }
 
 bool GSAircraftTrackerThread::HandleExistingAircraft(
-    GSAircraft &aircraft, std::shared_ptr<GSAircraft> &exisitng, const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry)
+    std::shared_ptr<GSAircraft> &aircraft, std::shared_ptr<GSAircraft> &exisitng, const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry)
 {
-    if (!aircraft.IsOnGround() && !exisitng->IsOnGround()) 
+    if (!aircraft->IsOnGround() && !exisitng->IsOnGround()) 
         return false;
 
-    aircraft.LoadDynamicState(entry);
-    if (aircraft != *exisitng) {
-        exisitng->CopyDynInfo(aircraft);
-        m_singleObserver.PostCommand(new GSCmdAircraftUpdate(GS_CMD_SPAWNER_AIRCRAFT_MODIFIED, exisitng->GetObjID()));
+    aircraft->LoadDynamicState(entry);
+    if (*aircraft != *exisitng) {
+        exisitng->CopyDynInfo(*aircraft);
+        m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_SPAWNER_AIRCRAFT_MODIFIED, aircraft));
     }
 
     return true;
@@ -223,7 +224,7 @@ bool GSAircraftTrackerThread::HandleExistingAircraft(
 
 void GSAircraftTrackerThread::PostNewAircraft(std::shared_ptr<GSAircraft>& aircraft)
 {
-    m_singleObserver.PostCommand(new GSCmdAircraftAdd(GS_CMD_SPAWNER_AIRCRAFT_ADDED, aircraft));
+    m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_SPAWNER_AIRCRAFT_ADDED, aircraft));
 }
 
 const GSAircraftTrackerThread::AirportScanCache::value_type* GSAircraftTrackerThread::IsNewAircraftEligable(const GSAircraft &aircraft) const
@@ -242,23 +243,24 @@ bool GSAircraftTrackerThread::HandleScanMessage(const SIMCONNECT_RECV_SIMOBJECT_
         return true;
     }
 
-    GSAircraft aircraft;
-    aircraft.LoadInitState(entry);
+    auto aircraft = std::make_shared<GSAircraft>();
+    aircraft->LoadInitState(entry);
     
-    if (aircraft.IsUser()) {
-        HandleAircraftUser(entry);
+    if (aircraft->IsUser()) {
+        aircraft->LoadDynamicState(entry);
+        HandleAircraftUser(aircraft);
     } else {
-        auto itr = m_tracked.find(aircraft.GetObjID());
+        auto itr = m_tracked.find(aircraft->GetObjID());
         if (itr != m_tracked.end()) { // Already tracking
             if (HandleExistingAircraft(aircraft, itr->second, entry)) {
-                 m_lastScanIDs.emplace(aircraft.GetObjID());
+                 m_lastScanIDs.emplace(aircraft->GetObjID());
             }
         } else {
-            const auto* airportInfo = IsNewAircraftEligable(aircraft);
+            const auto* airportInfo = IsNewAircraftEligable(*aircraft);
             if (airportInfo) {
-                m_tracked.emplace(aircraft.GetObjID(), std::make_shared<GSAircraft>(aircraft)).first->second->LoadDynamicState(entry);
-                PostReqCommand(new GSReqTrackerAircraftsInfo(*this, aircraft.GetObjID(), *airportInfo));
-                m_lastScanIDs.emplace(aircraft.GetObjID());
+                m_tracked.emplace(aircraft->GetObjID(), aircraft).first->second->LoadDynamicState(entry);
+                PostReqCommand(new GSReqTrackerAircraftsInfo(*this, aircraft->GetObjID(), *airportInfo));
+                m_lastScanIDs.emplace(aircraft->GetObjID());
             }
         }
     }

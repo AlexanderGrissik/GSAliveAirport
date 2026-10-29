@@ -11,8 +11,7 @@
 #include "SimObjects/GSGroundPower.h"
 #include "SimObjects/GSBuggageLoader.h"
 #include "SimObjects/GSStaircase.h"
-#include "Commands/GSCmdAircraftUpdate.h"
-#include "Commands/GSCmdAircraftAdd.h"
+#include "Commands/GSCmdAircraft.h"
 #include "Commands/GSCmdAnimObj.h"
 #include "Commands/GSCmdSimObj.h"
 #include "UI/GSAliveUIAPI.h"
@@ -36,6 +35,7 @@ void GSSpawnerThread::Start()
             RunDispatch(stopToken);
             CheckForPendingRemove();
             CheckForPendingAdd();
+            CheckForPendingUpdates();
 
             if (!IsSimStarted() || !IsLastLoopMessage()) {
                 std::this_thread::sleep_for(1000ms);
@@ -94,16 +94,17 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
 {
     switch (cmd.GetCmdID()) {
     case GS_CMD_SPAWNER_AIRCRAFT_ADDED:
-        NewAircraft(static_cast<GSCmdAircraftAdd&>(cmd).GetAircraft());
+        NewAircraft(static_cast<GSCmdAircraft&>(cmd).GetAircraft());
         break;
     case GS_CMD_SPAWNER_AIRCRAFT_REMOVED:
-        RemoveAircraft(static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraftID());
+        RemoveAircraft(static_cast<GSCmdAircraft&>(cmd).GetAircraft()->GetObjID());
         break;
     case GS_CMD_SPAWNER_AIRCRAFT_MODIFIED:
-        ModAircraft(static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraftID());
+        ModAircraft(*static_cast<GSCmdAircraft&>(cmd).GetAircraft());
         break;
     case GS_CMD_AIRCRAFT_USER:
-        UserAircraft(); // Implicit aquire fence 
+        m_userAircraft = static_cast<GSCmdAircraft&>(cmd).GetAircraft();
+        UserAircraft();
         break;
     case GS_CMD_ANIM_OBJ_ADD:
         m_animThread.PostCommand(
@@ -171,20 +172,23 @@ void GSSpawnerThread::NewAircraft(std::shared_ptr<GSAircraft>& aircraft)
     CheckForUnspawned(*grnd);
 }
 
-void GSSpawnerThread::ModAircraft(DWORD aircraftID)
+void GSSpawnerThread::ModAircraft(const GSAircraft& aircraft)
 {
-    auto itrPendAdd = m_groundPendingAdd.find(aircraftID);
+    auto itrPendAdd = m_groundPendingAdd.find(aircraft.GetObjID());
     if (itrPendAdd != m_groundPendingAdd.end()) {
+        itrPendAdd->second->CopyDynInfo(aircraft);
         return;
     }
 
-    auto itr = m_groundUnspawned.find(aircraftID);
+    auto itr = m_groundUnspawned.find(aircraft.GetObjID());
     if (itr != m_groundUnspawned.end()) {
+        itr->second->UpdateAircraft(aircraft);
         CheckForUnspawned(*itr->second);
     } else {
-        auto itrSpw = m_groundSpawned.find(aircraftID);
+        auto itrSpw = m_groundSpawned.find(aircraft.GetObjID());
         if (itrSpw != m_groundSpawned.end()) {
-            CheckForSpawned(*(itrSpw->second));
+            itrSpw->second->UpdateAircraft(aircraft);
+            CheckForSpawned(*itrSpw->second);
         } else {
             GSLogStream::LogError("GSSpawnerThread::ModAircraft - Existing aircraft not found");
         }
@@ -194,6 +198,7 @@ void GSSpawnerThread::ModAircraft(DWORD aircraftID)
 void GSSpawnerThread::RemoveAircraft(DWORD aircraftID)
 {
     m_groundSpawnEligable.erase(aircraftID);
+    m_groundPendingUpdates.erase(aircraftID);
     m_groundPendingAdd.erase(aircraftID);
     m_groundPendingDelete.insert(m_groundUnspawned.extract(aircraftID));
     m_groundPendingDelete.insert(m_groundSpawned.extract(aircraftID));
@@ -203,7 +208,7 @@ void GSSpawnerThread::RemoveAircraft(DWORD aircraftID)
 
 void GSSpawnerThread::UserAircraft()
 {
-    m_ui.PostMessageUI(GSAliveUIAPI::SetUserAircraft(m_userAircraft));
+    m_ui.PostMessageUI(GSAliveUIAPI::SetUserAircraft(*m_userAircraft));
 
     HelperPrepare(m_groundUnspawned.size());
 
@@ -218,7 +223,7 @@ void GSSpawnerThread::UserAircraft()
 
 bool GSSpawnerThread::SpawnCond(const GSAircraft& aircraft)
 {
-    bool baseCond = (GSGeography::DistanceMeters(m_userAircraft.GetLongLat(), aircraft.GetLongLat()) < s_SpawnDistMeters) && (aircraft.GetGroundSpeedKnots() < 1.0);
+    bool baseCond = (GSGeography::DistanceMeters(m_userAircraft->GetLongLat(), aircraft.GetLongLat()) < s_SpawnDistMeters) && (aircraft.GetGroundSpeedKnots() < 1.0);
     baseCond &= aircraft.IsOnGround();
     baseCond &= !aircraft.IsTaxing();
     return ((IsAnyInjector() && baseCond) ||
@@ -236,7 +241,6 @@ bool GSSpawnerThread::DespawnCond(const GSAircraft& aircraft)
 
 void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd)
 {
-    grnd.UpdateAircraft();
     if (grnd.GetSpawnState() == GSAircraftGround::SpawnState::UNSPAWNED) {
         if (SpawnCond(grnd.Aircraft())) {
             if (IsSIInjector() || (GSRandom::RandSizeT(1, 100) <= ServicedPerc())) {
@@ -247,19 +251,46 @@ void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd)
 
             m_groundSpawned.insert(m_groundUnspawned.extract(grnd.Aircraft().GetObjID()));
         }
+    } else {
+        m_groundPendingUpdates.insert(grnd.Aircraft().GetObjID());
     }
 }
 
 void GSSpawnerThread::CheckForSpawned(GSAircraftGround& grnd)
 {
-    grnd.UpdateAircraft();
-    if (grnd.GetSpawnState() == GSAircraftGround::SpawnState::SPAWNED) {  
+    if (grnd.GetSpawnState() == GSAircraftGround::SpawnState::SPAWNED) {
         if (DespawnCond(grnd.Aircraft())) {
             grnd.Despawn();
             TrySpawnEligable();
             m_groundUnspawned.insert(m_groundSpawned.extract(grnd.Aircraft().GetObjID()));
         }
-    } 
+    } else {
+        m_groundPendingUpdates.insert(grnd.Aircraft().GetObjID());
+    }
+}
+
+void GSSpawnerThread::CheckForPendingUpdates()
+{
+    for (auto it = m_groundPendingUpdates.begin(); it != m_groundPendingUpdates.end();) {
+        auto unspawned = m_groundUnspawned.find(*it);
+        auto spawned = m_groundSpawned.find(*it);
+        if (unspawned == m_groundUnspawned.end() && spawned == m_groundSpawned.end()) {
+            it = m_groundPendingUpdates.erase(it); // Already removed aircraft.
+        } else {
+            GSAircraftGround& grnd = (unspawned != m_groundUnspawned.end() ? *unspawned->second.get() : *spawned->second.get());
+            if (grnd.GetSpawnState() == GSAircraftGround::SpawnState::SPAWNING ||
+                    grnd.GetSpawnState() == GSAircraftGround::SpawnState::DESPAWNING) {
+                ++it;
+            } else {
+                it = m_groundPendingUpdates.erase(it);
+                if (unspawned != m_groundUnspawned.end()) {
+                    CheckForUnspawned(grnd);
+                } else if (spawned != m_groundSpawned.end()) {
+                    CheckForSpawned(grnd);
+                }
+            }
+        }
+    }
 }
 
 void GSSpawnerThread::CheckForPendingRemove()

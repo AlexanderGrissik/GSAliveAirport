@@ -3,7 +3,7 @@
 // See LICENSE for details
 #include "GSAnimationThread.h"
 #include "Commands/GSCmdAnimObj.h"
-#include "Commands/GSCmdAircraftUpdate.h"
+#include "Commands/GSCmdAircraft.h"
 #include "General/GSLogStream.h"
 #include "General/GSGeography.h"
 #include "GSAnimBFLO.h"
@@ -65,7 +65,7 @@ void GSAnimationThread::DoAnimation()
 {
     auto currTime = std::chrono::steady_clock::now();
     for (auto& anim : m_animObjs)
-        if (GSGeography::DistanceDegPow(m_userAircraft.GetLongLat(), anim.second->GetCurrLoc()) < s_AnimDistDegPow)
+        if (GSGeography::DistanceDegPow(m_userAircraft->GetLongLat(), anim.second->GetCurrLoc()) < s_AnimDistDegPow)
             anim.second->Animate(*this, std::chrono::duration<float, std::milli>(currTime - m_lastAnimTime).count());
 
     m_lastAnimTime = std::chrono::steady_clock::now();
@@ -87,7 +87,7 @@ void GSAnimationThread::OnCommand(GSCommand& cmd)
         break;
     }
     case GS_CMD_AIRCRAFT_USER:
-        // Empty command is an alternative to aquire fence.
+        m_userAircraft = static_cast<GSCmdAircraft&>(cmd).GetAircraft();
         break;
     default:
         GSLogStream::LogError("GSAnimationThread - Unexpected cmd: ") << cmd.GetCmdID();

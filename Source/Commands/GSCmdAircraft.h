@@ -9,12 +9,12 @@
 namespace NS_GSAliveAirport
 {
 
-class GSCmdAircraftAdd : public GSCommand
+class GSCmdAircraft : public GSCommand
 {
 public:
 
-    GSCmdAircraftAdd(GSCommandID cmd, std::shared_ptr<GSAircraft>& ac): GSCommand(cmd), m_aircraft(ac) {}
-    virtual ~GSCmdAircraftAdd() {}
+    GSCmdAircraft(GSCommandID cmd, std::shared_ptr<GSAircraft>& ac): GSCommand(cmd), m_aircraft(ac) {}
+    virtual ~GSCmdAircraft() {}
 
     std::shared_ptr<GSAircraft>& GetAircraft() { return m_aircraft; }
 

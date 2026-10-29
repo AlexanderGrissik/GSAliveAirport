@@ -90,7 +90,10 @@ public:
     static constexpr std::size_t AIRCRAFT_WIREDATA_DYNSIZE = sizeof(AircraftWireData) - AIRCRAFT_WIREDATA_INITSIZE;
 
     using InterPntRef = std::reference_wrapper<const InteractivePointWireData>;
-    
+
+    GSAircraft() = default;
+    GSAircraft(const GSAircraft& aircraft);
+
     static void InitDatums(GSSimConnect& handler);
     static bool IsValidInteractivePointType(std::int32_t type) { return type == 0 || type == 1 || type == 3 || type == 4; }
     static const char *InteractivePointTypeName(std::int32_t type);
@@ -106,7 +109,7 @@ public:
 
     bool IsParkedActive() const;
     AircraftSizeCategory GetCategory() const { return m_category; }
-    DWORD GetObjID() const { return objectID; }
+    DWORD GetObjID() const { return m_objectID; }
     const GSCoord& GetLongLat() const { return m_location; }
     float GetAltitudeFeet() const { return m_rawData.altitudeFeet; }
     float GetGroundAltitudeFeet() const { return m_rawData.groundAltitudeFeet; }
@@ -116,7 +119,7 @@ public:
     float GetGroundSpeedKnots() const { return m_rawData.groundSpeedKnots; }
     bool IsTaxing() const { return m_trafficState == "STATE_SIMPLE_TAXI"; }
     bool HasParking() const { return !m_parkingState.empty(); }
-    bool IsUser() const { return (m_rawData.isUser || (objectID == SIMCONNECT_OBJECT_ID_USER)); }
+    bool IsUser() const { return (m_rawData.isUser || (m_objectID == SIMCONNECT_OBJECT_ID_USER)); }
     bool IsDeparting() const { return m_departing; } 
     void SetAirport(std::shared_ptr<GSAirport>& ap) { m_airport = ap; }
     void SetParking(const GSRoadsNetwork::RoadNode* prkNode) { m_parkingNode = prkNode; }
@@ -124,6 +127,7 @@ public:
     std::string GetTitle() const { return m_rawData.title.data(); }
     bool IsOnGround() const { return !!m_rawData.onGround; }
     const GSAirport* GetAirport() const { return m_airport.get(); }
+    std::shared_ptr<GSAirport>& GetAirportPtr() { return m_airport; }
     const GSRoadsNetwork::RoadNode* GetParking() const { return m_parkingNode; }
 
     using DoorRef = std::optional<std::pair<InterPntRef, size_t>>;
@@ -159,6 +163,9 @@ public:
     const std::array<InteractivePointWireData, s_MaxInteractivePnts>& GetInteractivePoints() const { return m_rawConstData.interactivePoints; }
 
 private:
+
+    void ApplyInteractivePoints();
+
     AircraftWireData m_rawData{};
     AircraftWireDataConst m_rawConstData{};
 
@@ -172,7 +179,7 @@ private:
     DoorRef groundPowerPnt;
     DoorRef fuelHosePnt;
 
-    DWORD objectID{};
+    DWORD m_objectID{};
     bool m_departing = true;
     GSCoord m_location{-999.0,-999.0};
     std::string m_trafficState;

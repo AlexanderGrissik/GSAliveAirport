@@ -33,8 +33,7 @@
     <ClInclude Include="Source\Animation\GSAnimBFLOT.h" />
     <ClInclude Include="Source\Animation\GSAnimMulti.h" />
     <ClInclude Include="Source\Animation\GSAnimSingle.h" />
-    <ClInclude Include="Source\Commands\GSCmdAircraftAdd.h" />
-    <ClInclude Include="Source\Commands\GSCmdAircraftUpdate.h" />
+    <ClInclude Include="Source\Commands\GSCmdAircraft.h" />
     <ClInclude Include="Source\Commands\GSCmdAnimObj.h" />
     <ClInclude Include="Source\Commands\GSCmdReq.h" />
     <ClInclude Include="Source\Commands\GSCmdReqIdent.h" />

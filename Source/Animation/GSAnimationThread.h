@@ -23,8 +23,6 @@ public:
 
 	static constexpr double s_AnimDistDegPow = GSGeography::DegDistPowFromMeters(500.0);
 
-	GSAnimationThread(GSAircraft& userAircraft): m_userAircraft(userAircraft) {}
-
 	void Start();
 	void Stop();
 
@@ -45,7 +43,7 @@ private:
 	std::unordered_map<SIMCONNECT_OBJECT_ID, std::unique_ptr<GSAnimationObject>> m_animObjs;
 	GSTimePoint m_lastAnimTime{};
 	std::jthread m_thread;
-	GSAircraft& m_userAircraft;
+	std::shared_ptr<GSAircraft> m_userAircraft;
 };
 
 }

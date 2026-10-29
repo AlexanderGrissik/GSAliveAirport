@@ -27,7 +27,7 @@ public:
     };
 
     GSAircraftGround(std::shared_ptr<GSAircraft>& aircraft, GSSimConnect& simConn, GSAliveUI& ui) :
-        m_aircraft(aircraft), m_simConnect(simConn), m_ui(ui) {}
+        m_aircraft(*aircraft), m_simConnect(simConn), m_ui(ui) {}
     virtual ~GSAircraftGround() = default;
 
     virtual void BuildObjs(bool full) = 0;
@@ -37,9 +37,9 @@ public:
     
     void Spawn();
     void Despawn();
-    void UpdateAircraft();
+    void UpdateAircraft(const GSAircraft& aircraft);
     SpawnState GetSpawnState() const { return m_spawnState; }
-    const GSAircraft& Aircraft() const { return *m_aircraft; }
+    const GSAircraft& Aircraft() const { return m_aircraft; }
 
 protected:
 
@@ -49,7 +49,7 @@ protected:
     void Unspawned();
     void SetClosestParking();
 
-    std::shared_ptr<GSAircraft> m_aircraft;
+    GSAircraft m_aircraft;
     GSSimConnect& m_simConnect;
     SpawnState m_spawnState = SpawnState::UNSPAWNED;
     std::list<std::unique_ptr<GSSimObj>> m_objs;

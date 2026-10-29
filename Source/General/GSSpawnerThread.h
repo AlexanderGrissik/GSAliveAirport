@@ -33,8 +33,8 @@ public:
 
     static constexpr double s_SpawnDistMeters = 1000.0;
 
-    GSSpawnerThread(GSSimConnect& animThread, GSSimConnect& mvmntThread, GSAliveUI& ui, GSAircraft& userAircraft):
-        m_animThread(animThread), m_mvmntThread(mvmntThread), m_ui(ui), m_userAircraft(userAircraft) {}
+    GSSpawnerThread(GSSimConnect& animThread, GSSimConnect& mvmntThread, GSAliveUI& ui):
+        m_animThread(animThread), m_mvmntThread(mvmntThread), m_ui(ui) {}
     ~GSSpawnerThread() override {}
     GSSpawnerThread(const GSSpawnerThread &) = delete;
     GSSpawnerThread &operator=(const GSSpawnerThread &) = delete;
@@ -61,13 +61,14 @@ private:
     void HelperPrepare(size_t sz);
     void TrySpawnEligable();
     void NewAircraft(std::shared_ptr<GSAircraft>& aircraft);
-    void ModAircraft(DWORD aircraftID);
+    void ModAircraft(const GSAircraft& aircraft);
     void RemoveAircraft(DWORD aircraftID);
     void UserAircraft();
     bool SpawnCond(const GSAircraft& aircraft);
     bool DespawnCond(const GSAircraft& aircraft);
     void CheckForUnspawned(GSAircraftGround& grnd);
     void CheckForSpawned(GSAircraftGround& grnd);
+    void CheckForPendingUpdates();
     void CheckForPendingRemove();
     void CheckForPendingAdd();
 
@@ -82,9 +83,10 @@ private:
     std::unordered_map<DWORD, std::shared_ptr<GSAircraft>> m_groundPendingAdd;
     std::vector<std::reference_wrapper<GSAircraftGround>> m_groundHelper;
     std::unordered_set<DWORD> m_groundSpawnEligable;
+    std::unordered_set<DWORD> m_groundPendingUpdates;
     GSSimConnect& m_animThread;
     GSSimConnect& m_mvmntThread;
     GSAliveUI& m_ui;
-    GSAircraft& m_userAircraft;
+    std::shared_ptr<GSAircraft> m_userAircraft;
 };
 } // namespace NS_GSAliveAirport

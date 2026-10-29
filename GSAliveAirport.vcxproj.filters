@@ -63,10 +63,7 @@
     <ClInclude Include="Source\Animation\GSAnimSingle.h">
       <Filter>Source\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Commands\GSCmdAircraftAdd.h">
-      <Filter>Source\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Commands\GSCmdAircraftUpdate.h">
+    <ClInclude Include="Source\Commands\GSCmdAircraft.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
     <ClInclude Include="Source\Commands\GSCmdAnimObj.h">

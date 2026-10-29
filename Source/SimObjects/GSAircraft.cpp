@@ -59,6 +59,20 @@ constexpr std::array GSDatums_AircraftConst_InteractivePnt{
     GSDatum{"INTERACTIVE POINT HEADING EX1", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
+GSAircraft::GSAircraft(const GSAircraft& aircraft)
+{
+    memcpy(&m_rawData, &aircraft.m_rawData, sizeof(m_rawData));
+    memcpy(&m_rawConstData, &aircraft.m_rawConstData, sizeof(m_rawConstData));
+    m_trafficState = aircraft.m_trafficState;
+    m_parkingState = aircraft.m_parkingState;
+    m_location = aircraft.m_location;
+    m_objectID = aircraft.GetObjID();
+    m_departing = aircraft.m_departing;
+    m_category = aircraft.m_category;
+    m_airport = aircraft.m_airport;
+    ApplyInteractivePoints();
+}
+
 void GSAircraft::InitDatums(GSSimConnect& handler)
 {
     handler.InvokeAddDatums(GSDatums_Aircraft, GSDatumID_Aircraft);
@@ -79,13 +93,13 @@ void GSAircraft::CopyDynInfo(const GSAircraft& another)
     m_trafficState = m_rawData.trafficState.data();
     m_parkingState = m_rawData.assignedParking.data();
     m_location = another.GetLongLat();
-    objectID = another.GetObjID();
+    m_objectID = another.GetObjID();
 }
 
 void GSAircraft::LoadInitState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry)
 {
     GSSimConnect::ReadMsgData(&m_rawData, 0, AIRCRAFT_WIREDATA_INITSIZE, entry);
-    objectID = entry.dwObjectID;
+    m_objectID = entry.dwObjectID;
     m_location = {m_rawData.longitude,m_rawData.latitude};
 }
 
@@ -105,6 +119,11 @@ void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
     if (m_rawConstData.wingSpanMeters > 36.0) m_category = AircraftSizeCategory::Large;
     if (m_rawConstData.wingSpanMeters > 65.0) m_category = AircraftSizeCategory::ExtraLarge;
 
+    ApplyInteractivePoints();
+}
+
+void GSAircraft::ApplyInteractivePoints()
+{
     for (size_t idx = 0; idx < m_rawConstData.interactivePoints.size(); ++idx) {
         const auto& interactivePnt = m_rawConstData.interactivePoints[idx];
         if (interactivePnt.type > 4 || interactivePnt.type == 2)
@@ -146,7 +165,7 @@ void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 
 bool GSAircraft::operator==(const GSAircraft& another) const
 {
-    if (objectID == another.objectID) {
+    if (m_objectID == another.m_objectID) {
         return (memcmp(&m_rawData, &another.m_rawData, sizeof(m_rawData)) == 0);
     }
 

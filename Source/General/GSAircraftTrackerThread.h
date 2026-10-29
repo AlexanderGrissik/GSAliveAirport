@@ -30,8 +30,8 @@ public:
     ~GSAircraftTrackerThread() override {}
 #pragma warning(push)
 #pragma warning(disable : 4355)
-    GSAircraftTrackerThread(GSSimConnect& singleObserver, GSSimConnect& animThread, GSAircraft& userAircraft):
-        m_singleObserver(singleObserver), m_animThread(animThread), m_userAircraft(userAircraft),
+    GSAircraftTrackerThread(GSSimConnect& singleObserver, GSSimConnect& animThread):
+        m_singleObserver(singleObserver), m_animThread(animThread),
         m_airportAddedReqID(NextRequestID()), m_airportRemovedReqID(NextRequestID()),
         m_airportAddedReq(*this), m_airportRemovedReq(*this) {}
 #pragma warning(pop)
@@ -70,9 +70,9 @@ public:
 
     void RequestScan();
     void RequestAirportScan();
-    bool HandleExistingAircraft(GSAircraft& aircraft, std::shared_ptr<GSAircraft>& exisitng, const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
+    bool HandleExistingAircraft(std::shared_ptr<GSAircraft>& aircraft, std::shared_ptr<GSAircraft>& exisitng, const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry);
     void PostNewAircraft(std::shared_ptr<GSAircraft>& aircraft);
-    void HandleAircraftUser(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE &entry);
+    void HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft);
     void SpawnTestAircrafts();
     void SubscribeAirportList();
     void UnsubscribeAirportList();
@@ -89,7 +89,7 @@ public:
     GSTimePoint m_lastScanTime{};
     GSTimePoint m_lastAirportScanTime{};
     std::jthread m_thread;
-    GSAircraft& m_userAircraft;
+    GSAircraft m_userAircraft;
     AirportScanCache m_airportCache;
     std::unordered_map<std::string, std::pair<size_t, std::shared_ptr<GSAirport>>> m_activeAirports;
     DWORD m_airportAddedReqID = 0;
