@@ -11,17 +11,17 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_GroundPowerMSFSStateSet {
-    GSDefinitions::DatumSpec{"GROUNDPOWERUNIT HOSE DEPLOYED", "percent over 100", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"GROUNDPOWERUNIT HOSE DEPLOYED", "percent over 100", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_GroundPowerExtStateSet {
-    GSDefinitions::DatumSpec{"PLANE TOUCHDOWN BANK DEGREES", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"PLANE TOUCHDOWN BANK DEGREES", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 void GSGroundPower::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_GroundPowerMSFSStateSet, GSDefinitions::GSDefID::GSDefID_GroundPowerStateSet);
-    handler.InvokeAddDatums(GSDatums_GroundPowerExtStateSet, GSDefinitions::GSDefID::GSDefID_GroundPowerExtStateSet);
+    handler.InvokeAddDatums(GSDatums_GroundPowerMSFSStateSet, GSDatumID_GroundPowerStateSet);
+    handler.InvokeAddDatums(GSDatums_GroundPowerExtStateSet, GSDatumID_GroundPowerExtStateSet);
 }
 
 bool GSGroundPower::OnCreated()
@@ -34,11 +34,11 @@ void GSGroundPower::OnArrived()
 {
     std::array updateData1{ StateWireDataSet{ 1.0f } };
     m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
-        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_GroundPowerStateSet, std::move(updateData1)));
+        m_simHandle, *this, GSDatumID_GroundPowerStateSet, std::move(updateData1)));
 
     std::array updateData2{ StateWireDataSet{ 1.0f } };
     m_simHandle.PostReqCommand(new GSReqSetDataSimObj(
-        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_GroundPowerExtStateSet, std::move(updateData2)));
+        m_simHandle, *this, GSDatumID_GroundPowerExtStateSet, std::move(updateData2)));
 
     Freeze();
     ContinueSpawn();

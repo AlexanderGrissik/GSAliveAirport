@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 Alexander Grissik
+// Copyright (c) 2026 Alexander Grissik
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAliveAirportApp.h"
@@ -88,7 +88,7 @@ void GSAliveAirportApp::HandleCommand(const AppCommand &command)
         }
         break;
     case AT::Test:
-        PostACTrackCommand(GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT);
+        m_aircraftTracker.PostCommand(new GSCommand(GS_CMD_SPAWN_TEST_AIRCRAFTS));
         break;
     case AT::Injector:
     {
@@ -108,13 +108,6 @@ void GSAliveAirportApp::HandleCommand(const AppCommand &command)
         break;
     }
     }
-}
-
-void GSAliveAirportApp::PostACTrackCommand(int cmdId)
-{
-    // Results arrive through the log sink; never wait for a worker on the UI thread.
-    CmdPtr cmd = std::make_unique<GSCommand>(cmdId);
-    m_aircraftTracker.PostCommand(cmd);
 }
 
 void GSAliveAirportApp::SendSampleAircraft()

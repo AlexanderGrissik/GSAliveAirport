@@ -11,8 +11,8 @@ namespace NS_GSAliveAirport
 using namespace std::chrono_literals;
 
 constexpr std::array GSDatums_PlanePos{
-    GSDefinitions::DatumSpec{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
-    GSDefinitions::DatumSpec{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64}
+    GSDatum{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDatum{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64}
 };
 
 void GSMovementThread::Start()
@@ -56,7 +56,7 @@ void GSMovementThread::RunLoopMoveTracking(std::stop_token stopToken)
 
 void GSMovementThread::OnConnect()
 {
-    InvokeAddDatums(GSDatums_PlanePos, GSDefinitions::GSDefID_PlanePosition);
+    InvokeAddDatums(GSDatums_PlanePos, GSDatumID_PlanePosition);
 }
 
 void GSMovementThread::RequestTracking()
@@ -73,12 +73,12 @@ void GSMovementThread::RequestTracking()
 void GSMovementThread::OnCommand(GSCommand& cmd)
 {
     switch (cmd.GetCmdID()) {
-    case GSDefinitions::CMD_MVMNT_OBJ_ADD: {
+    case GS_CMD_MVMNT_OBJ_ADD: {
         auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
         m_trackObjs.try_emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj(), std::chrono::steady_clock::now(), 0.0);
         break;
     }
-    case GSDefinitions::CMD_MVMNT_OBJ_REM: {
+    case GS_CMD_MVMNT_OBJ_REM: {
         auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
         m_pendRemObjs.emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj());
         break;
@@ -98,8 +98,7 @@ void GSMovementThread::RemovePending()
         m_trackObjs.erase(itr->first);
         m_pendRemObjs.erase(itr);
 
-        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_REM_RET, *obj));
-        itr->second->GetSimConnect().PostCommand(cmd);
+        itr->second->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_RET, *obj));
     }
 }
 
@@ -130,23 +129,22 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
         auto simObj = track.m_simObj;
         m_trackObjs.erase(objID);
         m_pendRemObjs.erase(objID);
-        CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ARR, *simObj));
-        simObj->GetSimConnect().PostCommand(cmd);
+        simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ARR, *simObj));
     }
     
     DecrInflight();
 }
 
-GSRequest::SendResult GSMovementThread::GSReqObjPosition::Process()
+GSReqRC GSMovementThread::GSReqObjPosition::Process()
 {
     auto id = m_simHandle.NextRequestID();
-    GSRequest::SendResult rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObject, id, GSDefinitions::GSDefID_PlanePosition,
+    GSReqRC rc = {
+        m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObject, id, GSDatumID_PlanePosition,
             m_simObj.GetSimObjectID(), SIMCONNECT_PERIOD_ONCE, 0U, 0U, 0U, 0U), true };
 
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSMovementThread::GSReqObjPosition::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+    if (!rc.isOK()) {
+        GSLogStream::LogError("GSMovementThread::GSReqObjPosition::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
     }
 
     return rc;

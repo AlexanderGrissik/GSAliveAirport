@@ -15,7 +15,7 @@ bool GSWingmans::OnCreated()
     Freeze();
 
     GSCoord initPosLoc = { m_initPos.Longitude, m_initPos.Latitude };
-    auto* anim = new GSAnimSingle(m_simObjectID, initPosLoc, GSDefinitions::GSDefID_AnimVelocBodyY);
+    auto* anim = new GSAnimSingle(m_simObjectID, initPosLoc, GSDatumID_AnimVelocBodyY);
     anim->AddFrameSet({ 230, 267, 30.0 });
     anim->SetAIWaypoints(&m_aiWaypoints);
     RegisterAnim(anim);
@@ -56,7 +56,7 @@ bool GSWingmans::PreSpawn()
         ptrWalker2->SetPosition(initPosLoc2);
         ptrWalker2->PreSpawn();
 
-        auto* animWorker2 = new GSAnimSingle(0, initPosLoc2, GSDefinitions::GSDefID_AnimVelocBodyY);
+        auto* animWorker2 = new GSAnimSingle(0, initPosLoc2, GSDatumID_AnimVelocBodyY);
         animWorker2->AddFrameSet({ 230, 267, 30.0 });
         ptrWalker2->SetAnimObj(animWorker2);
 
@@ -74,7 +74,7 @@ bool GSWingmans::PreSpawn()
         ptrWalker3->SetPosition(initPosLoc3);
         ptrWalker3->PreSpawn();
 
-        auto* animWorker3 = new GSAnimSingle(0, initPosLoc3, GSDefinitions::GSDefID_AnimVelocBodyY);
+        auto* animWorker3 = new GSAnimSingle(0, initPosLoc3, GSDatumID_AnimVelocBodyY);
         animWorker3->AddFrameSet({ 230, 267, 30.0 });
         ptrWalker3->SetAnimObj(animWorker3);
 

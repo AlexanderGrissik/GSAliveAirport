@@ -62,10 +62,10 @@ private:
 	std::jthread m_thread;
 	size_t m_inflightReqs = 0U;
 
-	class GSReqObjPosition : public GSSimObj::GSSimObjReq {
+	class GSReqObjPosition : public GSSimObjReq {
 	public:
 		GSReqObjPosition(GSSimConnect& simHandle, GSSimObj& simObj, TrackState* track) : GSSimObjReq(simHandle, simObj), m_track(track) {}
-		GSRequest::SendResult Process() override;
+		GSReqRC Process() override;
 		bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
 		void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
 	private:

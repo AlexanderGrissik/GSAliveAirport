@@ -23,7 +23,7 @@ public:
     };
     #pragma pack(pop)
 
-    GSAnimMulti(SIMCONNECT_OBJECT_ID objID, const GSCoord& initCoord, bool uncycle, GSDefinitions::GSDefID defID):
+    GSAnimMulti(SIMCONNECT_OBJECT_ID objID, const GSCoord& initCoord, bool uncycle, GSDatumID defID):
         GSAnimationObject(objID, initCoord, uncycle), m_defID(defID), m_activeFrameRange(uncycle ? 1 : 0) {}
 
     void Animate(GSSimConnect& handler, float elapsedMilli) override;
@@ -34,7 +34,7 @@ public:
 
 private:
 
-    GSDefinitions::GSDefID m_defID;
+    GSDatumID m_defID;
     std::vector<GSAnimationObject::FrameRange> m_frameRanges;
     std::size_t m_activeFrameRange;
 };

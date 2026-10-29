@@ -14,11 +14,11 @@ class GSCmdAnimObj : public GSCommand
 {
 public:
 
-    GSCmdAnimObj(int cmd, GSSimConnect& retSimConnect, GSAnimationObject* animObj):
+    GSCmdAnimObj(GSCommandID cmd, GSSimConnect& retSimConnect, GSAnimationObject* animObj):
         GSCommand(cmd), m_retSimConnect(retSimConnect), m_animObj(animObj) {
         m_objID = animObj->GetObjID();
     }
-    GSCmdAnimObj(int cmd, GSSimConnect& retSimConnect, SIMCONNECT_OBJECT_ID animObj, GSRequest* retReq):
+    GSCmdAnimObj(GSCommandID cmd, GSSimConnect& retSimConnect, SIMCONNECT_OBJECT_ID animObj, GSRequest* retReq):
         GSCommand(cmd), m_retReq(retReq), m_retSimConnect(retSimConnect) {
         m_objID = animObj;
     }
@@ -33,7 +33,7 @@ public:
 private:
 
     std::unique_ptr<GSAnimationObject> m_animObj;
-    GSCmdReq::ReqPtr m_retReq;
+    GSRequestU m_retReq;
     GSSimConnect& m_retSimConnect;
     SIMCONNECT_OBJECT_ID m_objID{};
 };

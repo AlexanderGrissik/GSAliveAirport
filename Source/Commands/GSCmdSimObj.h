@@ -13,7 +13,7 @@ class GSCmdSimObj : public GSCommand
 {
 public:
 
-    GSCmdSimObj(int cmd, GSSimObj& simObj) : GSCommand(cmd), m_simObj(simObj) {}
+    GSCmdSimObj(GSCommandID cmd, GSSimObj& simObj) : GSCommand(cmd), m_simObj(simObj) {}
     virtual ~GSCmdSimObj() {}
 
     GSSimObj& SimObj() { return m_simObj; }

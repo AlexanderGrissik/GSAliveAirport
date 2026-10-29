@@ -31,8 +31,6 @@ public:
 
     int Run();
 
-    void PostACTrackCommand(int cmdId);
-
 private:
 
     enum class AppCommandType

@@ -93,55 +93,42 @@ void GSSpawnerThread::SetInjector(Injector injector, std::uint8_t groundServiced
 void GSSpawnerThread::OnCommand(GSCommand& cmd)
 {
     switch (cmd.GetCmdID()) {
-    case GSDefinitions::CMD_SPAWNER_AIRCRAFT_ADDED:
+    case GS_CMD_SPAWNER_AIRCRAFT_ADDED:
         NewAircraft(static_cast<GSCmdAircraftAdd&>(cmd).GetAircraft());
         break;
-    case GSDefinitions::CMD_SPAWNER_AIRCRAFT_REMOVED:
+    case GS_CMD_SPAWNER_AIRCRAFT_REMOVED:
         RemoveAircraft(static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraftID());
         break;
-    case GSDefinitions::CMD_SPAWNER_AIRCRAFT_MODIFIED:
+    case GS_CMD_SPAWNER_AIRCRAFT_MODIFIED:
         ModAircraft(static_cast<GSCmdAircraftUpdate&>(cmd).GetAircraftID());
         break;
-    case GSDefinitions::CMD_AIRCRAFT_USER:
+    case GS_CMD_AIRCRAFT_USER:
         UserAircraft(); // Implicit aquire fence 
         break;
-    case GSDefinitions::CMD_ANIM_OBJ_ADD: {
-        auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
-        CmdPtr newCmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_ADD, *this, cmdAnim.AnimObj().release()));
-        m_animThread.PostCommand(newCmd);
+    case GS_CMD_ANIM_OBJ_ADD:
+        m_animThread.PostCommand(
+            new GSCmdAnimObj(GS_CMD_ANIM_OBJ_ADD, *this, static_cast<GSCmdAnimObj&>(cmd).AnimObj().release()));
         break;
-    }
-    case GSDefinitions::CMD_ANIM_OBJ_REM: {
-        auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
-        CmdPtr newCmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_REM, *this, cmdAnim.ObjID(), cmdAnim.ReleaseReq()));
-        m_animThread.PostCommand(newCmd);
+    case GS_CMD_ANIM_OBJ_REM:
+        m_animThread.PostCommand(
+            new GSCmdAnimObj(GS_CMD_ANIM_OBJ_REM, *this, static_cast<GSCmdAnimObj&>(cmd).ObjID(), static_cast<GSCmdAnimObj&>(cmd).ReleaseReq()));
         break;
-    }
-    case GSDefinitions::CMD_ANIM_OBJ_REM_DONE: {
-        auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
-        cmdAnim.GetReq().Process();
+    case GS_CMD_ANIM_OBJ_REM_DONE:
+        static_cast<GSCmdAnimObj&>(cmd).GetReq().Process();
         break;
-    }
-    case GSDefinitions::CMD_MVMNT_OBJ_ADD: {
-        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
-        CmdPtr newCmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ADD, cmdObj.SimObj()));
-        m_mvmntThread.PostCommand(newCmd);
+    case GS_CMD_MVMNT_OBJ_ADD:
+        m_mvmntThread.PostCommand(
+            new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ADD, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
-    }
-    case GSDefinitions::CMD_MVMNT_OBJ_REM: {
-        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
-        CmdPtr newCmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_REM, cmdObj.SimObj()));
-        m_mvmntThread.PostCommand(newCmd);
+    case GS_CMD_MVMNT_OBJ_REM:
+        m_mvmntThread.PostCommand(
+            new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
-    }
-    case GSDefinitions::CMD_MVMNT_OBJ_REM_RET: {
+    case GS_CMD_MVMNT_OBJ_REM_RET:
         break;
-    }
-    case GSDefinitions::CMD_MVMNT_OBJ_ARR: {
-        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
-        cmdObj.SimObj().OnArrived();
+    case GS_CMD_MVMNT_OBJ_ARR:
+        static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrived();
         break;
-    }
     default:
         GSLogStream::LogError("GSSpawnerThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;

@@ -15,21 +15,21 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_StaircaseExtStateGet{
-    GSDefinitions::DatumSpec{"BOARDINGRAMP END POSITION Y",  "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BOARDINGRAMP END POSITION Z",  "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BOARDINGRAMP START POSITION Y","feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BOARDINGRAMP START POSITION Z","meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BOARDINGRAMP END POSITION Y",  "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BOARDINGRAMP END POSITION Z",  "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BOARDINGRAMP START POSITION Y","feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BOARDINGRAMP START POSITION Z","meters", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_StaircaseExtStateSet{
-    GSDefinitions::DatumSpec{"BOARDINGRAMP ORIENTATION TARGET", "percent", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BOARDINGRAMP ELEVATION TARGET", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BOARDINGRAMP ORIENTATION TARGET", "percent", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BOARDINGRAMP ELEVATION TARGET", "feet", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 void GSStaircase::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_StaircaseExtStateGet, GSDefinitions::GSDefID::GSDefID_StaircaseExtStateGet);
-    handler.InvokeAddDatums(GSDatums_StaircaseExtStateSet, GSDefinitions::GSDefID::GSDefID_StaircaseExtStateSet);
+    handler.InvokeAddDatums(GSDatums_StaircaseExtStateGet, GSDatumID_StaircaseExtStateGet);
+    handler.InvokeAddDatums(GSDatums_StaircaseExtStateSet, GSDatumID_StaircaseExtStateSet);
 }
 
 bool GSStaircase::OnCreated()
@@ -51,9 +51,9 @@ void GSStaircase::OnSpawned(bool ok, GSSimObj& obj)
 void GSStaircase::OnArrived()
 {
     m_simHandle.PostReqIdentCommand(
-        new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        new GSReqTxEventEx1(m_simHandle, *this, GSEventID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
-            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_OpenDoors, ") << message->dwException; });
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: OpenDoors, ") << message->dwException; });
 
     Freeze();
 
@@ -90,10 +90,10 @@ void GSStaircase::TrySpawnPassengers()
 void GSStaircase::OnDespawning()
 {
     m_simHandle.PostReqIdentCommand(new GSReqTxEventEx1(
-        m_simHandle, *this, GSDefinitions::GSDefID_CloseDoors,
+        m_simHandle, *this, GSEventID_CloseDoors,
         m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
-            GSLogStream::LogDebug(GSLogStream::DBG_LOG_STAIRCASE, "Ident Exception: GSDefID_CloseDoors, ") << message->dwException; });
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_STAIRCASE, "Ident Exception: CloseDoors, ") << message->dwException; });
 }
 
 bool GSStaircase::PreSpawn()

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #pragma once
-#include "GSRequest.h"
 #include "GSSimConnect.h"
 #include "GSCoord.h"
 #include <cstddef>

@@ -74,19 +74,19 @@ void GSAnimationThread::DoAnimation()
 void GSAnimationThread::OnCommand(GSCommand& cmd)
 {
     switch (cmd.GetCmdID()) {
-    case GSDefinitions::CMD_ANIM_OBJ_ADD: {
+    case GS_CMD_ANIM_OBJ_ADD: {
         auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
         m_animObjs.emplace(cmdAnim.ObjID(), cmdAnim.AnimObj().release());
         break;
     }
-    case GSDefinitions::CMD_ANIM_OBJ_REM: {
+    case GS_CMD_ANIM_OBJ_REM: {
         auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
         m_animObjs.erase(cmdAnim.ObjID());
-        CmdPtr newCmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_REM_DONE, *this, cmdAnim.ObjID(), cmdAnim.ReleaseReq()));
-        cmdAnim.RetSimConn().PostCommand(newCmd);
+        cmdAnim.RetSimConn().PostCommand(
+            new GSCmdAnimObj(GS_CMD_ANIM_OBJ_REM_DONE, *this, cmdAnim.ObjID(), cmdAnim.ReleaseReq()));
         break;
     }
-    case GSDefinitions::CMD_AIRCRAFT_USER:
+    case GS_CMD_AIRCRAFT_USER:
         // Empty command is an alternative to aquire fence.
         break;
     default:

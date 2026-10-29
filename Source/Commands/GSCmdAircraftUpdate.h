@@ -13,7 +13,7 @@ class GSCmdAircraftUpdate : public GSCommand
 {
 public:
 
-    GSCmdAircraftUpdate(int cmd, DWORD aircraftID): GSCommand(cmd), m_aircraftID(aircraftID) {}
+    GSCmdAircraftUpdate(GSCommandID cmd, DWORD aircraftID): GSCommand(cmd), m_aircraftID(aircraftID) {}
     virtual ~GSCmdAircraftUpdate() {}
 
     DWORD GetAircraftID() const { return m_aircraftID; }

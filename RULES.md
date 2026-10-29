@@ -14,6 +14,7 @@ No global methods or global variables outside of a class. Everything must be a m
 
 - `main()` — allowed as a free function.
 - `WinMain()` — allowed as a free function (Windows GUI subsystem entry point, required by the CRT).
+- `GSDefinitions.h` - allowed to have small global structs and enums. Modifying this file strictly requires excplicit user approval.
 - Any other exception **must** be explicitly approved by the user and documented in this section.
 
 ## 3. Header-Only Files

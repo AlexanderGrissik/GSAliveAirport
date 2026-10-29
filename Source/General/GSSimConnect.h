@@ -37,23 +37,23 @@ public:
     void InvokeMapClientEvent(SIMCONNECT_CLIENT_EVENT_ID EventID, const char * EventName);
 
     template <size_t SZ>
-    void InvokeAddDatums(const std::array<GSDefinitions::DatumSpec, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID);
+    void InvokeAddDatums(const std::array<GSDatum, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID);
 
     template <size_t SZ>
     void InvokeAddFacilityDatums(const std::array<const char*, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID);
 
     template <typename Method, typename... Args>
-    GSDefinitions::SendResult Invoke(Method&& method, Args&&... args) { return CaptureResult(method(GetHandle(), std::forward<Args>(args)...), 0U); }
+    GSInvokeRC Invoke(Method&& method, Args&&... args) { return CaptureResult(method(GetHandle(), std::forward<Args>(args)...), 0U); }
 
     template <typename Method, typename... Args>
-    GSDefinitions::SendResult InvokeRequest(DWORD nextRequestID, Method&& method, Args&&... args) { return CaptureResult(method(GetHandle(), std::forward<Args>(args)...), nextRequestID); }
+    GSInvokeRC InvokeRequest(DWORD nextRequestID, Method&& method, Args&&... args) { return CaptureResult(method(GetHandle(), std::forward<Args>(args)...), nextRequestID); }
 
-    GSDefinitions::SendResult CaptureResult(HRESULT result, DWORD requestID) const;
+    GSInvokeRC CaptureResult(HRESULT result, DWORD requestID) const;
 
     static void ReadMsgData(void* dest, size_t offset, size_t dstSize, const SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
 
     void FlushPendingRequestsWithException();
-    void PostCommand(CmdPtr& cmd) { m_commands.Push(cmd); }
+    void PostCommand(GSCommand* cmd);
     void PostReqCommand(GSRequest* req);
     void PostReqCommandDeferred(GSRequest* req, GSTimePoint execTime);
     void PostReqIdentCommand(GSRequest* req, GSCmdReqIdent::Callable&& clb);
@@ -70,7 +70,7 @@ protected:
     bool IsLastLoopMessage() const { return m_lastLoopMsg; }
     bool IsSimStarted() const { return m_simStarted; }
     void Connect();
-    void AddRawRequestHandler(DWORD reqID, GSRequest& req) { m_reqIDToPtr.emplace(GSDefinitions::SendResultIDs{0, reqID}, req); }
+    void AddRawRequestHandler(DWORD reqID, GSRequest& req) { m_reqIDToPtr.emplace(GSInvokeID{0, reqID}, req); }
     
 private:
     
@@ -79,10 +79,10 @@ private:
     void HandleCmdReqIdentProcess(GSCmdReqIdent& cmd);
     
     static void CALLBACK DispatchThunk(SIMCONNECT_RECV *message, DWORD messageSize, void *context);
-    static std::size_t HashReqID(const GSDefinitions::SendResultIDs& key) noexcept { return std::hash<DWORD>{}(key.requestID); }
-    static bool EqualReqID(const GSDefinitions::SendResultIDs& lhs, const GSDefinitions::SendResultIDs& rhs) noexcept { return lhs.requestID == rhs.requestID; }
-    static std::size_t HashSendID(const GSDefinitions::SendResultIDs& key) noexcept { return std::hash<DWORD>{}(key.sendID); }
-    static bool EqualSendID(const GSDefinitions::SendResultIDs& lhs, const GSDefinitions::SendResultIDs& rhs) noexcept { return lhs.sendID == rhs.sendID; }
+    static std::size_t HashReqID(const GSInvokeID& key) noexcept { return std::hash<DWORD>{}(key.requestID); }
+    static bool EqualReqID(const GSInvokeID& lhs, const GSInvokeID& rhs) noexcept { return lhs.requestID == rhs.requestID; }
+    static std::size_t HashSendID(const GSInvokeID& key) noexcept { return std::hash<DWORD>{}(key.sendID); }
+    static bool EqualSendID(const GSInvokeID& lhs, const GSInvokeID& rhs) noexcept { return lhs.sendID == rhs.sendID; }
 
     HANDLE m_handle = nullptr;
     DWORD m_nextRequestId = 10'000;
@@ -91,19 +91,18 @@ private:
     bool m_lastLoopMsg = false;
     bool m_simStarted = false;
     bool m_reportedWaiting = false;
-    GSCmdQueue m_commands;
-    std::list<CmdPtr> m_deferred;
+    GSCommandUQueue m_commands;
+    std::list<GSCommandU> m_deferred;
 
-    using GSReqRef = std::reference_wrapper<GSRequest>;
-    std::unordered_map<GSDefinitions::SendResultIDs, GSReqRef, decltype(&HashReqID), decltype(&EqualReqID)> m_reqIDToPtr{ 1, &HashReqID, &EqualReqID };
-    std::unordered_map<GSDefinitions::SendResultIDs, GSCmdReq::ReqPtr, decltype(&HashSendID), decltype(&EqualSendID)> m_sendIDToPtr{ 1, &HashSendID, &EqualSendID };
-    std::deque<std::pair<GSDefinitions::SendResultIDs, GSCmdReqIdent::Callable>> m_sendIDToIdent;
+    std::unordered_map<GSInvokeID, GSRequestR, decltype(&HashReqID), decltype(&EqualReqID)> m_reqIDToPtr{ 1, &HashReqID, &EqualReqID };
+    std::unordered_map<GSInvokeID, GSRequestU, decltype(&HashSendID), decltype(&EqualSendID)> m_sendIDToPtr{ 1, &HashSendID, &EqualSendID };
+    std::deque<std::pair<GSInvokeID, GSCmdReqIdent::Callable>> m_sendIDToIdent;
 };
 
 template <size_t SZ>
-void GSSimConnect::InvokeAddDatums(const std::array<GSDefinitions::DatumSpec, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID)
+void GSSimConnect::InvokeAddDatums(const std::array<GSDatum, SZ>& arr, SIMCONNECT_DATA_DEFINITION_ID defID)
 {
-    for (const GSDefinitions::DatumSpec &datum : arr) {
+    for (const GSDatum &datum : arr) {
         InvokeAddDatum(defID, datum.name, datum.units, datum.type);
     }        
 }

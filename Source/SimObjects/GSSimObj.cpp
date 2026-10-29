@@ -12,23 +12,23 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_Position{
-    GSDefinitions::DatumSpec{"Initial Position", nullptr, SIMCONNECT_DATATYPE_INITPOSITION},
+    GSDatum{"Initial Position", nullptr, SIMCONNECT_DATATYPE_INITPOSITION},
 };
 
 constexpr std::array GSDatums_AIWaypoints{
-    GSDefinitions::DatumSpec{"AI WAYPOINT LIST", "number", SIMCONNECT_DATATYPE_WAYPOINT},
+    GSDatum{"AI WAYPOINT LIST", "number", SIMCONNECT_DATATYPE_WAYPOINT},
 };
 
 void GSSimObj::InitDatums(GSSimConnect& handler)
 {
     GSAnimationObject::InitDatums(handler);
-    handler.InvokeAddDatums(GSDatums_AIWaypoints, GSDefinitions::GSDefID::GSDefID_AIWaypoints);
+    handler.InvokeAddDatums(GSDatums_AIWaypoints, GSDatumID_AIWaypoints);
 
-    handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_LongLat, "FREEZE_LATITUDE_LONGITUDE_SET");
-    handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_Altitude, "FREEZE_ALTITUDE_SET");
-    handler.InvokeMapClientEvent(GSDefinitions::GSDefID_Freeze_Attitude, "FREEZE_ATTITUDE_SET");
-    handler.InvokeMapClientEvent(GSDefinitions::GSDefID_OpenDoors, "OPEN_AIRCRAFT_DOORS");
-    handler.InvokeMapClientEvent(GSDefinitions::GSDefID_CloseDoors, "CLOSE_AIRCRAFT_DOORS");
+    handler.InvokeMapClientEvent(GSEventID_Freeze_LongLat, "FREEZE_LATITUDE_LONGITUDE_SET");
+    handler.InvokeMapClientEvent(GSEventID_Freeze_Altitude, "FREEZE_ALTITUDE_SET");
+    handler.InvokeMapClientEvent(GSEventID_Freeze_Attitude, "FREEZE_ATTITUDE_SET");
+    handler.InvokeMapClientEvent(GSEventID_OpenDoors, "OPEN_AIRCRAFT_DOORS");
+    handler.InvokeMapClientEvent(GSEventID_CloseDoors, "CLOSE_AIRCRAFT_DOORS");
 }
 
 void GSSimObj::Spawn()
@@ -90,27 +90,25 @@ void GSSimObj::Freeze()
     //auto reqID = m_simHandle.NextRequestID();
     //m_simHandle.Invoke(SimConnect_AIReleaseControl, m_simObjectID, reqID);
 
-    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_LongLat, 1));
-    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_Altitude, 1));
-    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSDefinitions::GSDefID_Freeze_Attitude, 1));
+    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSEventID_Freeze_LongLat, 1));
+    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Altitude, 1));
+    m_simHandle.PostReqCommand(new GSReqTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Attitude, 1));
 
     std::array updatePos{ m_initPos };
     m_simHandle.PostReqCommand(new GSReqSetPos(
-        m_simHandle, *this, GSDefinitions::GSDefID::GSDefID_Position, std::move(updatePos)));
+        m_simHandle, *this, GSDatumID_Position, std::move(updatePos)));
 }
 
 void GSSimObj::RegisterAnim(GSAnimationObject* animObj)
 {
-    CmdPtr cmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_ADD, m_simHandle, animObj));
-    m_simHandle.PostCommand(cmd);
+    m_simHandle.PostCommand(new GSCmdAnimObj(GS_CMD_ANIM_OBJ_ADD, m_simHandle, animObj));
     m_hasAnim = true;
 }
 
 void GSSimObj::UnregisterAnim()
 {
-    CmdPtr cmd(new GSCmdAnimObj(GSDefinitions::CMD_ANIM_OBJ_REM, m_simHandle, m_simObjectID, 
-        new GSReqRemAnim(m_simHandle, *this)));
-    m_simHandle.PostCommand(cmd);
+    m_simHandle.PostCommand(
+        new GSCmdAnimObj(GS_CMD_ANIM_OBJ_REM, m_simHandle, m_simObjectID, new GSReqRemAnim(m_simHandle, *this)));
     m_hasAnim = false;
 }
 
@@ -128,12 +126,11 @@ void GSSimObj::ShootWaypoints()
     //}
 
     m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
-        GSDefinitions::GSDefID_AIWaypoints, m_simObjectID, 0, static_cast<DWORD>(m_aiWaypoints.size()),
+        GSDatumID_AIWaypoints, m_simObjectID, 0, static_cast<DWORD>(m_aiWaypoints.size()),
         static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), m_aiWaypoints.data());
 
     m_startMoveTime = std::chrono::steady_clock::now();
-    CmdPtr cmd(new GSCmdSimObj(GSDefinitions::CMD_MVMNT_OBJ_ADD, *this));
-    m_simHandle.PostCommand(cmd);
+    m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ADD, *this));
 }
 
 void GSSimObj::PrepareRoute()
@@ -212,15 +209,15 @@ void GSSimObj::ContinueSpawn()
         OnObjSpawned(true);
 }
 
-GSRequest::SendResult GSSimObj::GSReqCreate::Process()
+GSReqRC GSSimObj::GSReqCreate::Process()
 {
     auto id = m_simHandle.NextRequestID();
-    GSSimObjReq::SendResult rc = {
+    GSReqRC rc = {
         m_simHandle.InvokeRequest(id, SimConnect_AICreateSimulatedObject_EX1, m_simObj.GetTitle().c_str(), "", m_simObj.GetInitPos(), id), true };
     
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSSimObjReq::GSReqCreate::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+    if (!rc.isOK()) {
+        GSLogStream::LogError("GSReqCreate::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
         m_simObj.OnObjSpawned(false);
     } 
 
@@ -238,7 +235,7 @@ bool GSSimObj::GSReqCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSiz
         }
     } else {
         m_simObj.OnObjSpawned(false);
-        GSLogStream::LogError("GSSimObjReq::GSReqCreate::OnMessage Unexpected Message: ") << message->dwID;
+        GSLogStream::LogError("GSReqCreate::OnMessage Unexpected Message: ") << message->dwID;
     }
     (void)messageSize;
     return true;
@@ -247,15 +244,15 @@ bool GSSimObj::GSReqCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSiz
 void GSSimObj::GSReqCreate::OnException(SIMCONNECT_RECV_EXCEPTION *message)
 {
     m_simObj.OnObjSpawned(false);
-    GSLogStream::LogError("GSSimObjReq::GSReqCreate::OnException: ") << message->dwException << ", " << message->dwIndex;
+    GSLogStream::LogError("GSReqCreate::OnException: ") << message->dwException << ", " << message->dwIndex;
 }
 
-GSRequest::SendResult GSSimObj::GSReqDelete::Process() 
+GSReqRC GSSimObj::GSReqDelete::Process() 
 {
     auto id = m_simHandle.NextRequestID();
     auto simRC = m_simHandle.Invoke(SimConnect_AIRemoveObject, m_simObj.GetSimObjectID(), id);
     if (!simRC.isOK()) {
-        GSLogStream::LogError("GSSimObjReq::GSReqDelete::Process Failed call: ") << simRC.rc;
+        GSLogStream::LogError("GSReqDelete::Process Failed call: ") << simRC.rc;
     } else {
         m_simObj.OnObjDespawned();
         //m_simObj.SetInProgress(true); // Unclear if SimConnect_AIRemoveObject fires OnMessage.
@@ -275,41 +272,41 @@ void GSSimObj::GSReqDelete::OnException(SIMCONNECT_RECV_EXCEPTION *message)
     (void)message;
 }
 
-GSRequest::SendResult GSSimObj::GSReqGetDataSimObj::Process()
+GSReqRC GSSimObj::GSReqGetDataSimObj::Process()
 {
     auto id = m_simHandle.NextRequestID();
-    GSSimObjReq::SendResult rc = {
+    GSReqRC rc = {
         m_simHandle.InvokeRequest(
             id, SimConnect_RequestDataOnSimObject, id, m_definitionID, m_simObj.GetSimObjectID(), SIMCONNECT_PERIOD_ONCE, 0, 0, 0, 0), true };
     
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSSimObjReq::GSReqGetDataSimObj::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+    if (!rc.isOK()) {
+        GSLogStream::LogError("GSReqGetDataSimObj::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
         m_simObj.OnObjSpawned(false);
     }
 
     return rc;
 }
 
-GSRequest::SendResult GSSimObj::GSReqTxClientEvent::Process()
+GSReqRC GSSimObj::GSReqTxClientEvent::Process()
 {
     auto simRC = m_simHandle.Invoke(
         SimConnect_TransmitClientEvent, m_simObj.GetSimObjectID(), m_eventID, m_data, 
         SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
     if (!simRC.isOK()) {
-        GSLogStream::LogError("GSSimObjReq::GSReqTxClientEvent::Process Failed call: ") << simRC.rc;
+        GSLogStream::LogError("GSReqTxClientEvent::Process Failed call: ") << simRC.rc;
     }
 
     return {simRC, false};
 }
 
-GSRequest::SendResult GSSimObj::GSReqTxEventEx1::Process()
+GSReqRC GSSimObj::GSReqTxEventEx1::Process()
 {
     auto simRC = m_simHandle.Invoke(
         SimConnect_TransmitClientEvent_EX1, m_objID, m_eventID,
         SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY, m_data0, m_data1, 0, 0, 0);
     if (!simRC.isOK()) {
-        GSLogStream::LogError("GSSimObjReq::GSReqTxEventEx1::Process Failed call: ") << simRC.rc;
+        GSLogStream::LogError("GSReqTxEventEx1::Process Failed call: ") << simRC.rc;
     }
 
     return {simRC, false};

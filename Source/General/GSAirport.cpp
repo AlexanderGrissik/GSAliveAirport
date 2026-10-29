@@ -45,7 +45,7 @@ constexpr std::array GSDatums_AirportInfo{
 
 void GSAirport::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddFacilityDatums(GSDatums_AirportInfo, GSDefinitions::GSDefID_AirportInfo);
+    handler.InvokeAddFacilityDatums(GSDatums_AirportInfo, GSDatumID_AirportInfo);
 }
 
 void GSAirport::LoadInfo(const SIMCONNECT_RECV_FACILITY_DATA& entry)

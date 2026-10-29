@@ -14,61 +14,61 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_Aircraft {
-    GSDefinitions::DatumSpec{"TITLE", "", SIMCONNECT_DATATYPE_STRING32},
-    GSDefinitions::DatumSpec{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
-    GSDefinitions::DatumSpec{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
-    GSDefinitions::DatumSpec{"SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"GROUND VELOCITY", "knots", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"TITLE", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDatum{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDatum{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDatum{"SIM ON GROUND", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"IS USER SIM", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"GROUND VELOCITY", "knots", SIMCONNECT_DATATYPE_FLOAT32},
 
-    GSDefinitions::DatumSpec{"PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"GROUND ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"PLANE ALT ABOVE GROUND", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"PLANE ALT ABOVE GROUND MINUS CG", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"AI TRAFFIC CURRENT AIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
-    GSDefinitions::DatumSpec{"AI TRAFFIC FROMAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
-    GSDefinitions::DatumSpec{"AI TRAFFIC TOAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
-    GSDefinitions::DatumSpec{"AI TRAFFIC ASSIGNED PARKING", "", SIMCONNECT_DATATYPE_STRING32},
-    GSDefinitions::DatumSpec{"AI TRAFFIC STATE", "", SIMCONNECT_DATATYPE_STRING32},
-    GSDefinitions::DatumSpec{"AI TRAFFIC ETD", "seconds", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"AI TRAFFIC ETA", "seconds", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"LIGHT BEACON", "bool", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"LIGHT NAV", "bool", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"LIGHT TAXI", "bool", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"BRAKE PARKING POSITION", "bool", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"PUSHBACK ATTACHED", "bool", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"PUSHBACK WAIT", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"GROUND ALTITUDE", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"PLANE ALT ABOVE GROUND", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"PLANE ALT ABOVE GROUND MINUS CG", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"AI TRAFFIC CURRENT AIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
+    GSDatum{"AI TRAFFIC FROMAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
+    GSDatum{"AI TRAFFIC TOAIRPORT", "", SIMCONNECT_DATATYPE_STRING8},
+    GSDatum{"AI TRAFFIC ASSIGNED PARKING", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDatum{"AI TRAFFIC STATE", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDatum{"AI TRAFFIC ETD", "seconds", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"AI TRAFFIC ETA", "seconds", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"LIGHT BEACON", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"LIGHT NAV", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"LIGHT TAXI", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"BRAKE PARKING POSITION", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"PUSHBACK ATTACHED", "bool", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"PUSHBACK WAIT", "bool", SIMCONNECT_DATATYPE_INT32},
 };
 
 constexpr std::array GSDatums_AircraftConst {
-    GSDefinitions::DatumSpec{"ATC ID", "", SIMCONNECT_DATATYPE_STRING32},
-    GSDefinitions::DatumSpec{"ATC AIRLINE", "", SIMCONNECT_DATATYPE_STRING32},
-    GSDefinitions::DatumSpec{"ATC FLIGHT NUMBER", "", SIMCONNECT_DATATYPE_STRING32},
-    GSDefinitions::DatumSpec{"NUMBER OF ENGINES", "number", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"WING SPAN", "meters", SIMCONNECT_DATATYPE_FLOAT64},
-    GSDefinitions::DatumSpec{"PUSHBACK CONTACTX", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"PUSHBACK CONTACTZ", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"ATC ID", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDatum{"ATC AIRLINE", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDatum{"ATC FLIGHT NUMBER", "", SIMCONNECT_DATATYPE_STRING32},
+    GSDatum{"NUMBER OF ENGINES", "number", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"WING SPAN", "meters", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDatum{"PUSHBACK CONTACTX", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"PUSHBACK CONTACTZ", "meters", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_AircraftConst_InteractivePnt{
-    GSDefinitions::DatumSpec{"INTERACTIVE POINT TYPE EX1", "enum", SIMCONNECT_DATATYPE_INT32},
-    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSX EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSY EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"INTERACTIVE POINT POSZ EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"INTERACTIVE POINT HEADING EX1", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"INTERACTIVE POINT TYPE EX1", "enum", SIMCONNECT_DATATYPE_INT32},
+    GSDatum{"INTERACTIVE POINT POSX EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"INTERACTIVE POINT POSY EX1", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"INTERACTIVE POINT POSZ EX1", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"INTERACTIVE POINT HEADING EX1", "degrees", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 void GSAircraft::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_Aircraft, GSDefinitions::GSDefID_Aircraft);
-    handler.InvokeAddDatums(GSDatums_AircraftConst, GSDefinitions::GSDefID_AircraftConst);
+    handler.InvokeAddDatums(GSDatums_Aircraft, GSDatumID_Aircraft);
+    handler.InvokeAddDatums(GSDatums_AircraftConst, GSDatumID_AircraftConst);
 
     for (std::size_t index = 0; index < GSAircraft::s_MaxInteractivePnts; ++index) {
         const std::string suffix = ":" + std::to_string(index);
         for (std::size_t dt = 0; dt < GSDatums_AircraftConst_InteractivePnt.size(); ++dt) {
-            const GSDefinitions::DatumSpec& datum = GSDatums_AircraftConst_InteractivePnt[dt];
-            handler.InvokeAddDatum(GSDefinitions::GSDefID_AircraftConst, (datum.name + suffix).c_str(), datum.units, datum.type);
+            const GSDatum& datum = GSDatums_AircraftConst_InteractivePnt[dt];
+            handler.InvokeAddDatum(GSDatumID_AircraftConst, (datum.name + suffix).c_str(), datum.units, datum.type);
         }
     }
 }

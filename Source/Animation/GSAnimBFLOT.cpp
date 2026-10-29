@@ -8,14 +8,14 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_AnimWagonBFLOT{
-    GSDefinitions::DatumSpec{"WAGON BACK LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"WAGON FRONT LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"PLANE TOUCHDOWN HEADING DEGREES TRUE", "number", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"WAGON BACK LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"WAGON FRONT LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"PLANE TOUCHDOWN HEADING DEGREES TRUE", "number", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 void GSAnimBFLOT::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_AnimWagonBFLOT, GSDefinitions::GSDefID::GSDefID_AnimWagonBFLOT);
+    handler.InvokeAddDatums(GSDatums_AnimWagonBFLOT, GSDatumID_AnimWagonBFLOT);
 }
 
 void GSAnimBFLOT::AddFrameSet(
@@ -34,7 +34,7 @@ void GSAnimBFLOT::Animate(GSSimConnect& handler, float elapsedMilli)
 
     StateWireDataSet valSet { m_BLO.m_currFrame, m_FLO.m_currFrame, m_TDW.m_currFrame };
     auto simRC = handler.Invoke(
-        SimConnect_SetDataOnSimObject, GSDefinitions::GSDefID::GSDefID_AnimWagonBFLOT, m_simObjectID,
+        SimConnect_SetDataOnSimObject, GSDatumID_AnimWagonBFLOT, m_simObjectID,
         0, 1, static_cast<DWORD>(sizeof(valSet)), &valSet);
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSAnimBFLOT::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;

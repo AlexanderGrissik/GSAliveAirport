@@ -16,7 +16,7 @@ bool GSMarshaller::OnCreated()
 
     if (m_hasAnimMarshall) {
         GSCoord initPosLoc = { m_initPos.Longitude, m_initPos.Latitude };
-        auto* anim = new GSAnimSingle(m_simObjectID, initPosLoc, GSDefinitions::GSDefID_AnimVelocBodyY);
+        auto* anim = new GSAnimSingle(m_simObjectID, initPosLoc, GSDatumID_AnimVelocBodyY);
         anim->AddFrameSet({ 0, 2179, 30.0 });
         RegisterAnim(anim);
     }

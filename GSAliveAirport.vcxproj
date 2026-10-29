@@ -51,10 +51,11 @@
     <ClInclude Include="Source\General\GSQuickQueue.h" />
     <ClInclude Include="Source\General\GSRandom.h" />
     <ClInclude Include="Source\General\GSStringUtils.h" />
-    <ClInclude Include="Source\General\GSRequest.h" />
     <ClInclude Include="Source\General\GSRoadsNetwork.h" />
     <ClInclude Include="Source\General\GSSimConnect.h" />
     <ClInclude Include="Source\General\GSSpawnerThread.h" />
+    <ClInclude Include="Source\Requests\GSRequest.h" />
+    <ClInclude Include="Source\Requests\GSSimObjReq.h" />
     <ClInclude Include="Source\SimObjects\GSStaircase.h" />
     <ClInclude Include="Source\UI\GSAliveUI.h" />
     <ClInclude Include="Source\UI\GSAliveUIAPI.h" />

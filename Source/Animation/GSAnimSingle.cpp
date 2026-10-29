@@ -8,18 +8,18 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_AnimVelocY{
-    GSDefinitions::DatumSpec{"VELOCITY BODY Y", "number", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"VELOCITY BODY Y", "number", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_AnimWagonBLO{
-    GSDefinitions::DatumSpec{"WAGON BACK LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"WAGON BACK LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 
 void GSAnimSingle::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_AnimVelocY, GSDefinitions::GSDefID::GSDefID_AnimVelocBodyY);
-    handler.InvokeAddDatums(GSDatums_AnimWagonBLO, GSDefinitions::GSDefID::GSDefID_AnimWagonBLO);
+    handler.InvokeAddDatums(GSDatums_AnimVelocY, GSDatumID_AnimVelocBodyY);
+    handler.InvokeAddDatums(GSDatums_AnimWagonBLO, GSDatumID_AnimWagonBLO);
 }
 
 void GSAnimSingle::AddFrameSet(const FrameRangeInfo& info)

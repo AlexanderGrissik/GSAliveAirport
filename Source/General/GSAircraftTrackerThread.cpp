@@ -69,8 +69,8 @@ void GSAircraftTrackerThread::OnConnect()
     GSAirport::InitDatums(*this);
     GSAircraft::InitDatums(*this);
     GSSimObj::InitDatums(*this);
-    InvokeMapClientEvent(GSDefinitions::GSDefID_Jetway, "TOGGLE_JETWAY");
-    InvokeMapClientEvent(GSDefinitions::GSDefID_BeaconLights, "BEACON_LIGHTS_SET");
+    InvokeMapClientEvent(GSEventID_Jetway, "TOGGLE_JETWAY");
+    InvokeMapClientEvent(GSEventID_BeaconLights, "BEACON_LIGHTS_SET");
     m_lastScanTime = std::chrono::steady_clock::now() - 10s;
     m_lastAirportScanTime = std::chrono::steady_clock::now() - 400s;
 }
@@ -92,8 +92,7 @@ void GSAircraftTrackerThread::OnSimStart()
 void GSAircraftTrackerThread::OnSimStop()
 {
     std::for_each(m_tracked.begin(), m_tracked.end(), [this](auto& aircraft) { 
-        CmdPtr cmd(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_REMOVED, aircraft.second->GetObjID()));
-        m_singleObserver.PostCommand(cmd);        
+        m_singleObserver.PostCommand(new GSCmdAircraftUpdate(GS_CMD_SPAWNER_AIRCRAFT_REMOVED, aircraft.second->GetObjID()));
     }); 
 
     UnsubscribeAirportList();
@@ -139,8 +138,7 @@ void GSAircraftTrackerThread::HandleRemoved()
             }
         }
 
-        CmdPtr cmd(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_REMOVED, node.mapped()->GetObjID()));
-        m_singleObserver.PostCommand(cmd);
+        m_singleObserver.PostCommand(new GSCmdAircraftUpdate(GS_CMD_SPAWNER_AIRCRAFT_REMOVED, node.mapped()->GetObjID()));
     }); 
 
     m_lastScanIDs.clear();
@@ -149,12 +147,9 @@ void GSAircraftTrackerThread::HandleRemoved()
 void GSAircraftTrackerThread::OnCommand(GSCommand& cmd)
 {
     switch (cmd.GetCmdID()) {
-    case GSDefinitions::CMD_SPAWN_TEST_AIRCRAFT: {
+    case GS_CMD_SPAWN_TEST_AIRCRAFTS:
         SpawnTestAircrafts();
-        CmdPtr ret(new GSCommand(cmd));
-        cmd.Finish(ret);
         break;
-    }
     default:
         GSLogStream::LogError("GSAircraftTrackerThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;
@@ -172,7 +167,7 @@ void GSAircraftTrackerThread::SpawnTestAircrafts()
 
 void GSAircraftTrackerThread::SubscribeAirportList()
 {
-    GSDefinitions::SendResult rc = Invoke(SimConnect_SubscribeToFacilities_EX1,
+    GSInvokeRC rc = Invoke(SimConnect_SubscribeToFacilities_EX1,
         SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, m_airportAddedReqID, m_airportRemovedReqID);
     if (!rc.isOK())
         GSLogStream::LogError("SimConnect_SubscribeToFacilities_EX1 failed: ") << rc.rc;
@@ -180,7 +175,7 @@ void GSAircraftTrackerThread::SubscribeAirportList()
 
 void GSAircraftTrackerThread::UnsubscribeAirportList()
 {
-    GSDefinitions::SendResult rc = Invoke(SimConnect_UnsubscribeToFacilities_EX1,
+    GSInvokeRC rc = Invoke(SimConnect_UnsubscribeToFacilities_EX1,
         SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, TRUE, TRUE);
     if (!rc.isOK())
         GSLogStream::LogError("SimConnect_UnsubscribeToFacilities_EX1 failed: ") << rc.rc;
@@ -202,10 +197,8 @@ void GSAircraftTrackerThread::HandleAircraftUser(const SIMCONNECT_RECV_SIMOBJECT
         }
     }
 
-    CmdPtr cmd1(new GSCommand(GSDefinitions::CMD_AIRCRAFT_USER));
-    m_singleObserver.PostCommand(cmd1);
-    CmdPtr cmd2(new GSCommand(GSDefinitions::CMD_AIRCRAFT_USER));
-    m_animThread.PostCommand(cmd2);
+    m_singleObserver.PostCommand(new GSCommand(GS_CMD_AIRCRAFT_USER));
+    m_animThread.PostCommand(new GSCommand(GS_CMD_AIRCRAFT_USER));
 }
 
 bool GSAircraftTrackerThread::HandleExistingAircraft(
@@ -217,8 +210,7 @@ bool GSAircraftTrackerThread::HandleExistingAircraft(
     aircraft.LoadDynamicState(entry);
     if (aircraft != *exisitng) {
         exisitng->CopyDynInfo(aircraft);
-        CmdPtr cmd(new GSCmdAircraftUpdate(GSDefinitions::CMD_SPAWNER_AIRCRAFT_MODIFIED, exisitng->GetObjID()));
-        m_singleObserver.PostCommand(cmd);
+        m_singleObserver.PostCommand(new GSCmdAircraftUpdate(GS_CMD_SPAWNER_AIRCRAFT_MODIFIED, exisitng->GetObjID()));
     }
 
     return true;
@@ -226,8 +218,7 @@ bool GSAircraftTrackerThread::HandleExistingAircraft(
 
 void GSAircraftTrackerThread::PostNewAircraft(std::shared_ptr<GSAircraft>& aircraft)
 {
-    CmdPtr cmd(new GSCmdAircraftAdd(GSDefinitions::CMD_SPAWNER_AIRCRAFT_ADDED, aircraft));
-    m_singleObserver.PostCommand(cmd);
+    m_singleObserver.PostCommand(new GSCmdAircraftAdd(GS_CMD_SPAWNER_AIRCRAFT_ADDED, aircraft));
 }
 
 const GSAircraftTrackerThread::AirportScanCache::value_type* GSAircraftTrackerThread::IsNewAircraftEligable(const GSAircraft &aircraft) const
@@ -374,7 +365,7 @@ const GSAircraftTrackerThread::AirportScanCache::value_type* GSAircraftTrackerTh
     return closest;
 }
 
-GSRequest::SendResult GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos)
+GSReqRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos)
 {
     const auto posUser = m_userAircraft.GetLongLat();
     if (posUser.Long() < 900.0 || !m_userAircraft.GetAirport()) {
@@ -420,28 +411,28 @@ GSRequest::SendResult GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCO
     }
 
     auto id = NextRequestID();
-    GSRequest::SendResult rc = {
+    GSReqRC rc = {
         InvokeRequest(id, SimConnect_AICreateSimulatedObject_EX1, title.c_str(), "", pos, id), true };
 
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSAircraftTrackerThread::GSReqSpawnAircraft::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+    if (!rc.isOK()) {
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqSpawnAircraft::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
     }
 
     return rc;
 }
 
-GSRequest::SendResult GSAircraftTrackerThread::GSReqScan::Process()
+GSReqRC GSAircraftTrackerThread::GSReqScan::Process()
 {
     GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Starting Aircraft Scan");
 
     auto id = m_simHandle.NextRequestID();
-    GSRequest::SendResult rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObjectType, id, GSDefinitions::GSDefID_Aircraft, DiscoveryRadiusMeters, SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT), true };
+    GSReqRC rc = {
+        m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObjectType, id, GSDatumID_Aircraft, DiscoveryRadiusMeters, SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT), true };
     
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSAircraftTrackerThread::GSReqScan::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+    if (!rc.isOK()) {
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqScan::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
     } 
 
     return rc;
@@ -470,20 +461,20 @@ void GSAircraftTrackerThread::GSReqScan::OnException(SIMCONNECT_RECV_EXCEPTION *
     tracker.HandleRemoved();
 }
 
-GSRequest::SendResult GSAircraftTrackerThread::GSReqAircraftConstInfo::Process()
+GSReqRC GSAircraftTrackerThread::GSReqAircraftConstInfo::Process()
 {
     GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Starting Aircraft Const Info");
 
     auto id = m_simHandle.NextRequestID();
-    GSRequest::SendResult rc = {
+    GSReqRC rc = {
         m_simHandle.InvokeRequest(
-            id, SimConnect_RequestDataOnSimObject, id, GSDefinitions::GSDefID_AircraftConst, m_objectID, SIMCONNECT_PERIOD_ONCE, 0, 0, 0, 0), true };
+            id, SimConnect_RequestDataOnSimObject, id, GSDatumID_AircraftConst, m_objectID, SIMCONNECT_PERIOD_ONCE, 0, 0, 0, 0), true };
     
-    if (!rc.m_simRC.isOK()) {
+    if (!rc.isOK()) {
         GSAircraftTrackerThread &tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
         tracker.ClearFailedAircraft(m_objectID);
-        GSLogStream::LogError("GSAircraftTrackerThread::GSReqAircraftConstInfo::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqAircraftConstInfo::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
     } 
 
     return rc;
@@ -512,17 +503,17 @@ void GSAircraftTrackerThread::GSReqAircraftConstInfo::OnException(SIMCONNECT_REC
         ", Exception: " << message->dwException << "Index:" << message->dwIndex;
 }
 
-GSRequest::SendResult GSAircraftTrackerThread::GSReqAirportInfo::Process()
+GSReqRC GSAircraftTrackerThread::GSReqAirportInfo::Process()
 {
     auto id = m_simHandle.NextRequestID();
-    GSRequest::SendResult rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestFacilityData, GSDefinitions::GSDefID_AirportInfo, id, m_airportInfo.first.c_str(), ""), true};
+    GSReqRC rc = {
+        m_simHandle.InvokeRequest(id, SimConnect_RequestFacilityData, GSDatumID_AirportInfo, id, m_airportInfo.first.c_str(), ""), true};
     
-    if (!rc.m_simRC.isOK()) {
+    if (!rc.isOK()) {
         GSAircraftTrackerThread &tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
         tracker.ClearFailedAircraft(m_objectID);
-        GSLogStream::LogError("GSAircraftTrackerThread::GSReqAirportInfo::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqAirportInfo::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
     } 
 
     return rc;
@@ -556,15 +547,15 @@ void GSAircraftTrackerThread::GSReqAirportInfo::OnException(SIMCONNECT_RECV_EXCE
     GSLogStream::LogError("GSReqAirportInfo request failed: ") << message->dwException;
 }
 
-GSRequest::SendResult GSAircraftTrackerThread::GSReqScanAirport::Process()
+GSReqRC GSAircraftTrackerThread::GSReqScanAirport::Process()
 {
     auto id = m_simHandle.NextRequestID();
-    GSRequest::SendResult rc = {
+    GSReqRC rc = {
         m_simHandle.InvokeRequest(id, SimConnect_RequestFacilitiesList_EX1, SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, id), true };
     
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSAircraftTrackerThread::GSReqScanAirport::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+    if (!rc.isOK()) {
+        GSLogStream::LogError("GSAircraftTrackerThread::GSReqScanAirport::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
     } 
 
     return rc;
@@ -595,7 +586,7 @@ void GSAircraftTrackerThread::GSReqScanAirport::OnException(SIMCONNECT_RECV_EXCE
         ", Exception: " << message->dwException << "Index:" << message->dwIndex;
 }
 
-GSRequest::SendResult GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
+GSReqRC GSAircraftTrackerThread::GSReqSpawnAircraft::Process()
 {
     GSAircraftTrackerThread& tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
     return tracker.SpawnTestAircraft(m_type, m_pos);
@@ -608,21 +599,21 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
         
         auto requestId = m_simHandle.NextRequestID();
         auto aiRC = m_simHandle.InvokeRequest(requestId, SimConnect_AIReleaseControl, msg->dwObjectID, requestId);
-        auto beaconRC = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_BeaconLights, 0,
+        auto beaconRC = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_BeaconLights, 0,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
 
         std::this_thread::sleep_for(100ms);
         m_pos.Airspeed = 0;
 
-        auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_LongLat, 1,
+        auto simRC1 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Freeze_LongLat, 1,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
-        auto simRC2 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Freeze_Altitude, 1,
+        auto simRC2 = m_simHandle.Invoke(SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Freeze_Altitude, 1,
             SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
-        auto simRC = m_simHandle.Invoke(SimConnect_SetDataOnSimObject, GSDefinitions::GSDefID::GSDefID_Position, msg->dwObjectID, 0, 1,
+        auto simRC = m_simHandle.Invoke(SimConnect_SetDataOnSimObject, GSDatumID_Position, msg->dwObjectID, 0, 1,
             static_cast<DWORD>(sizeof(m_pos)), &m_pos);
         
         if (!simRC1.isOK() || !simRC2.isOK() || !simRC.isOK() || !aiRC.isOK() || !beaconRC.isOK()) {
-            GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Failed call Freeze: ") << 
+            GSLogStream::LogError("GSReqSpawnAircraft::OnMessage Failed call Freeze: ") << 
                 simRC1.rc << "," << simRC2.rc << "," << simRC.rc << "," << beaconRC.rc;
         }
 
@@ -630,11 +621,11 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
     
         if (m_type == 2) {
             m_simHandle.Invoke(
-                SimConnect_TransmitClientEvent, msg->dwObjectID, GSDefinitions::GSDefID_Jetway,
+                SimConnect_TransmitClientEvent, msg->dwObjectID, GSEventID_Jetway,
                 0, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
         }
     } else {
-        GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnMessage Unexpected Message: ") << message->dwID;
+        GSLogStream::LogError("GSReqSpawnAircraft::OnMessage Unexpected Message: ") << message->dwID;
     }
     (void)messageSize;
     return true;
@@ -642,7 +633,7 @@ bool GSAircraftTrackerThread::GSReqSpawnAircraft::OnMessage(SIMCONNECT_RECV* mes
 
 void GSAircraftTrackerThread::GSReqSpawnAircraft::OnException(SIMCONNECT_RECV_EXCEPTION* message)
 {
-    GSLogStream::LogError("GSSimObjReq::GSReqSpawnAircraft::OnException: ") << message->dwException << ", " << message->dwIndex;
+    GSLogStream::LogError("GSReqSpawnAircraft::OnException: ") << message->dwException << ", " << message->dwIndex;
 }
 
 bool GSAircraftTrackerThread::GSReqAirportAdded::OnMessage(SIMCONNECT_RECV *message, DWORD messageSize)

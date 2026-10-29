@@ -9,20 +9,20 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_CateringTruckStateGet {
-    GSDefinitions::DatumSpec{"CATERINGTRUCK AIRCRAFT DOOR CONTACT OFFSET Z", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"CATERINGTRUCK AIRCRAFT DOOR CONTACT OFFSET Z", "meters", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_CateringTruckStateSet {
-    GSDefinitions::DatumSpec{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
-    GSDefinitions::DatumSpec{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
-    GSDefinitions::DatumSpec{"CATERINGTRUCK ELEVATION TARGET", "feet", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"CATERINGTRUCK OPENING TARGET", "percent over 100", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"PLANE LONGITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDatum{"PLANE LATITUDE", "degrees", SIMCONNECT_DATATYPE_FLOAT64},
+    GSDatum{"CATERINGTRUCK ELEVATION TARGET", "feet", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"CATERINGTRUCK OPENING TARGET", "percent over 100", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 void GSCateringCart::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_CateringTruckStateGet, GSDefinitions::GSDefID::GSDefID_CateringTruckStateGet);
-    handler.InvokeAddDatums(GSDatums_CateringTruckStateSet, GSDefinitions::GSDefID::GSDefID_CateringTruckStateSet);
+    handler.InvokeAddDatums(GSDatums_CateringTruckStateGet, GSDatumID_CateringTruckStateGet);
+    handler.InvokeAddDatums(GSDatums_CateringTruckStateSet, GSDatumID_CateringTruckStateSet);
 }
 
 bool GSCateringCart::OnCreated()

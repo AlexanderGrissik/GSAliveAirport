@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GSCommand.h"
-#include "../General/GSRequest.h"
+#include "../Requests/GSRequest.h"
 
 namespace NS_GSAliveAirport
 {
@@ -13,16 +13,14 @@ class GSCmdReq : public GSCommand
 {
 public:
 
-    using ReqPtr = std::unique_ptr<GSRequest>;
-
-    GSCmdReq(int cmd, ReqPtr& req): GSCommand(cmd), m_Req(std::move(req)) {}
-    GSCmdReq(int cmd, ReqPtr& req, GSTimePoint execTime): GSCommand(cmd, execTime), m_Req(std::move(req)) {}
+    GSCmdReq(GSCommandID cmd, GSRequest* req): GSCommand(cmd), m_Req(req) {}
+    GSCmdReq(GSCommandID cmd, GSRequest* req, GSTimePoint execTime): GSCommand(cmd, execTime), m_Req(req) {}
     virtual ~GSCmdReq() {}
 
-    ReqPtr ReleaseReq() { return std::move(m_Req); }
+    GSRequestU ReleaseReq() { return std::move(m_Req); }
 
 private:
 
-    ReqPtr m_Req;
+    GSRequestU m_Req;
 };
 } // namespace NS_GSAliveAirport

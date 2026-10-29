@@ -15,7 +15,7 @@ public:
 
     using Callable = std::function<void(SIMCONNECT_RECV_EXCEPTION *message)>;
 
-    GSCmdReqIdent(int cmd, ReqPtr& req, Callable&& clb) : 
+    GSCmdReqIdent(GSCommandID cmd, GSRequest* req, Callable&& clb) :
         GSCmdReq(cmd, req), m_callable(std::move(clb)) {}
 
     ~GSCmdReqIdent() override = default;

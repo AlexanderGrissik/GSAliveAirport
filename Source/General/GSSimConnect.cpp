@@ -124,7 +124,7 @@ void GSSimConnect::Connect()
             m_handle = nullptr;
         }
 
-        if (m_handle && FAILED(SimConnect_SubscribeToSystemEvent(m_handle, GSDefinitions::GSEventID_SimState, "Sim"))) {
+        if (m_handle && FAILED(SimConnect_SubscribeToSystemEvent(m_handle, GSEventID_SimState, "Sim"))) {
             GSLogStream::Log(std::string("Failed to subscribe to SimConnect event: Sim"));
             SimConnect_Close(m_handle);
             m_handle = nullptr;
@@ -166,7 +166,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
         break;
     case SIMCONNECT_RECV_ID_EVENT: {
         const auto &event = *reinterpret_cast<SIMCONNECT_RECV_EVENT *>(message);
-        if (event.uEventID == GSDefinitions::GSEventID_SimState) {
+        if (event.uEventID == GSEventID_SimState) {
             if (event.dwData != 0) {
                 GSLogStream::Log("Simulation detected.");
                 m_simStarted = true;
@@ -184,7 +184,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
     }
     case SIMCONNECT_RECV_ID_EXCEPTION: {
         auto& msg = *static_cast<SIMCONNECT_RECV_EXCEPTION*>(message);
-        GSDefinitions::SendResultIDs id{msg.dwSendID, 0};
+        GSInvokeID id{msg.dwSendID, 0};
         auto itr = m_sendIDToPtr.find(id);
         if (itr != m_sendIDToPtr.end()) {
             itr->second->OnException(&msg);
@@ -209,7 +209,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
     }
     default:
         if (message->dwID < s_hasRequestID.size() && s_hasRequestID[message->dwID]) {
-            GSDefinitions::SendResultIDs id{0, s_hasRequestID[message->dwID](message)};
+            GSInvokeID id{0, s_hasRequestID[message->dwID](message)};
             auto itr = m_reqIDToPtr.find(id);
             if (itr != m_reqIDToPtr.end()) {
                 if (itr->second.get().OnMessage(message, messageSize)) {
@@ -274,9 +274,9 @@ void GSSimConnect::RunCommands()
             }
 
             m_lastLoopMsg = true;
-            if (opt->get()->GetCmdID() == GSDefinitions::CMD_REQ_PROCESS)
+            if (opt->get()->GetCmdID() == GS_CMD_REQ_PROCESS)
                 HandleCmdReqProcess(static_cast<GSCmdReq&>(*opt->get()));
-            else if (opt->get()->GetCmdID() == GSDefinitions::CMD_REQ_PROCESS_IDENT)
+            else if (opt->get()->GetCmdID() == GS_CMD_REQ_PROCESS_IDENT)
                 HandleCmdReqIdentProcess(static_cast<GSCmdReqIdent&>(*opt->get()));
             else
                 OnCommand(*opt->get());
@@ -289,11 +289,11 @@ void GSSimConnect::RunCommands()
 void GSSimConnect::HandleCmdReqProcess(GSCmdReq& cmd)
 {
     auto req(cmd.ReleaseReq());
-    GSRequest::SendResult rc = req->Process();
-    if (rc.m_simRC.isOK() && rc.m_keep) {
-        m_reqIDToPtr.emplace(rc.m_simRC, *(req.get()));
-        m_sendIDToPtr.emplace(rc.m_simRC, std::move(req));
-    } else if (!rc.m_simRC.isOK()) {
+    GSReqRC rc = req->Process();
+    if (rc.isOK() && rc.keepReq) {
+        m_reqIDToPtr.emplace(rc, *(req.get()));
+        m_sendIDToPtr.emplace(rc, std::move(req));
+    } else if (!rc.isOK()) {
         GSLogStream::LogError("Command Post Failed");
     }
 }
@@ -301,23 +301,23 @@ void GSSimConnect::HandleCmdReqProcess(GSCmdReq& cmd)
 void GSSimConnect::HandleCmdReqIdentProcess(GSCmdReqIdent& cmd)
 {
     auto req(cmd.ReleaseReq());
-    GSRequest::SendResult rc = req->Process();
-    if (rc.m_simRC.isOK()) {
-        if (rc.m_keep) {
-            m_reqIDToPtr.emplace(rc.m_simRC, *(req.get()));
-            m_sendIDToPtr.emplace(rc.m_simRC, std::move(req));
+    GSReqRC rc = req->Process();
+    if (rc.isOK()) {
+        if (rc.keepReq) {
+            m_reqIDToPtr.emplace(rc, *(req.get()));
+            m_sendIDToPtr.emplace(rc, std::move(req));
         }
 
-        m_sendIDToIdent.emplace_back(rc.m_simRC, std::move(cmd.GetCallable()));
+        m_sendIDToIdent.emplace_back(rc, std::move(cmd.GetCallable()));
         if (m_sendIDToIdent.size() > 1000) {
             m_sendIDToIdent.pop_front();
         }
-    } else if (!rc.m_simRC.isOK()) {
+    } else if (!rc.isOK()) {
         GSLogStream::LogError("Command Post Failed");
     }
 }
 
-GSDefinitions::SendResult GSSimConnect::CaptureResult(HRESULT result, DWORD requestID) const
+GSInvokeRC GSSimConnect::CaptureResult(HRESULT result, DWORD requestID) const
 {
     DWORD sendId = 0;
     if (GetHandle() && SUCCEEDED(result)) {
@@ -336,25 +336,25 @@ void GSSimConnect::ReadMsgData(void* dest, size_t offset, size_t destSize, const
     std::memcpy(static_cast<std::byte*>(dest) + offset, data + offset, std::min(payloadSize - offset, destSize));
 }
 
+void GSSimConnect::PostCommand(GSCommand* cmd)
+{
+    GSCommandU cmdU(cmd);
+    m_commands.Push(cmdU);
+}
+
 void GSSimConnect::PostReqCommand(GSRequest* req)
 {
-    GSCmdReq::ReqPtr reqPtr(req);
-    CmdPtr cmd(new GSCmdReq(GSDefinitions::CMD_REQ_PROCESS, reqPtr));
-    PostCommand(cmd);
+    PostCommand(new GSCmdReq(GS_CMD_REQ_PROCESS, req));
 }
 
 void GSSimConnect::PostReqCommandDeferred(GSRequest* req, GSTimePoint execTime)
 {
-    GSCmdReq::ReqPtr reqPtr(req);
-    CmdPtr cmd(new GSCmdReq(GSDefinitions::CMD_REQ_PROCESS, reqPtr, execTime));
-    PostCommand(cmd);
+    PostCommand(new GSCmdReq(GS_CMD_REQ_PROCESS, req, execTime));
 }
 
 void GSSimConnect::PostReqIdentCommand(GSRequest* req, GSCmdReqIdent::Callable&& clb)
 {
-    GSCmdReq::ReqPtr reqPtr(req);
-    CmdPtr cmd(new GSCmdReqIdent(GSDefinitions::CMD_REQ_PROCESS_IDENT, reqPtr, std::move(clb)));
-    PostCommand(cmd);
+    PostCommand(new GSCmdReqIdent(GS_CMD_REQ_PROCESS_IDENT, req, std::move(clb)));
 }
 
 void GSSimConnect::FlushPendingRequestsWithException()

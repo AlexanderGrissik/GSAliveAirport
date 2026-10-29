@@ -74,7 +74,7 @@ private:
     std::string m_empty;
     class GSCatalogReq : public GSRequest {
         using GSRequest::GSRequest;
-        GSRequest::SendResult Process() override;
+        GSReqRC Process() override;
         bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
     };

@@ -105,14 +105,14 @@ const std::string& GSCatalog::GetEntry(EntiresVec& entires)
     return entires[GSRandom::RandSizeT(0, entires.size() - 1)]->first;
 }
 
-GSRequest::SendResult GSCatalog::GSCatalogReq::Process()
+GSReqRC GSCatalog::GSCatalogReq::Process()
 {
     const DWORD requestId = m_simHandle.NextRequestID();
-    GSRequest::SendResult rc = {
+    GSReqRC rc = {
         m_simHandle.InvokeRequest(requestId, SimConnect_EnumerateSimObjectsAndLiveries, requestId, SIMCONNECT_SIMOBJECT_TYPE_ALL), true };
-    if (!rc.m_simRC.isOK()) {
-        GSLogStream::LogError("GSCatalog::GSCatalogReq::Process Failed call: ") << rc.m_simRC.rc;
-        rc.m_keep = false;
+    if (!rc.isOK()) {
+        GSLogStream::LogError("GSCatalog::GSCatalogReq::Process Failed call: ") << rc.rc;
+        rc.keepReq = false;
         static_cast<GSCatalog&>(m_simHandle).Done();
     }
 

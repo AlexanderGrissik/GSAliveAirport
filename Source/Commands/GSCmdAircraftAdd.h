@@ -13,7 +13,7 @@ class GSCmdAircraftAdd : public GSCommand
 {
 public:
 
-    GSCmdAircraftAdd(int cmd, std::shared_ptr<GSAircraft>& ac): GSCommand(cmd), m_aircraft(ac) {}
+    GSCmdAircraftAdd(GSCommandID cmd, std::shared_ptr<GSAircraft>& ac): GSCommand(cmd), m_aircraft(ac) {}
     virtual ~GSCmdAircraftAdd() {}
 
     std::shared_ptr<GSAircraft>& GetAircraft() { return m_aircraft; }

@@ -14,20 +14,20 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_BuggageLoaderExtStateGet{
-    GSDefinitions::DatumSpec{"BAGGAGELOADER END RAMP Y", "feet",   SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BAGGAGELOADER END RAMP Z", "meters", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BAGGAGELOADER PIVOT Y",    "feet",   SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"BAGGAGELOADER PIVOT Z",    "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BAGGAGELOADER END RAMP Y", "feet",   SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BAGGAGELOADER END RAMP Z", "meters", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BAGGAGELOADER PIVOT Y",    "feet",   SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"BAGGAGELOADER PIVOT Z",    "meters", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 constexpr std::array GSDatums_BuggageLoaderExtStateSet{
-    GSDefinitions::DatumSpec{"BAGGAGELOADER ANGLE TARGET", "degrees", SIMCONNECT_DATATYPE_FLOAT32}
+    GSDatum{"BAGGAGELOADER ANGLE TARGET", "degrees", SIMCONNECT_DATATYPE_FLOAT32}
 };
 
 void GSBuggageLoader::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_BuggageLoaderExtStateGet, GSDefinitions::GSDefID::GSDefID_BuggageLoaderExtStateGet);
-    handler.InvokeAddDatums(GSDatums_BuggageLoaderExtStateSet, GSDefinitions::GSDefID::GSDefID_BuggageLoaderExtStateSet);
+    handler.InvokeAddDatums(GSDatums_BuggageLoaderExtStateGet, GSDatumID_BuggageLoaderExtStateGet);
+    handler.InvokeAddDatums(GSDatums_BuggageLoaderExtStateSet, GSDatumID_BuggageLoaderExtStateSet);
 }
 
 bool GSBuggageLoader::OnCreated()
@@ -39,9 +39,9 @@ bool GSBuggageLoader::OnCreated()
 void GSBuggageLoader::OnArrived()
 {
     m_simHandle.PostReqIdentCommand(
-        new GSReqTxEventEx1(m_simHandle, *this, GSDefinitions::GSDefID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        new GSReqTxEventEx1(m_simHandle, *this, GSEventID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
-            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_OpenDoors, ") << message->dwException; });
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: OpenDoors, ") << message->dwException; });
 
     Freeze();
 
@@ -64,7 +64,7 @@ void GSBuggageLoader::OnArrived()
         ptrWorker->GetInitPos().OnGround = 1;
         ptrWorker->PreSpawn();
         
-        auto* animWorker = new GSAnimSingle(0, initPosLoc, GSDefinitions::GSDefID_AnimWagonBLO);
+        auto* animWorker = new GSAnimSingle(0, initPosLoc, GSDatumID_AnimWagonBLO);
         if (m_aircraft.IsDeparting()) {
             animWorker->AddFrameSet({ 4213, 0, 30.0 });
         } else {
@@ -85,10 +85,10 @@ void GSBuggageLoader::OnArrived()
 void GSBuggageLoader::OnDespawning()
 {
     m_simHandle.PostReqIdentCommand(new GSReqTxEventEx1(
-        m_simHandle, *this, GSDefinitions::GSDefID_CloseDoors,
+        m_simHandle, *this, GSEventID_CloseDoors,
         m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
-            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: GSDefID_CloseDoors, ") << message->dwException; });
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: CloseDoors, ") << message->dwException; });
 }
 
 bool GSBuggageLoader::PreSpawn()

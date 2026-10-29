@@ -55,7 +55,7 @@ private:
     class GSReqGetDataSimObj : public GSSimObj::GSReqGetDataSimObj {
     public:
         GSReqGetDataSimObj(GSSimConnect& simHandle, GSSimObj& simObj) :
-            GSSimObj::GSReqGetDataSimObj(simHandle, simObj, GSDefinitions::GSDefID::GSDefID_BuggageLoaderExtStateGet) {}
+            GSSimObj::GSReqGetDataSimObj(simHandle, simObj, GSDatumID_BuggageLoaderExtStateGet) {}
 
         bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override {
             (void)messageSize;
@@ -78,7 +78,7 @@ private:
     public:
         GSReqSetDataSimObj(GSSimConnect& simHandle, GSSimObj& simObj, std::array<StateWireDataSet, 1>&& data) :
             GSSimObj::GSReqSetDataSimObj<StateWireDataSet, 1>(
-                simHandle, simObj, GSDefinitions::GSDefID::GSDefID_BuggageLoaderExtStateSet,
+                simHandle, simObj, GSDatumID_BuggageLoaderExtStateSet,
                 std::forward<std::array<StateWireDataSet, 1>>(data)) {
         }
     };

@@ -69,13 +69,13 @@ public:
     void SpawnTestAircrafts();
     void SubscribeAirportList();
     void UnsubscribeAirportList();
-    GSRequest::SendResult SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos);
+    GSReqRC SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos);
     const AirportScanCache::value_type* FindClosesAirportToAircraft(const GSAircraft& aircraft) const;
     const AirportScanCache::value_type* IsNewAircraftEligable(const GSAircraft& aircraft) const;
 
     std::unordered_map<DWORD, std::shared_ptr<GSAircraft>> m_tracked;
     std::unordered_set<DWORD> m_lastScanIDs;
-    GSDefinitions::SendResult m_rc{};
+    GSInvokeRC m_rc{};
     bool m_scanInProgress = false;
     bool m_scanAirportInProgress = false;
     GSSimConnect& m_singleObserver;
@@ -92,7 +92,7 @@ public:
     class GSReqScan : public GSRequest {
     public:
         using GSRequest::GSRequest;
-        GSRequest::SendResult Process() override;
+        GSReqRC Process() override;
         bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
     };
@@ -101,7 +101,7 @@ public:
     public:
         GSReqAircraftConstInfo(GSSimConnect& simHandle, DWORD objID, const AirportScanCache::value_type& airportInfo):
             GSRequest(simHandle), m_objectID(objID), m_airportInfo(airportInfo) {}
-        GSRequest::SendResult Process() override;
+        GSReqRC Process() override;
         bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
     private:
@@ -115,7 +115,7 @@ public:
         GSReqAirportInfo(GSSimConnect& handler, DWORD objID, const AirportScanCache::value_type& airportInfo)
             : GSRequest(handler), m_objectID(objID), m_airportInfo(airportInfo) {}
 
-        GSRequest::SendResult Process() override;
+        GSReqRC Process() override;
         bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
 
@@ -127,7 +127,7 @@ public:
     class GSReqScanAirport : public GSRequest {
     public:
         using GSRequest::GSRequest;
-        GSRequest::SendResult Process() override;
+        GSReqRC Process() override;
         bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
     };
@@ -136,7 +136,7 @@ public:
     public:
         GSReqSpawnAircraft(GSSimConnect& simHandle, int t):
             GSRequest(simHandle), m_type(t) {}
-        GSRequest::SendResult Process() override;
+        GSReqRC Process() override;
         bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
     private:
@@ -147,7 +147,7 @@ public:
     class GSReqAirportAdded : public GSRequest {
     public:
         using GSRequest::GSRequest;
-        GSRequest::SendResult Process() override { return {{0,0,E_FAIL}, false}; } // Never called. AddRawRequestHandler.
+        GSReqRC Process() override { return {{0,0,E_FAIL}, false}; } // Never called. AddRawRequestHandler.
         bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
     };
@@ -155,7 +155,7 @@ public:
     class GSReqAirportRemoved : public GSRequest {
     public:
         using GSRequest::GSRequest;
-        GSRequest::SendResult Process() override { return {{0,0,E_FAIL}, false}; } // Never called. AddRawRequestHandler.
+        GSReqRC Process() override { return {{0,0,E_FAIL}, false}; } // Never called. AddRawRequestHandler.
         bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
         void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
     };

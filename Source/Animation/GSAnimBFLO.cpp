@@ -8,13 +8,13 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_AnimWagonBFLO{
-    GSDefinitions::DatumSpec{"WAGON BACK LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
-    GSDefinitions::DatumSpec{"WAGON FRONT LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"WAGON BACK LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
+    GSDatum{"WAGON FRONT LINK ORIENTATION", "number", SIMCONNECT_DATATYPE_FLOAT32},
 };
 
 void GSAnimBFLO::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_AnimWagonBFLO, GSDefinitions::GSDefID::GSDefID_AnimWagonBFLO);
+    handler.InvokeAddDatums(GSDatums_AnimWagonBFLO, GSDatumID_AnimWagonBFLO);
 }
 
 void GSAnimBFLO::AddFrameSet(const FrameRangeInfo& infoB, const FrameRangeInfo& infoF)
@@ -30,7 +30,7 @@ void GSAnimBFLO::Animate(GSSimConnect& handler, float elapsedMilli)
 
     StateWireDataSet valSet { m_BLO.m_currFrame, m_FLO.m_currFrame };
     auto simRC = handler.Invoke(
-        SimConnect_SetDataOnSimObject, GSDefinitions::GSDefID::GSDefID_AnimWagonBFLO, m_simObjectID,
+        SimConnect_SetDataOnSimObject, GSDatumID_AnimWagonBFLO, m_simObjectID,
         0, 1, static_cast<DWORD>(sizeof(valSet)), &valSet);
     if (!simRC.isOK()) {
         GSLogStream::LogError("GSAnimBFLO::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;

@@ -19,76 +19,76 @@ namespace NS_GSAliveAirport {
 
 using GSTimePoint = std::chrono::steady_clock::time_point;
 
-class GSDefinitions
+struct GSInvokeID {
+    DWORD sendID;
+    DWORD requestID;
+};
+
+struct GSInvokeRC : public GSInvokeID{
+    HRESULT rc;
+    bool isOK() const { return SUCCEEDED(rc); }
+};
+
+struct GSReqRC : public GSInvokeRC {
+    bool keepReq;
+};
+    
+struct GSDatum
 {
-public:
-    enum GSEventID : SIMCONNECT_CLIENT_EVENT_ID {
-        GSEventID_SimState = 1,
-        GSDefID_Freeze_LongLat,
-        GSDefID_Freeze_Altitude,
-        GSDefID_Freeze_Attitude,
-        GSDefID_OpenDoors,
-        GSDefID_CloseDoors,
-        GSDefID_Jetway,
-        GSDefID_BeaconLights
-    };
+    const char *name;
+    const char *units;
+    SIMCONNECT_DATATYPE type;
+};
 
-    enum GSDefID : SIMCONNECT_DATA_DEFINITION_ID {
-        GSDefID_Aircraft = 1,
-        GSDefID_AircraftConst,
-        GSDefID_Position,
-        GSDefID_AIWaypoints,
-        GSDefID_AirportInfo,
-        GSDefID_CateringTruckStateGet,
-        GSDefID_CateringTruckStateSet,
-        GSDefID_GroundPowerStateSet,
-        GSDefID_GroundPowerExtStateSet,
-        GSDefID_BuggageLoaderExtStateGet,
-        GSDefID_BuggageLoaderExtStateSet,
-        GSDefID_StaircaseExtStateGet,
-        GSDefID_StaircaseExtStateSet,
-        GSDefID_AnimVelocBodyY,
-        GSDefID_AnimWagonBLO,
-        GSDefID_AnimWagonBFLO,
-        GSDefID_AnimWagonBFLOT,
-        GSDefID_PlanePosition
-    };
+enum GSCommandID
+{
+    GS_CMD_REQ_PROCESS = 0,
+    GS_CMD_REQ_PROCESS_IDENT,
+    GS_CMD_SPAWN_TEST_AIRCRAFTS,
+    GS_CMD_SPAWNER_AIRCRAFT_ADDED,
+    GS_CMD_SPAWNER_AIRCRAFT_REMOVED,
+    GS_CMD_SPAWNER_AIRCRAFT_MODIFIED,
+    GS_CMD_AIRCRAFT_USER,
+    GS_CMD_ANIM_OBJ_ADD,
+    GS_CMD_ANIM_OBJ_REM,
+    GS_CMD_ANIM_OBJ_REM_DONE,
+    GS_CMD_MVMNT_OBJ_ADD,
+    GS_CMD_MVMNT_OBJ_REM,
+    GS_CMD_MVMNT_OBJ_REM_RET,
+    GS_CMD_MVMNT_OBJ_ARR,
+    GS_CMD_AIRPORT,
+};
 
-    enum ECommands
-    {
-        CMD_REQ_PROCESS = 0,
-        CMD_REQ_PROCESS_IDENT,
-        CMD_SPAWN_TEST_AIRCRAFT,
-        CMD_SPAWNER_AIRCRAFT_ADDED,
-        CMD_SPAWNER_AIRCRAFT_REMOVED,
-        CMD_SPAWNER_AIRCRAFT_MODIFIED,
-        CMD_AIRCRAFT_USER,
-        CMD_ANIM_OBJ_ADD,
-        CMD_ANIM_OBJ_REM,
-        CMD_ANIM_OBJ_REM_DONE,
-        CMD_MVMNT_OBJ_ADD,
-        CMD_MVMNT_OBJ_REM,
-        CMD_MVMNT_OBJ_REM_RET,
-        CMD_MVMNT_OBJ_ARR,
-        CMD_AIRPORT,
-    };
+enum GSDatumID : SIMCONNECT_DATA_DEFINITION_ID {
+    GSDatumID_Aircraft = 1,
+    GSDatumID_AircraftConst,
+    GSDatumID_Position,
+    GSDatumID_AIWaypoints,
+    GSDatumID_AirportInfo,
+    GSDatumID_CateringTruckStateGet,
+    GSDatumID_CateringTruckStateSet,
+    GSDatumID_GroundPowerStateSet,
+    GSDatumID_GroundPowerExtStateSet,
+    GSDatumID_BuggageLoaderExtStateGet,
+    GSDatumID_BuggageLoaderExtStateSet,
+    GSDatumID_StaircaseExtStateGet,
+    GSDatumID_StaircaseExtStateSet,
+    GSDatumID_AnimVelocBodyY,
+    GSDatumID_AnimWagonBLO,
+    GSDatumID_AnimWagonBFLO,
+    GSDatumID_AnimWagonBFLOT,
+    GSDatumID_PlanePosition
+};
 
-    struct DatumSpec
-    {
-        const char *name;
-        const char *units;
-        SIMCONNECT_DATATYPE type;
-    };
-
-    struct SendResultIDs {
-        DWORD sendID;
-        DWORD requestID;
-    };
-
-    struct SendResult : public SendResultIDs{
-        HRESULT rc;
-        bool isOK() const { return SUCCEEDED(rc); }
-    };
+enum GSEventID : SIMCONNECT_CLIENT_EVENT_ID {
+    GSEventID_SimState = 1,
+    GSEventID_Freeze_LongLat,
+    GSEventID_Freeze_Altitude,
+    GSEventID_Freeze_Attitude,
+    GSEventID_OpenDoors,
+    GSEventID_CloseDoors,
+    GSEventID_Jetway,
+    GSEventID_BeaconLights
 };
 
 } // namespace NS_GSAliveAirport

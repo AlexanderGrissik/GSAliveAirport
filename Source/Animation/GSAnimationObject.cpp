@@ -9,12 +9,12 @@ namespace NS_GSAliveAirport
 {
 
 constexpr std::array GSDatums_Position{
-    GSDefinitions::DatumSpec{"Initial Position", nullptr, SIMCONNECT_DATATYPE_INITPOSITION},
+    GSDatum{"Initial Position", nullptr, SIMCONNECT_DATATYPE_INITPOSITION},
 };
 
 void GSAnimationObject::InitDatums(GSSimConnect& handler)
 {
-    handler.InvokeAddDatums(GSDatums_Position, GSDefinitions::GSDefID::GSDefID_Position);
+    handler.InvokeAddDatums(GSDatums_Position, GSDatumID_Position);
 }
 
 void GSAnimationObject::CalcNextFrame(GSAnimationObject::FrameRange& frange, float elapsedMilli) 
@@ -77,7 +77,7 @@ void GSAnimationObject::Move(GSSimConnect& handler, float elapsedMilli)
     };
 
     const auto rcSim = handler.Invoke(
-        SimConnect_SetDataOnSimObject, GSDefinitions::GSDefID_Position,
+        SimConnect_SetDataOnSimObject, GSDatumID_Position,
         m_simObjectID, 0, 1, static_cast<DWORD>(sizeof(position)), &position);
 
     if (!rcSim.isOK()) {
