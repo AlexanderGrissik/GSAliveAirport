@@ -24,7 +24,6 @@ GSReqRC GSReqCatalog::Process()
 
 bool GSReqCatalog::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
 {
-    (void)messageSize;
     const auto& entry = *reinterpret_cast<const SIMCONNECT_RECV_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST*>(message);
     if (entry.dwOutOf == 0 || message->dwID != SIMCONNECT_RECV_ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST) { // Empty Scan
         static_cast<GSCatalog&>(m_simHandle).Done();

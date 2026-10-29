@@ -25,7 +25,7 @@ public:
     void OnDisconnect() override {}
     void OnSimStart() override {}
     void OnSimStop() override {}
-    void OnCommand(GSCommand& cmd) override { (void)cmd; }
+    void OnCommand(GSCommand& cmd) override {}
     void Done();
     void AddEntry(const char* title, const char* livery) { m_entires.emplace_back(title, livery); }
 

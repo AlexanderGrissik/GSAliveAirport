@@ -13,8 +13,8 @@ public:
     using GSSimObjReq::GSSimObjReq;
 
     GSReqRC Process() override;
-    bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
-    void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
+    bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { return true; }
+    void OnException(SIMCONNECT_RECV_EXCEPTION *message) override {}
 };
 
 }

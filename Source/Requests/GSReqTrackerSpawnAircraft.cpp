@@ -53,7 +53,7 @@ bool GSReqTrackerSpawnAircraft::OnMessage(SIMCONNECT_RECV* message, DWORD messag
     } else {
         GSLogStream::LogError("GSReqTrackerSpawnAircraft::OnMessage Unexpected Message: ") << message->dwID;
     }
-    (void)messageSize;
+
     return true;
 }
 

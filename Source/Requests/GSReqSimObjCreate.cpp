@@ -34,7 +34,7 @@ bool GSReqSimObjCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) {
         m_simObj.OnObjSpawned(false);
         GSLogStream::LogError("GSReqCreate::OnMessage Unexpected Message: ") << message->dwID;
     }
-    (void)messageSize;
+
     return true;
 }
 

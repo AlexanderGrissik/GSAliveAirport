@@ -9,7 +9,6 @@ namespace NS_GSAliveAirport
 {
 
 bool GSReqBuggageLoaderGetData::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) {
-    (void)messageSize;
     if (message->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
         static_cast<GSBuggageLoader&>(m_simObj).SetFinalPositionAndState(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message));
     } else {

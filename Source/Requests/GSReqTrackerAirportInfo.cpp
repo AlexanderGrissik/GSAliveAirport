@@ -26,7 +26,6 @@ GSReqRC GSReqTrackerAirportInfo::Process()
 
 bool GSReqTrackerAirportInfo::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
 {
-    (void)messageSize;
     const auto& entry = *reinterpret_cast<const SIMCONNECT_RECV_FACILITY_DATA*>(message);
 
     GSAircraftTrackerThread& tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);

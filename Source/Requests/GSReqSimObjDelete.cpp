@@ -21,16 +21,4 @@ GSReqRC GSReqSimObjDelete::Process()
     return {simRC, true};
 }
 
-bool GSReqSimObjDelete::OnMessage(SIMCONNECT_RECV *message, DWORD messageSize)
-{
-    (void)message;
-    (void)messageSize;
-    return true;
-}
-
-void GSReqSimObjDelete::OnException(SIMCONNECT_RECV_EXCEPTION *message)
-{
-    (void)message;
-}
-
 }

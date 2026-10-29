@@ -19,12 +19,8 @@ public:
     GSReqSimObjSetData(GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID, std::array<T,N>&& data):
         GSSimObjReq(simHandle, simObj), m_definitionID(definitionID), m_data(std::forward<std::array<T,N>>(data)) {}
     GSReqRC Process() override;
-    bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { 
-        (void)message;
-        (void)messageSize;
-        return true; 
-    }
-    void OnException(SIMCONNECT_RECV_EXCEPTION *message) override { (void)message; }
+    bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { return true; }
+    void OnException(SIMCONNECT_RECV_EXCEPTION *message) override {}
 private:
     SIMCONNECT_DATA_DEFINITION_ID m_definitionID;
     std::array<T,N> m_data;

@@ -13,8 +13,6 @@
 #pragma warning(pop)
 #include <chrono>
 
-#define VD(x) (void)(x)
-
 namespace NS_GSAliveAirport {
 
 using GSTimePoint = std::chrono::steady_clock::time_point;

@@ -77,7 +77,6 @@ void GSSimObj::DespawnAttached()
 
 void GSSimObj::OnSpawned(bool ok, GSSimObj& obj)
 {
-    (void)obj; (void)ok;
     if (++m_childSpawned == m_attached.size())
         OnObjSpawned(true);
 }
