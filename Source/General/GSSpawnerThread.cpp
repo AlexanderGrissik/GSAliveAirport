@@ -121,11 +121,9 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
         m_mvmntThread.PostCommand(
             new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ADD, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
-    case GS_CMD_MVMNT_OBJ_REM:
+    case GS_CMD_MVMNT_OBJ_QUICK:
         m_mvmntThread.PostCommand(
-            new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM, static_cast<GSCmdSimObj&>(cmd).SimObj()));
-        break;
-    case GS_CMD_MVMNT_OBJ_REM_RET:
+            new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
     case GS_CMD_MVMNT_OBJ_ARR:
         static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrived();
@@ -201,7 +199,12 @@ void GSSpawnerThread::RemoveAircraft(DWORD aircraftID)
     m_groundPendingUpdates.erase(aircraftID);
     m_groundPendingAdd.erase(aircraftID);
     m_groundPendingDelete.insert(m_groundUnspawned.extract(aircraftID));
-    m_groundPendingDelete.insert(m_groundSpawned.extract(aircraftID));
+
+    auto itr = m_groundSpawned.extract(aircraftID);
+    if (itr) {
+        itr.mapped()->OnRemoveGround();
+        m_groundPendingDelete.insert(std::move(itr));
+    }
 
     m_ui.PostMessageUI(GSAliveUIAPI::RemoveAircraft(aircraftID));
 }

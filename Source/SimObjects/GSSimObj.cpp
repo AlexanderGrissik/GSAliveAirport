@@ -50,7 +50,8 @@ void GSSimObj::Spawn()
 void GSSimObj::Despawn()
 {
     if (m_attached.size() > 0) {
-        DespawnAttached();
+        for (auto& obj : m_attached)
+            obj->Despawn();
     } else if (m_hasAnim) {
         UnregisterAnim();
     } else {
@@ -59,16 +60,13 @@ void GSSimObj::Despawn()
     }
 }
 
-void GSSimObj::SpawnAttached()
+void GSSimObj::QuickArrive()
 {
+    if (!m_aiWaypoints.empty())
+        m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, *this));
+    
     for (auto& obj : m_attached)
-        obj->Spawn();
-}
-
-void GSSimObj::DespawnAttached()
-{
-    for (auto& obj : m_attached)
-        obj->Despawn();
+        obj->QuickArrive();
 }
 
 void GSSimObj::OnSpawned(bool ok, GSSimObj& obj)
@@ -101,15 +99,15 @@ void GSSimObj::Freeze()
 
 void GSSimObj::RegisterAnim(GSAnimationObject* animObj)
 {
-    m_simHandle.PostCommand(new GSCmdAnimObj(GS_CMD_ANIM_OBJ_ADD, m_simHandle, animObj));
     m_hasAnim = true;
+    m_simHandle.PostCommand(new GSCmdAnimObj(GS_CMD_ANIM_OBJ_ADD, m_simHandle, animObj));
 }
 
 void GSSimObj::UnregisterAnim()
 {
+    m_hasAnim = false;
     m_simHandle.PostCommand(
         new GSCmdAnimObj(GS_CMD_ANIM_OBJ_REM, m_simHandle, m_simObjectID, new GSReqSimObjContDespawn(m_simHandle, *this)));
-    m_hasAnim = false;
 }
 
 void GSSimObj::AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float percThrot, unsigned flags)
@@ -203,9 +201,10 @@ void GSSimObj::RestoreInitPos()
 
 void GSSimObj::ContinueSpawn()
 {
-    if (m_attached.size())
-        SpawnAttached();
-    else
+    if (m_attached.size()) {
+        for (auto& obj : m_attached)
+            obj->Spawn();
+    } else
         OnObjSpawned(true);
 }
 

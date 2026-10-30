@@ -53,6 +53,15 @@ void GSAircraftGround::Unspawned()
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::None));
 }
 
+void GSAircraftGround::OnRemoveGround()
+{
+    if (m_spawnState == SpawnState::SPAWNING) {
+        for (auto& obj : m_objs) {
+            obj->QuickArrive();
+        }
+    }
+}
+
 void GSAircraftGround::SetClosestParking()
 {
     const auto prk = m_aircraft.GetAirport()->GetRoadNet().GetClosestNormalParking(m_aircraft.GetLongLat());

@@ -31,6 +31,8 @@ public:
 		GSSimObj* m_simObj;
 		GSTimePoint m_lastPosCheckTime;
 		double m_lastDistToDest;
+		bool m_inProgress;
+		bool m_quick;
 	};
 
 	void Start();
@@ -54,10 +56,9 @@ private:
 	static void MoveTrackLoop(std::stop_token stopToken, GSMovementThread* self);
 	void RunLoopMoveTracking(std::stop_token stopToken);
 	void RequestTracking();
-	void RemovePending();
+	void Arrived(GSMovementThread::TrackState& track);
 
 	std::unordered_map<SIMCONNECT_OBJECT_ID, TrackState> m_trackObjs;
-	std::unordered_map<SIMCONNECT_OBJECT_ID, GSSimObj*> m_pendRemObjs;
 	GSTimePoint m_lastTrackTime{};
 	std::jthread m_thread;
 	size_t m_inflightReqs = 0U;

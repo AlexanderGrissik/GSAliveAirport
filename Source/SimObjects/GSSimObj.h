@@ -40,8 +40,7 @@ public:
 
     void Spawn();
     void Despawn();
-    void SpawnAttached();
-    void DespawnAttached();
+    void QuickArrive();
     void Freeze();
     void RegisterAnim(GSAnimationObject* animObj);
     void UnregisterAnim();

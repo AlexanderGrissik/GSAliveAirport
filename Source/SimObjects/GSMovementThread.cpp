@@ -39,10 +39,6 @@ void GSMovementThread::RunLoopMoveTracking(std::stop_token stopToken)
     while (!stopToken.stop_requested()) {
         RunDispatch(stopToken);
 
-        if (!m_inflightReqs) {
-            RemovePending();
-        }
-
         if (IsSimStarted() && !m_inflightReqs) {
             if (m_trackObjs.size() && ((std::chrono::steady_clock::now() - m_lastTrackTime) > 1s))
                 RequestTracking();
@@ -64,8 +60,11 @@ void GSMovementThread::RequestTracking()
 {
     auto currTime = std::chrono::steady_clock::now();
     for (auto& obj : m_trackObjs) {
-        PostReqCommand(new GSReqMvmntObjPos(*this, *obj.second.m_simObj, &obj.second));
-        IncrInflight();
+        if (!obj.second.m_inProgress) {
+            obj.second.m_inProgress = true;
+            PostReqCommand(new GSReqMvmntObjPos(*this, *obj.second.m_simObj, &obj.second));
+            IncrInflight();
+        }
     }
 
     m_lastTrackTime = std::chrono::steady_clock::now();
@@ -76,12 +75,18 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
     switch (cmd.GetCmdID()) {
     case GS_CMD_MVMNT_OBJ_ADD: {
         auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
-        m_trackObjs.try_emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj(), std::chrono::steady_clock::now(), 0.0);
+        m_trackObjs.try_emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj(), std::chrono::steady_clock::now(), 0.0, false, false);
         break;
     }
-    case GS_CMD_MVMNT_OBJ_REM: {
+    case GS_CMD_MVMNT_OBJ_QUICK: {
         auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
-        m_pendRemObjs.emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj());
+        auto itr = m_trackObjs.find(cmdAnim.SimObj().GetSimObjectID());
+        if (itr != m_trackObjs.end()) {
+            itr->second.m_quick = true;
+            if (!itr->second.m_inProgress) {
+                Arrived(itr->second);
+            }
+        }
         break;
     }
     default:
@@ -90,22 +95,23 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
     }
 }
 
-void GSMovementThread::RemovePending()
+void GSMovementThread::Arrived(GSMovementThread::TrackState& track)
 {
-    while (!m_pendRemObjs.empty()) {
-        auto itr = m_pendRemObjs.begin();
-        GSSimObj* obj = itr->second;
-
-        m_trackObjs.erase(itr->first);
-        m_pendRemObjs.erase(itr);
-
-        itr->second->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_RET, *obj));
-    }
+    auto simObj = track.m_simObj;
+    m_trackObjs.erase(track.m_simObj->GetSimObjectID());
+    simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ARR, *simObj));
 }
 
 void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, GSMovementThread::TrackState& track)
 {
     static double ArrivalDistanceMtr = 10.0;
+
+    track.m_inProgress = false;
+    if (track.m_quick) {
+        Arrived(track);
+        return;
+    }
+
     StateWireDataGet rawStateGet;
     GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
@@ -124,13 +130,9 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
         track.m_lastPosCheckTime = nowTime;
         track.m_lastDistToDest = distToDest;
     }
-
+    
     if (arrived) {
-        auto objID = track.m_simObj->GetSimObjectID();
-        auto simObj = track.m_simObj;
-        m_trackObjs.erase(objID);
-        m_pendRemObjs.erase(objID);
-        simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ARR, *simObj));
+        Arrived(track);
     }
     
     DecrInflight();
