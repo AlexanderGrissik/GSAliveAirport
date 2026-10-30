@@ -7,6 +7,7 @@
 
 #include "GSCoord.h"
 #include <cmath>
+#include <cstddef>
 
 namespace NS_GSAliveAirport
 {
@@ -39,14 +40,23 @@ public:
 
     [[nodiscard]] static double Azz(const GSCoord& coordA, const GSCoord& coordB);
 
-    [[nodiscard]] static GSCoord RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters);
-
     [[nodiscard]] static double MetersPerDegreeLong(double latitude);
 
-    [[nodiscard]] static GSCoord RelativePosition(double headingDeg, const GSCoord coordA, double YMeters, double XMeters);
+    [[nodiscard]] static GSCoord RelativePosition(double headingDeg, const GSCoord coordA, double headingMeters, double crossMeters);
 
-    [[nodiscard]] static GSCoord FindReverseCircleIntersection(
-        const GSCoord& center, double radiusMeters, const GSCoord& pnt, double headingDeg);
+    // Returns intermediate headings along the shortest arc; the end is excluded.
+    // Index zero is the first step. At 180 degrees, the clockwise arc is used.
+    // Returns false without changing heading if spacing is not positive or the step reaches the end.
+    [[nodiscard]] static bool PointOnCircle(
+        double startHeading, double endHeading, double spacing, std::size_t index, double& heading);
+
+    // Returns false without changing the outputs if the line misses the circle.
+    // When the point is strictly inside, firstIntersection is behind the heading.
+    // Otherwise, firstIntersection is the closer intersection. A tangent returns
+    // the same point twice; a point on the circle is not considered inside.
+    [[nodiscard]] static bool FindReverseCircleIntersection(
+        const GSCoord& center, double radiusMeters, const GSCoord& pnt, double headingDeg,
+        GSCoord& firstIntersection, GSCoord& secondIntersection, bool& pointInside);
 };
 
 } // namespace NS_GSAliveAirport

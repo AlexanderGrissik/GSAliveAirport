@@ -40,65 +40,70 @@ double GSGeography::Azz(const GSCoord& coordA, const GSCoord& coordB)
     return NormDeg(std::atan2(eastMeters, northMeters) * RadToDeg);
 }
 
-GSCoord GSGeography::RepositionZOffset(const GSCoord& coord, double mainHeadingDegrees, double zOffsetMeters)
-{
-    const double heading = mainHeadingDegrees * DegToRad;
-    const double doorLatitude = coord.Lat() * DegToRad;
-
-    // Move the truck origin opposite to its contact-point offset.
-    const double northOffsetMeters = zOffsetMeters * std::cos(heading);
-    const double eastOffsetMeters = zOffsetMeters * std::sin(heading);
-
-    double newPosLat = coord.Lat() + (northOffsetMeters / EARTH_RADIUS_METERS) * RadToDeg;
-    double newPosLong = coord.Long() + (eastOffsetMeters / (EARTH_RADIUS_METERS * std::cos(doorLatitude))) * RadToDeg;
-
-    return {newPosLong, newPosLat};
-}
-
-GSCoord GSGeography::RelativePosition(double headingDeg, const GSCoord coordA, double YMeters, double XMeters)
+GSCoord GSGeography::RelativePosition(double headingDeg, const GSCoord coordA, double headingMeters, double crossMeters)
 {
     const double heading = headingDeg * DegToRad;
-    const double northMeters = YMeters * std::cos(heading) - XMeters * std::sin(heading);
-    const double eastMeters = YMeters * std::sin(heading) + XMeters * std::cos(heading);
+    const double northMeters = headingMeters * std::cos(heading) - crossMeters * std::sin(heading);
+    const double eastMeters = headingMeters * std::sin(heading) + crossMeters * std::cos(heading);
     return {
         coordA.Long() + eastMeters / MetersPerDegreeLong(coordA.Lat()),
         coordA.Lat() + northMeters / MetersPerDegreeLat()
     };
 }
 
-GSCoord GSGeography::FindReverseCircleIntersection(const GSCoord& center, double radiusMeters, const GSCoord& pnt, double headingDeg)
+bool GSGeography::FindReverseCircleIntersection(
+    const GSCoord& center, double radiusMeters, const GSCoord& pnt, double headingDeg,
+    GSCoord& firstIntersection, GSCoord& secondIntersection, bool& pointInside)
 {
-    double radius = radiusMeters / MetersPerDegreeLong(center.Lat());
+    if (radiusMeters < 0.0 || std::abs(center.Lat()) >= 90.0) {
+        return false;
+    }
 
-    // Move point into circle-local coordinates.
-    const double x0 = pnt.Long() - center.Long();
-    const double y0 = pnt.Lat() - center.Lat();
-
-    // Aviation heading: 0° = North, 90° = East
+    const double metersPerLong = MetersPerDegreeLong(center.Lat());
+    const double x0 = (pnt.Long() - center.Long()) * metersPerLong;
+    const double y0 = (pnt.Lat() - center.Lat()) * MetersPerDegreeLat();
     const double heading = headingDeg * DegToRad;
     const double dx = std::sin(heading);
     const double dy = std::cos(heading);
 
-    // Circle: x^2 + y^2 = radius^2
-    // Line: x = x0 + t * dx, y = y0 + t * dy
-
-    const double B = x0 * dx + y0 * dy;
-    const double C = x0 * x0 + y0 * y0 - radius * radius;
-    const double discriminant = B * B - C;
-
+    // Solve the intersection of the heading line and the circle in meters.
+    const double b = x0 * dx + y0 * dy;
+    const double c = x0 * x0 + y0 * y0 - radiusMeters * radiusMeters;
+    const double discriminant = b * b - c;
     if (discriminant < 0.0) {
-        return center;
+        return false;
     }
 
-    // Negative root = intersection behind the current heading.
-    const double t = -B - std::sqrt(discriminant);
+    const double root = std::sqrt(discriminant);
+    const double lower = -b - root;
+    const double upper = -b + root;
+    pointInside = lower < 0.0 && upper > 0.0;
+    const bool useLowerFirst = pointInside || std::abs(lower) <= std::abs(upper);
 
-    // Intersection in circle-local coordinates.
-    const double x = x0 + t * dx;
-    const double y = y0 + t * dy;
+    const auto toCoord = [&](double distance) {
+        return GSCoord(center.Long() + (x0 + distance * dx) / metersPerLong,
+                       center.Lat() + (y0 + distance * dy) / MetersPerDegreeLat());
+    };
 
-    // Convert back to original lon/lat coordinate system.
-    return { center.Long() + x, center.Lat() + y };
+    firstIntersection = toCoord(useLowerFirst ? lower : upper);
+    secondIntersection = toCoord(useLowerFirst ? upper : lower);
+    return true;
+}
+
+bool GSGeography::PointOnCircle(
+    double startHeading, double endHeading, double spacing, std::size_t index, double& heading)
+{
+    const double start = NormDeg(startHeading);
+    const double clockwiseDistance = NormDeg(endHeading - start);
+    const bool clockwise = clockwiseDistance <= 180.0;
+    const double arcLength = clockwise ? clockwiseDistance : 360.0 - clockwiseDistance;
+    const double step = (static_cast<double>(index) + 1.0) * spacing;
+    if (step >= arcLength) {
+        return false;
+    }
+
+    heading = NormDeg(start + (clockwise ? step : -step));
+    return true;
 }
 
 } // namespace NS_GSAliveAirport

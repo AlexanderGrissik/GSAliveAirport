@@ -166,8 +166,8 @@ void GSSimObj::PrepareRoute()
     m_aiWaypoints.pop_back();
 
     m_preMoveInitPos = { m_initPos.Longitude, m_initPos.Latitude };
-    const auto& src = m_aiWaypoints.front();
-    m_initPos.Longitude = src.Longitude;
+    const auto& src = m_aiWaypoints.front(); 
+    m_initPos.Longitude = src.Longitude; // Spawn at the start of the road.
     m_initPos.Latitude = src.Latitude;
     m_routePrepared = true;
 }
@@ -180,12 +180,42 @@ void GSSimObj::FinalizeRoute()
     }
 
     static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
-    auto intrCoord = GSGeography::FindReverseCircleIntersection(
-        m_aircraft.GetLongLat(), m_aircraft.GetWingSpanMeters() / 2.0,
-        { m_initPos.Longitude, m_initPos.Latitude }, m_initPos.Heading + 180.0);
+    GSCoord intrCoord = m_aircraft.GetLongLat();
+    GSCoord endIntrersection;
+    GSCoord otherIntersection;
+    bool pointInside = false;
 
-    m_aiWaypoints.emplace_back(intrCoord.Lat(), intrCoord.Long(), m_initPos.Altitude, flags, 30.0, 0.0);
-    m_aiWaypoints.emplace_back(m_initPos.Latitude, m_initPos.Longitude, m_initPos.Altitude, flags, 30.0, 0.0);
+    bool intersects = GSGeography::FindReverseCircleIntersection(
+        m_aircraft.GetLongLat(), m_aircraft.GetWingSpanMeters() / 2.0,
+        { m_initPos.Longitude, m_initPos.Latitude }, m_initPos.Heading,
+        endIntrersection, otherIntersection, pointInside); // Intersection of the m_initPos with the circle.
+
+    if (intersects && pointInside) {
+        const auto& lastRoadPntWP = m_aiWaypoints.back();
+        GSCoord lastRoadPnt(lastRoadPntWP.Longitude, lastRoadPntWP.Latitude);
+        double roadHeading = GSGeography::Azz(lastRoadPnt, m_aircraft.GetLongLat());
+        GSCoord startIntersection = endIntrersection;
+        double halfWing = m_aircraft.GetWingSpanMeters() / 2.0;
+
+        intersects = GSGeography::FindReverseCircleIntersection(
+            m_aircraft.GetLongLat(), halfWing, lastRoadPnt, roadHeading,
+            startIntersection, otherIntersection, pointInside); // Intersection of the lastRoadPnt with the circle.
+
+        m_aiWaypoints.emplace_back(startIntersection.Lat(), startIntersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
+
+        double startHeading = GSGeography::NormDeg(roadHeading + 180.0);
+        double endHeading = GSGeography::Azz(m_aircraft.GetLongLat(), endIntrersection);
+        double outHeading = 0.0;
+        size_t index = 0;
+        while (GSGeography::PointOnCircle(startHeading, endHeading, 10.0, index++, outHeading) && index < 36) {
+            otherIntersection = GSGeography::RelativePosition(outHeading, m_aircraft.GetLongLat(), halfWing, 0.0);
+            m_aiWaypoints.emplace_back(otherIntersection.Lat(), otherIntersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
+        }
+        
+        m_aiWaypoints.emplace_back(endIntrersection.Lat(), endIntrersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
+    }
+    
+    m_aiWaypoints.emplace_back(m_initPos.Latitude, m_initPos.Longitude, m_initPos.Altitude, flags, 5.0, 0.0);
 
     ShootWaypoints();
 }
