@@ -62,6 +62,7 @@ std::optional<GSAliveAirportApp::AppCommand> GSAliveAirportApp::ParseCommand(std
         return debug;
     }
     if (command == "test") return AppCommand{AppCommandType::Test, {}};
+    if (command == "testjetway") return AppCommand{AppCommandType::TestJetway, {}};
     if (command == "injector") {
         AppCommand injector{AppCommandType::Injector, {}};
         std::getline(input >> std::ws, injector.argument);
@@ -89,6 +90,9 @@ void GSAliveAirportApp::HandleCommand(const AppCommand &command)
         break;
     case AT::Test:
         m_aircraftTracker.PostCommand(new GSCommand(GS_CMD_SPAWN_TEST_AIRCRAFTS));
+        break;
+    case AT::TestJetway:
+        m_aircraftTracker.PostCommand(new GSCommand(GS_CMD_SPAWN_TEST_AIRCRAFTS_JETWAY));
         break;
     case AT::Injector:
     {

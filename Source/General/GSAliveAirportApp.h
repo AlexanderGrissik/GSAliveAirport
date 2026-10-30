@@ -34,7 +34,7 @@ private:
 
     enum class AppCommandType
     {
-        Log, Debug, Test, Injector,
+        Log, Debug, Test, TestJetway, Injector,
     };
 
     struct AppCommand

@@ -74,6 +74,7 @@ public:
     void PostNewAircraft(std::shared_ptr<GSAircraft>& aircraft);
     void HandleAircraftUser(std::shared_ptr<GSAircraft>& aircraft);
     void SpawnTestAircrafts();
+    void SpawnTestAircraftsJetway();
     void SubscribeAirportList();
     void UnsubscribeAirportList();
     const AirportScanCache::value_type* FindClosesAirportToAircraft(const GSAircraft& aircraft) const;

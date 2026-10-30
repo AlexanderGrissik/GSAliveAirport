@@ -154,6 +154,9 @@ void GSAircraftTrackerThread::OnCommand(GSCommand& cmd)
     case GS_CMD_SPAWN_TEST_AIRCRAFTS:
         SpawnTestAircrafts();
         break;
+    case GS_CMD_SPAWN_TEST_AIRCRAFTS_JETWAY:
+        SpawnTestAircraftsJetway();
+        break;
     default:
         GSLogStream::LogError("GSAircraftTrackerThread - Unexpected cmd: ") << cmd.GetCmdID();
         break;
@@ -163,10 +166,14 @@ void GSAircraftTrackerThread::OnCommand(GSCommand& cmd)
 void GSAircraftTrackerThread::SpawnTestAircrafts()
 {
     PostReqCommand(new GSReqTrackerSpawnAircraft(*this, 1));
-    PostReqCommand(new GSReqTrackerSpawnAircraft(*this, 2));
     PostReqCommand(new GSReqTrackerSpawnAircraft(*this, 3));
     PostReqCommand(new GSReqTrackerSpawnAircraft(*this, 4));
     PostReqCommand(new GSReqTrackerSpawnAircraft(*this, 5));
+}
+
+void GSAircraftTrackerThread::SpawnTestAircraftsJetway()
+{
+    PostReqCommand(new GSReqTrackerSpawnAircraft(*this, 2));
 }
 
 void GSAircraftTrackerThread::SubscribeAirportList()
@@ -393,11 +400,20 @@ GSReqRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INI
 
     if (type == 2) {
         title = "737 Max 8 Passengers";
-        const auto parking = m_userAircraft.GetAirport()->GetRoadNet().GetClosestJetwayParking(posUser);
-        if (parking) {
-            pos.Latitude = (*parking)->m_loc.Lat();
-            pos.Longitude = (*parking)->m_loc.Long();
-            pos.Heading = (*parking)->m_heading;
+        auto itr = m_activeAirports.find(m_userAircraft.GetAirport()->GetICAO());
+        bool found = false;
+        if (itr != m_activeAirports.end()) {
+            const auto parking = itr->second.second->GetRoadNet().GetClosestJetwayParking(posUser);
+            if (parking) {
+                pos.Latitude = (*parking)->m_loc.Lat();
+                pos.Longitude = (*parking)->m_loc.Long();
+                pos.Heading = (*parking)->m_heading;
+                found = true;
+            }
+        }
+
+        if (!found) {
+            return { {{0,0},E_FAIL}, false };
         }
     }
     else if (type == 3) {
