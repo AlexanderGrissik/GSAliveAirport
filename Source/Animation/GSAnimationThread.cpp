@@ -65,9 +65,9 @@ void GSAnimationThread::DoAnimation()
 {
     auto currTime = std::chrono::steady_clock::now();
     for (auto& anim : m_animObjs)
-        if (GSGeography::DistanceDegPow(m_userAircraft->GetLongLat(), anim.second->GetCurrLoc()) < s_AnimDistDegPow)
-            anim.second->Animate(*this, std::chrono::duration<float, std::milli>(currTime - m_lastAnimTime).count());
-
+        anim.second->Animate(*this, std::chrono::duration<float, std::milli>(currTime - m_lastAnimTime).count(),
+            GSGeography::DistanceDegPow(m_userAircraft->GetLongLat(), anim.second->GetCurrLoc()) >= s_AnimDistDegPow);
+            
     m_lastAnimTime = std::chrono::steady_clock::now();
 }
 

@@ -104,7 +104,9 @@ std::string GSAliveUIAPI::SetUserAircraft(const GSAircraft& ac)
     stream << ",\"lat\":" << ac.GetLongLat().Lat() << ",\"lon\":" << ac.GetLongLat().Long()
            << ",\"altFt\":" << ac.GetAltitudeFeet() << ",\"gndAltFt\":" << ac.GetGroundAltitudeFeet();
     stream << ",\"hdgDeg\":" << ac.GetHeading() << ",\"gndSpdKt\":" << ac.GetGroundSpeedKnots();
-    stream << (",\"curr\":" + JsonString(ac.GetAICurrAirport() + "/" + (ac.GetAirport() ? ac.GetAirport()->GetICAO() : "")));
+    const auto currentAirport = ac.GetAICurrAirport();
+    stream << ",\"curr\":" << JsonString((currentAirport.empty() ? "-" : currentAirport) + "/" +
+        (ac.GetAirport() ? ac.GetAirport()->GetICAO() : ""));
     stream << ",\"onGround\":" << (ac.IsOnGround() ? "true" : "false") << "}";
     return stream.str();
 }

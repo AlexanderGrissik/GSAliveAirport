@@ -31,7 +31,7 @@ public:
         Any = 99,
     };
 
-    static constexpr double s_SpawnDistMeters = 1000.0;
+    static constexpr double s_SpawnDistMeters = 2000.0;
 
     GSSpawnerThread(GSSimConnect& animThread, GSSimConnect& mvmntThread, GSAliveUI& ui):
         m_animThread(animThread), m_mvmntThread(mvmntThread), m_ui(ui) {}

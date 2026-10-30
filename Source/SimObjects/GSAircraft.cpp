@@ -106,6 +106,8 @@ void GSAircraft::LoadInitState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entr
 void GSAircraft::LoadDynamicState(const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& entry)
 {
     GSSimConnect::ReadMsgData(&m_rawData, offsetof(decltype(m_rawData), altitudeFeet), AIRCRAFT_WIREDATA_DYNSIZE, entry);
+    m_trafficState = m_rawData.trafficState.data();
+    m_parkingState = m_rawData.assignedParking.data();
 }
 
 void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)

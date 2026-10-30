@@ -12,6 +12,7 @@ namespace NS_GSAliveAirport
 
 bool GSLavatoryTruck::OnCreated()
 {
+    m_arriveReverse = true;
     FinalizeRoute();
     return false;
 }

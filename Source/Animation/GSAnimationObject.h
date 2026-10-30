@@ -28,7 +28,7 @@ public:
 
     static void InitDatums(GSSimConnect& handler);
 
-    virtual void Animate(GSSimConnect& handler, float elapsedMilli) = 0;
+    virtual void Animate(GSSimConnect& handler, float elapsedMilli, bool internal) = 0;
     virtual void OnNextWayPoint(std::size_t idx) = 0;
     
     void ResetObjID(SIMCONNECT_OBJECT_ID objID) { m_simObjectID = objID; }
@@ -61,7 +61,7 @@ protected:
     static constexpr double ArrivalRadiusMeters = 0.10;
 
     void CalcNextFrame(FrameRange& frange, float elapsedMilli);
-    void Move(GSSimConnect& handler, float elapsedMilli);
+    void Move(GSSimConnect& handler, float elapsedMilli, bool internal);
 
     SIMCONNECT_OBJECT_ID m_simObjectID;
     const std::vector<SIMCONNECT_DATA_WAYPOINT>* m_aiWaypoints = nullptr;

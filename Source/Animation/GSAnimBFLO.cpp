@@ -23,17 +23,19 @@ void GSAnimBFLO::AddFrameSet(const FrameRangeInfo& infoB, const FrameRangeInfo& 
     m_FLO = infoF;
 }
 
-void GSAnimBFLO::Animate(GSSimConnect& handler, float elapsedMilli)
+void GSAnimBFLO::Animate(GSSimConnect& handler, float elapsedMilli, bool internal)
 {
     CalcNextFrame(m_BLO, elapsedMilli);
     CalcNextFrame(m_FLO, elapsedMilli);
 
-    StateWireDataSet valSet { m_BLO.m_currFrame, m_FLO.m_currFrame };
-    auto simRC = handler.Invoke(
-        SimConnect_SetDataOnSimObject, GSDatumID_AnimWagonBFLO, m_simObjectID,
-        0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
-    if (!simRC.isOK()) {
-        GSLogStream::LogError("GSAnimBFLO::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
+    if (!internal) {
+        StateWireDataSet valSet{ m_BLO.m_currFrame, m_FLO.m_currFrame };
+        auto simRC = handler.Invoke(
+            SimConnect_SetDataOnSimObject, GSDatumID_AnimWagonBFLO, m_simObjectID,
+            0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
+        if (!simRC.isOK()) {
+            GSLogStream::LogError("GSAnimBFLO::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
+        }
     }
 }
 

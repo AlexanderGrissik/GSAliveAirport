@@ -231,7 +231,7 @@ bool GSSpawnerThread::SpawnCond(const GSAircraft& aircraft)
     baseCond &= !aircraft.IsTaxing();
     return ((IsAnyInjector() && baseCond) ||
             (IsMSFSInjector() && baseCond && aircraft.HasParking()) ||
-            (IsSIInjector() && baseCond && aircraft.IsLightNavOn()));
+            (IsSIInjector() && baseCond && aircraft.IsLightNavOn() && !aircraft.IsLightBeaconOn()));
 }
 
 bool GSSpawnerThread::DespawnCond(const GSAircraft& aircraft)

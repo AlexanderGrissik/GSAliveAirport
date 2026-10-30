@@ -27,19 +27,21 @@ void GSAnimSingle::AddFrameSet(const FrameRangeInfo& info)
     m_frame = info;
 }
 
-void GSAnimSingle::Animate(GSSimConnect& handler, float elapsedMilli)
+void GSAnimSingle::Animate(GSSimConnect& handler, float elapsedMilli, bool internal)
 {
     CalcNextFrame(m_frame, elapsedMilli);
     
-    StateWireDataSet valSet { m_frame.m_currFrame };
-    auto simRC = handler.Invoke(
-        SimConnect_SetDataOnSimObject, m_defID, m_simObjectID,
-        0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
-    if (!simRC.isOK()) {
-        GSLogStream::LogError("GSAnimSingle::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
+    if (!internal) {
+        StateWireDataSet valSet{ m_frame.m_currFrame };
+        auto simRC = handler.Invoke(
+            SimConnect_SetDataOnSimObject, m_defID, m_simObjectID,
+            0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
+        if (!simRC.isOK()) {
+            GSLogStream::LogError("GSAnimSingle::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
+        }
     }
 
-    Move(handler, elapsedMilli);
+    Move(handler, elapsedMilli, internal);
 }
 
 }

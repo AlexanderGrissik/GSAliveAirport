@@ -123,12 +123,25 @@ void GSSimObj::ShootWaypoints()
     //    GSLogStream::Log() << "  [" << index << "] lat=" << waypoint.Latitude << " long=" << waypoint.Longitude << " alt=" << waypoint.Altitude;
     //}
 
+    size_t skipLast = m_arriveReverse ? 1 : 0;
+    m_arriveIdx = m_aiWaypoints.size() - skipLast - 1U;
     m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
-        GSDatumID_AIWaypoints, m_simObjectID, 0U, static_cast<DWORD>(m_aiWaypoints.size()),
-        static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), m_aiWaypoints.data());
+        GSDatumID_AIWaypoints, m_simObjectID, 0U, static_cast<DWORD>(m_aiWaypoints.size() - skipLast),
+        static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), 
+        m_aiWaypoints.data());
 
     m_startMoveTime = std::chrono::steady_clock::now();
     m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ADD, *this));
+}
+
+void GSSimObj::ShootWaypointsRev()
+{
+    m_arriveReverse = false;
+    m_arriveIdx = m_aiWaypoints.size() - 1U;
+    m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
+        GSDatumID_AIWaypoints, m_simObjectID, 0U, 1U,
+        static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)),
+        m_aiWaypoints.data() + m_arriveIdx);
 }
 
 void GSSimObj::PrepareRoute()
@@ -179,14 +192,15 @@ void GSSimObj::FinalizeRoute()
         return;
     }
 
-    static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
+    unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
     GSCoord intrCoord = m_aircraft.GetLongLat();
     GSCoord endIntrersection;
     GSCoord otherIntersection;
     bool pointInside = false;
+    double halfWing = (m_aircraft.GetWingSpanMeters() / 2.0) * 1.5;
 
     bool intersects = GSGeography::FindReverseCircleIntersection(
-        m_aircraft.GetLongLat(), m_aircraft.GetWingSpanMeters() / 2.0,
+        m_aircraft.GetLongLat(), halfWing,
         { m_initPos.Longitude, m_initPos.Latitude }, m_initPos.Heading,
         endIntrersection, otherIntersection, pointInside); // Intersection of the m_initPos with the circle.
 
@@ -194,9 +208,10 @@ void GSSimObj::FinalizeRoute()
         const auto& lastRoadPntWP = m_aiWaypoints.back();
         GSCoord lastRoadPnt(lastRoadPntWP.Longitude, lastRoadPntWP.Latitude);
         double roadHeading = GSGeography::Azz(lastRoadPnt, m_aircraft.GetLongLat());
+        if (m_arriveReverse)
+            endIntrersection = otherIntersection;
+        
         GSCoord startIntersection = endIntrersection;
-        double halfWing = m_aircraft.GetWingSpanMeters() / 2.0;
-
         intersects = GSGeography::FindReverseCircleIntersection(
             m_aircraft.GetLongLat(), halfWing, lastRoadPnt, roadHeading,
             startIntersection, otherIntersection, pointInside); // Intersection of the lastRoadPnt with the circle.
@@ -205,14 +220,20 @@ void GSSimObj::FinalizeRoute()
 
         double startHeading = GSGeography::NormDeg(roadHeading + 180.0);
         double endHeading = GSGeography::Azz(m_aircraft.GetLongLat(), endIntrersection);
-        double outHeading = 0.0;
+        double outHeading = startHeading;
         size_t index = 0;
         while (GSGeography::PointOnCircle(startHeading, endHeading, 10.0, index++, outHeading) && index < 36) {
             otherIntersection = GSGeography::RelativePosition(outHeading, m_aircraft.GetLongLat(), halfWing, 0.0);
             m_aiWaypoints.emplace_back(otherIntersection.Lat(), otherIntersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
         }
-        
+
         m_aiWaypoints.emplace_back(endIntrersection.Lat(), endIntrersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
+
+        if (m_arriveReverse) {
+            otherIntersection = GSGeography::RelativePosition(m_initPos.Heading, endIntrersection, 15.0, 0.0);
+            m_aiWaypoints.emplace_back(otherIntersection.Lat(), otherIntersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
+            flags |= SIMCONNECT_WAYPOINT_REVERSE;
+        }
     }
     
     m_aiWaypoints.emplace_back(m_initPos.Latitude, m_initPos.Longitude, m_initPos.Altitude, flags, 5.0, 0.0);

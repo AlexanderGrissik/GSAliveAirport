@@ -26,7 +26,7 @@ public:
     GSAnimMulti(SIMCONNECT_OBJECT_ID objID, const GSCoord& initCoord, bool uncycle, GSDatumID defID):
         GSAnimationObject(objID, initCoord, uncycle), m_defID(defID), m_activeFrameRange(uncycle ? 1 : 0) {}
 
-    void Animate(GSSimConnect& handler, float elapsedMilli) override;
+    void Animate(GSSimConnect& handler, float elapsedMilli, bool internal) override;
     void OnNextWayPoint(std::size_t idx) override;
 
     template <size_t N>

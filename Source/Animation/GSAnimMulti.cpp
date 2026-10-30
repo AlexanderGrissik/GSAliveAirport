@@ -14,18 +14,20 @@ void GSAnimMulti::OnNextWayPoint(std::size_t idx)
     m_activeFrameRange = std::min(idx, m_frameRanges.size() - 1);
 }
 
-void GSAnimMulti::Animate(GSSimConnect& handler, float elapsedMilli)
+void GSAnimMulti::Animate(GSSimConnect& handler, float elapsedMilli, bool internal)
 {
-    Move(handler, elapsedMilli);
+    Move(handler, elapsedMilli, internal);
 
     CalcNextFrame(m_frameRanges[m_activeFrameRange], elapsedMilli);
 
-    StateWireDataSet valSet { m_frameRanges[m_activeFrameRange].m_currFrame };
-    auto simRC = handler.Invoke(
-        SimConnect_SetDataOnSimObject, m_defID, m_simObjectID,
-        0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
-    if (!simRC.isOK()) {
-        GSLogStream::LogError("GSAnimMulti::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
+    if (!internal) {
+        StateWireDataSet valSet{ m_frameRanges[m_activeFrameRange].m_currFrame };
+        auto simRC = handler.Invoke(
+            SimConnect_SetDataOnSimObject, m_defID, m_simObjectID,
+            0U, 1U, static_cast<DWORD>(sizeof(valSet)), &valSet);
+        if (!simRC.isOK()) {
+            GSLogStream::LogError("GSAnimMulti::Animate Failed SimConnect_SetDataOnSimObject call: ") << simRC.rc;
+        }
     }
 }
 

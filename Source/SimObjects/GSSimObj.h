@@ -50,7 +50,7 @@ public:
     SIMCONNECT_DATA_INITPOSITION& GetInitPos() { return m_initPos; }
     SIMCONNECT_OBJECT_ID GetSimObjectID() const { return m_simObjectID; }
     GSSimConnect& GetSimConnect() const { return m_simHandle; }
-    const SIMCONNECT_DATA_WAYPOINT& GetDestPoint() const { return m_aiWaypoints.back(); }
+    const SIMCONNECT_DATA_WAYPOINT& GetDestPoint() const { return m_aiWaypoints[m_arriveIdx]; }
     const GSTimePoint& GetStartMoveTime() const { return m_startMoveTime; } 
 
     void SetSimObjectID(DWORD id) { m_simObjectID = static_cast<SIMCONNECT_OBJECT_ID>(id); }
@@ -60,6 +60,7 @@ public:
     void SetHeading(double heading) { m_initPos.Heading = heading; }
     void SetPosition(const GSCoord& pos) { m_initPos.Longitude = pos.Long(); m_initPos.Latitude = pos.Lat(); }
     void SetDeferredSpawn(const GSTimePoint& val) { m_deferredSpawn = val; }
+    bool IsRevArrive() const { return m_arriveReverse; }
     void PrepareRoute();
     void FinalizeRoute();
     void ContinueSpawn();
@@ -67,6 +68,7 @@ public:
 
     void AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float percThrot, unsigned flags);
     void ShootWaypoints();
+    void ShootWaypointsRev();
 
 protected:
 
@@ -84,9 +86,11 @@ protected:
     GSTimePoint m_startMoveTime{};
     GSCoord m_preMoveInitPos;
     size_t m_childSpawned = 0;
+    size_t m_arriveIdx = 0;
     bool m_hasAnim = false;
     bool m_routePrepared = false;
     bool m_spawnRequested = false;
+    bool m_arriveReverse = false;
 };
 
 

@@ -75,7 +75,7 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
     switch (cmd.GetCmdID()) {
     case GS_CMD_MVMNT_OBJ_ADD: {
         auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
-        m_trackObjs.try_emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj(), std::chrono::steady_clock::now(), 0.0, false, false);
+        m_trackObjs.try_emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj(), std::chrono::steady_clock::now(), GSCoord{0.0, 0.0}, false, false);
         break;
     }
     case GS_CMD_MVMNT_OBJ_QUICK: {
@@ -102,11 +102,18 @@ void GSMovementThread::Arrived(GSMovementThread::TrackState& track)
     simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ARR, *simObj));
 }
 
+void GSMovementThread::OnErrorPosReq(GSMovementThread::TrackState& track)
+{
+    track.m_inProgress = false;
+    DecrInflight();
+}
+
 void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, GSMovementThread::TrackState& track)
 {
-    static double ArrivalDistanceMtr = 10.0;
+    static double ArrivalDistanceMtr = 2.0;
 
     track.m_inProgress = false;
+    DecrInflight();
     if (track.m_quick) {
         Arrived(track);
         return;
@@ -116,26 +123,31 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
     GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
     const auto nowTime = std::chrono::steady_clock::now();
+    const GSCoord currentPos{rawStateGet.posLong, rawStateGet.posLat};
     const auto& dst = track.m_simObj->GetDestPoint();
-    const auto distToDest = GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, { rawStateGet.posLong, rawStateGet.posLat });
+    const auto distToDest = GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, currentPos);
 
     bool arrived = false;
-    if ((nowTime - track.m_simObj->GetStartMoveTime() > 900s) || (ArrivalDistanceMtr > distToDest)) {
-        arrived = true;
-    } else if (nowTime - track.m_lastPosCheckTime > 10s) {
-        if (std::abs(distToDest - track.m_lastDistToDest) < 1.0) {
+    bool maxTime = (nowTime - track.m_simObj->GetStartMoveTime() > 900s);
+    if (maxTime || (ArrivalDistanceMtr > distToDest)) {
             arrived = true;
-        }
+    } else if (nowTime - track.m_lastPosCheckTime > 10s) {
+        if (GSGeography::DistanceMeters(track.m_lastPosition, currentPos) < 5.0)
+            arrived = true;
 
         track.m_lastPosCheckTime = nowTime;
-        track.m_lastDistToDest = distToDest;
+        track.m_lastPosition = currentPos;
     }
     
     if (arrived) {
-        Arrived(track);
+        if (!maxTime && track.m_simObj->IsRevArrive()) {
+            track.m_simObj->ShootWaypointsRev();
+
+            track.m_lastPosCheckTime = nowTime;
+            track.m_lastPosition = currentPos;
+        } else
+            Arrived(track);
     }
-    
-    DecrInflight();
 }
 
 

@@ -38,7 +38,7 @@ void GSAnimationObject::SetAIWaypoints(const std::vector<SIMCONNECT_DATA_WAYPOIN
     }
 }
 
-void GSAnimationObject::Move(GSSimConnect& handler, float elapsedMilli)
+void GSAnimationObject::Move(GSSimConnect& handler, float elapsedMilli, bool internal)
 {
     if (!m_aiWaypoints || !m_aiWaypoints->size())
         return;
@@ -70,18 +70,20 @@ void GSAnimationObject::Move(GSSimConnect& handler, float elapsedMilli)
         m_currLocation = GSGeography::RelativePosition(headingToTarget, m_currLocation, moveMeters, 0.0);
     }
 
-    SIMCONNECT_DATA_INITPOSITION position { 
-        m_currLocation.Lat(), m_currLocation.Long(), m_currAlt, 0, 0,
-        GSGeography::NormDeg(headingToTarget + ((waypoint.Flags & SIMCONNECT_WAYPOINT_REVERSE) ? 180.0 : 0.0)),
-        (waypoint.Flags & SIMCONNECT_WAYPOINT_ON_GROUND) ? 1U : 0U, 0
-    };
+    if (!internal) {
+        SIMCONNECT_DATA_INITPOSITION position{
+            m_currLocation.Lat(), m_currLocation.Long(), m_currAlt, 0, 0,
+            GSGeography::NormDeg(headingToTarget + ((waypoint.Flags & SIMCONNECT_WAYPOINT_REVERSE) ? 180.0 : 0.0)),
+            (waypoint.Flags & SIMCONNECT_WAYPOINT_ON_GROUND) ? 1U : 0U, 0
+        };
 
-    const auto rcSim = handler.Invoke(
-        SimConnect_SetDataOnSimObject, GSDatumID_Position,
-        m_simObjectID, 0U, 1U, static_cast<DWORD>(sizeof(position)), &position);
+        const auto rcSim = handler.Invoke(
+            SimConnect_SetDataOnSimObject, GSDatumID_Position,
+            m_simObjectID, 0U, 1U, static_cast<DWORD>(sizeof(position)), &position);
 
-    if (!rcSim.isOK()) {
-        GSLogStream::LogError("GSAnimationObject::Move failed to update object position: ") << rcSim.rc;
+        if (!rcSim.isOK()) {
+            GSLogStream::LogError("GSAnimationObject::Move failed to update object position: ") << rcSim.rc;
+        }
     }
 }
 }

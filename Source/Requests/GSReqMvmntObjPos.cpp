@@ -17,6 +17,7 @@ GSReqRC GSReqMvmntObjPos::Process()
     if (!rc.isOK()) {
         GSLogStream::LogError("GSReqMvmntObjPos::Process Failed call: ") << rc.rc;
         rc.keepReq = false;
+        static_cast<GSMovementThread&>(m_simHandle).OnErrorPosReq(*m_track);
     }
 
     return rc;
@@ -28,6 +29,7 @@ bool GSReqMvmntObjPos::OnMessage(SIMCONNECT_RECV* message, DWORD messageSize)
 
     if (!message || message->dwID != SIMCONNECT_RECV_ID_SIMOBJECT_DATA) {
         GSLogStream::LogError("Unexpected message: ") << (message ? message->dwID : -1) << ", Size: " << messageSize;
+        tracker.OnErrorPosReq(*m_track);
     } else {
         tracker.HandlePosMessage(*static_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(message), *m_track);
     }
@@ -42,7 +44,7 @@ void GSReqMvmntObjPos::OnException(SIMCONNECT_RECV_EXCEPTION* message)
     GSLogStream::LogError("GSReqMvmntObjPos:: Exception: ") << message->dwID <<
         ", Exception: " << message->dwException << "Index:" << message->dwIndex;
 
-    tracker.DecrInflight();
+    tracker.OnErrorPosReq(*m_track);
 }
 
 }

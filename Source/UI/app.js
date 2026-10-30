@@ -186,6 +186,9 @@ const userFields = {
   curr: document.getElementById("uf-curr"),
   onGnd: document.getElementById("uf-on-gnd"),
 };
+function displayGroundSpeed(value) {
+  return typeof value === "number" && Math.abs(value) < 0.01 ? 0 : value;
+}
 function setUserAircraft(m) {
   const put = (el, v) => { el.textContent = v === null || v === undefined || v === "" ? "\u2014" : String(v); };
   userFields.id.textContent = m.id === null || m.id === undefined || m.id === "" ? "#\u2014" : "#" + m.id;
@@ -194,7 +197,8 @@ function setUserAircraft(m) {
   put(userFields.alt, m.altFt);
   put(userFields.gndAlt, m.gndAltFt);
   put(userFields.hdg, m.hdgDeg);
-  put(userFields.spd, m.gndSpdKt);
+  put(userFields.spd, displayGroundSpeed(m.gndSpdKt));
+  put(userFields.curr, m.curr);
   put(userFields.onGnd, m.onGround ? "Yes" : "No");
   userChip.textContent = "Detected";
   userChip.classList.add("on");
@@ -262,7 +266,7 @@ function buildBody(rec) {
   const onOff = (v) => v ? "On" : (v === 0 || v === false ? "Off" : "\u2014");
   const yesNo = (v) => v ? "Yes" : (v === 0 || v === false ? "No" : "\u2014");
   const mainFields = document.createElement("div"); mainFields.className = "ac-main-fields";
-  [["Gnd speed (kt)", d.gndSpdKt], ["Latitude", d.lat], ["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Beacon Lights", onOff(d.beacon)],
+  [["Gnd speed (kt)", displayGroundSpeed(d.gndSpdKt)], ["Latitude", d.lat], ["From/To", (d.from || "\u2014") + "/" + (d.to || "\u2014")], ["Beacon Lights", onOff(d.beacon)],
    ["On Ground", yesNo(d.onGround)], ["Longitude", d.lon], ["Parking", d.parking], ["Nav Lights", onOff(d.nav)],
    ["Size", d.category], ["Altitude (ft)", d.altFt], ["State", d.state], ["Taxi Lights", onOff(d.taxi)],
    ["Jetway", yesNo(d.jetway)], ["Ground alt (ft)", d.gndAltFt], ["Parking Brakes", onOff(d.parkBrake)], ["Pushback attached", d.pushbackAttached]]

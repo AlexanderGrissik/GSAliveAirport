@@ -30,7 +30,7 @@ public:
 	struct TrackState { 
 		GSSimObj* m_simObj;
 		GSTimePoint m_lastPosCheckTime;
-		double m_lastDistToDest;
+		GSCoord m_lastPosition;
 		bool m_inProgress;
 		bool m_quick;
 	};
@@ -48,6 +48,7 @@ public:
 	void DecrInflight() { --m_inflightReqs; }
 
 	void HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, TrackState& track);
+	void OnErrorPosReq(TrackState& track);
 
 private:
 

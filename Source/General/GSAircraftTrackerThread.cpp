@@ -382,7 +382,7 @@ const GSAircraftTrackerThread::AirportScanCache::value_type* GSAircraftTrackerTh
 GSReqRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos)
 {
     const auto posUser = m_userAircraft.GetLongLat();
-    if (posUser.Long() < 900.0 || !m_userAircraft.GetAirport()) {
+    if (!m_userAircraft.GetAirport()) {
         GSLogStream::LogError("GSAircraftTrackerThread::GSReqTrackerSpawnAircraft::Process No User Aircrat/Airport");
         return { {{0,0},E_FAIL}, false };
     }
