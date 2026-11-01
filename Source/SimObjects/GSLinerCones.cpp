@@ -37,19 +37,19 @@ bool GSLinerCones::PreSpawn()
     ptrCone2->SetTitle("Cone_Medium");
     ptrCone2->SetPosition({ -halfWing / 4, -halfWing - 6 });
     ptrCone2->PreSpawn();
-    m_attached.emplace_back(ptrCone2);
+    AddAttached(ptrCone2);
 
     auto ptrCone3 = new GSStatic(m_simHandle, m_aircraft, *this);
     ptrCone3->SetTitle("Cone_Medium");
     ptrCone3->SetPosition({ halfWing / 2, -halfWing - 6 });
     ptrCone3->PreSpawn();
-    m_attached.emplace_back(ptrCone3);
+    AddAttached(ptrCone3);
 
     auto ptrCone4 = new GSStatic(m_simHandle, m_aircraft, *this);
     ptrCone4->SetTitle("Cone_Medium");
     ptrCone4->SetPosition({ halfWing / 4, -halfWing - 6 });
     ptrCone4->PreSpawn();
-    m_attached.emplace_back(ptrCone4);
+    AddAttached(ptrCone4);
 
     return true;
 }

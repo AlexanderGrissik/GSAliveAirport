@@ -13,14 +13,16 @@ class GSCmdSimObj : public GSCommand
 {
 public:
 
-    GSCmdSimObj(GSCommandID cmd, GSSimObj& simObj) : GSCommand(cmd), m_simObj(simObj) {}
+    GSCmdSimObj(GSCommandID cmd, GSSimObj& simObj) : GSCommand(cmd), m_simObj(simObj), m_objID(simObj.GetSimObjectID()) {}
     virtual ~GSCmdSimObj() {}
 
     GSSimObj& SimObj() { return m_simObj; }
+    DWORD ObjID() const { return m_objID; }
         
 private:
 
     GSSimObj& m_simObj;
+    DWORD m_objID;
 };
 
 } // namespace NS_GSAliveAirport

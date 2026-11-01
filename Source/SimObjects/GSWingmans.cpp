@@ -66,7 +66,7 @@ bool GSWingmans::PreSpawn()
             m_aircraft.GetHeading(), m_aircraft.GetLongLat(), -halfWing, halfWing);
         BuildWalkPath(wp21, wp22, *ptrWalker2);
 
-        m_attached.emplace_back(ptrWalker2);
+        AddAttached(ptrWalker2);
 
         GSCoord initPosLoc3 = { -halfWing + 6, -halfWing / 2 };
         auto ptrWalker3 = new GSStatic(m_simHandle, m_aircraft, *this);
@@ -84,7 +84,7 @@ bool GSWingmans::PreSpawn()
             m_aircraft.GetHeading(), m_aircraft.GetLongLat(), -halfWing, -halfWing);
         BuildWalkPath(wp31, wp32, *ptrWalker3);
 
-        m_attached.emplace_back(ptrWalker3);
+        AddAttached(ptrWalker3);
     }
 
     return true;

@@ -41,13 +41,13 @@ bool GSTruckFacility::PreSpawn()
         { halfWing + 4, 3 });
     ptrH1->SetPosition({ -halfWing / 4, -halfWing - 6 });
     ptrH1->PreSpawn();
-    m_attached.emplace_back(ptrH1);
+    AddAttached(ptrH1);
 
     auto ptrH2 = new GSStandingHuman(m_simHandle, m_aircraft, *this, GSStandingHuman::PASSENGER,
         { halfWing + 3, 4 });
     ptrH2->SetPosition({ halfWing / 2, -halfWing - 6 });
     ptrH2->PreSpawn();
-    m_attached.emplace_back(ptrH2);
+    AddAttached(ptrH2);
 
     PrepareRoute();
 

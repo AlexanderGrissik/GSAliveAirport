@@ -22,6 +22,7 @@ public:
         None = 0,
         Spawning,
         Inplace,
+        Despawning,
     };
 
     // Full snapshot: identity, position, route, systems, static aircraft data, interactive points.

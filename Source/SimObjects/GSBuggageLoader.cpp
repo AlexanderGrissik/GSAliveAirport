@@ -75,12 +75,12 @@ void GSBuggageLoader::OnArrived()
         }
         ptrWorker->SetAnimObj(animWorker);
 
-        m_attached.emplace_back(ptrWorker);
+        AddAttached(ptrWorker);
     }
 
     auto ptrTrain = new GSBuggageTrain(m_simHandle, m_aircraft, *this, *this);
     ptrTrain->PreSpawn();
-    m_attached.emplace_back(ptrTrain);
+    AddAttached(ptrTrain);
         
     ContinueSpawn();
 }

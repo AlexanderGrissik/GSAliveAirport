@@ -71,20 +71,24 @@ void GSStaircase::TrySpawnPassengers()
 
     if (!m_stairsArrived || !m_busArrived || m_paxSpawned) {
         return;
-    }
+    }       
 
     float totDoorAltFeet = m_aircraft.GetGroundAltitudeFeet() + m_doorPosElev;
     float stairBaseHeading = static_cast<float>(GSGeography::NormDeg(m_initPos.Heading + 180.0));
 
     GSTimePoint incrDelta = std::chrono::steady_clock::now();
-    std::generate_n(std::back_inserter(m_attached), PASSANGER_COUNT, [this, stairBaseHeading, totDoorAltFeet, &incrDelta] {
+    for (size_t i = 0; i < PASSANGER_COUNT; ++i) {
         auto passenger = std::make_unique<GSPassenger>(
             m_simHandle, m_aircraft, *this, m_stairBasePos, m_stairTopPos, m_doorPos, stairBaseHeading, totDoorAltFeet);
-        passenger->SetDeferredSpawn(incrDelta);
+        if (!m_quickArrive) { 
+            // If the passangers were queued to spawn just before we set m_quickArrive,
+            // We live with it and let them spawn using deferred.
+            passenger->SetDeferredSpawn(incrDelta);
+        }
         passenger->PreSpawn();
         incrDelta += DELTA_SPAWN;
-        return passenger;
-    });
+        AddAttached(passenger.release());
+    }
         
     m_paxSpawned = true;
     ContinueSpawn();
@@ -164,7 +168,7 @@ void GSStaircase::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry
     auto bus = std::make_unique<GSPaxBus>(
         m_simHandle, m_aircraft, *this, busPos, GSGeography::NormDeg(m_initPos.Heading + 90.0), m_busArrived);
     if (bus->PreSpawn()) {
-        m_attached.emplace_back(std::move(bus));
+        AddAttached(bus.release());
         ContinueSpawn();
     }
 }

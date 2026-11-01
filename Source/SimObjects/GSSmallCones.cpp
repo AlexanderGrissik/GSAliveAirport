@@ -35,7 +35,7 @@ bool GSSmallCones::PreSpawn()
     ptrCone2->SetTitle("Cone_Medium");
     ptrCone2->SetPosition({ halfWing, 0 });
     ptrCone2->PreSpawn();
-    m_attached.emplace_back(ptrCone2);
+    AddAttached(ptrCone2);
 
     return true;
 }

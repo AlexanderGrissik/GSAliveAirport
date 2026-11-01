@@ -62,11 +62,21 @@ void GSSimObj::Despawn()
 
 void GSSimObj::QuickArrive()
 {
-    if (!m_aiWaypoints.empty())
-        m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, *this));
-    
-    for (auto& obj : m_attached)
-        obj->QuickArrive();
+    if (!m_quickArrive) {
+        m_quickArrive = true;
+        if (!m_aiWaypoints.empty() && m_simObjectID != 0)
+            m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, *this));
+        
+        for (auto& obj : m_attached)
+            obj->QuickArrive();
+    }
+}
+
+void GSSimObj::AddAttached(GSSimObj* obj)
+{
+    if (m_quickArrive)
+        obj->SetQuickArriveFlag();
+    m_attached.emplace_back(std::unique_ptr<GSSimObj>(obj));
 }
 
 void GSSimObj::OnSpawned(bool ok, GSSimObj& obj)
@@ -187,7 +197,7 @@ void GSSimObj::PrepareRoute()
 
 void GSSimObj::FinalizeRoute()
 {
-    if (m_aiWaypoints.empty()) {
+    if (m_aiWaypoints.empty() || m_quickArrive) {
         OnArrived();
         return;
     }

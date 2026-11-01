@@ -50,7 +50,7 @@ bool GSBuggageTrain::PreSpawn()
         ptrDriver->GetInitPos().Altitude = 1.0961 + m_initPos.Altitude;
         ptrDriver->GetInitPos().OnGround = 0;
         ptrDriver->PreSpawn();
-        m_attached.emplace_back(ptrDriver);
+        AddAttached(ptrDriver);
     }
 
     auto ptrCart1 = new GSStatic(m_simHandle, m_aircraft, *this);
@@ -62,7 +62,7 @@ bool GSBuggageTrain::PreSpawn()
     ptrCart1->SetHeading(m_initPos.Heading);
     ptrCart1->SetPosition(cart1Pos);
     ptrCart1->PreSpawn();
-    m_attached.emplace_back(ptrCart1);
+    AddAttached(ptrCart1);
 
     auto ptrCart2 = new GSStatic(m_simHandle, m_aircraft, *this);
     auto cart1PosInit = ptrCart1->GetInitPos();
@@ -74,7 +74,7 @@ bool GSBuggageTrain::PreSpawn()
     ptrCart2->SetHeading(cart1PosInit.Heading);
     ptrCart2->SetPosition(cart2Pos);
     ptrCart2->PreSpawn();
-    m_attached.emplace_back(ptrCart2);
+    AddAttached(ptrCart2);
 
     auto ptrCart3 = new GSStatic(m_simHandle, m_aircraft, *this);
     auto cart2PosInit = ptrCart2->GetInitPos();
@@ -86,7 +86,7 @@ bool GSBuggageTrain::PreSpawn()
     ptrCart3->SetHeading(cart2PosInit.Heading);
     ptrCart3->SetPosition(cart3Pos);
     ptrCart3->PreSpawn();
-    m_attached.emplace_back(ptrCart3);
+    AddAttached(ptrCart3);
 
     return true;
 }

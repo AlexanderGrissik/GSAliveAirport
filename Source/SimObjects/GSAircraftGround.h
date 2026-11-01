@@ -37,7 +37,7 @@ public:
     
     void Spawn();
     void Despawn();
-    void OnRemoveGround();
+    void QuickArrive();
     void UpdateAircraft(const GSAircraft& aircraft);
     SpawnState GetSpawnState() const { return m_spawnState; }
     const GSAircraft& Aircraft() const { return m_aircraft; }

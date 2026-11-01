@@ -79,8 +79,8 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
         break;
     }
     case GS_CMD_MVMNT_OBJ_QUICK: {
-        auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
-        auto itr = m_trackObjs.find(cmdAnim.SimObj().GetSimObjectID());
+        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
+        auto itr = m_trackObjs.find(cmdObj.ObjID());
         if (itr != m_trackObjs.end()) {
             itr->second.m_quick = true;
             if (!itr->second.m_inProgress) {
@@ -106,6 +106,7 @@ void GSMovementThread::OnErrorPosReq(GSMovementThread::TrackState& track)
 {
     track.m_inProgress = false;
     DecrInflight();
+    Arrived(track);
 }
 
 void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, GSMovementThread::TrackState& track)

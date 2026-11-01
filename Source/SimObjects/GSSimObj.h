@@ -72,6 +72,8 @@ public:
 
 protected:
 
+    void AddAttached(GSSimObj* obj);
+    void SetQuickArriveFlag() { m_quickArrive = true; }
     virtual void OnDespawning() = 0;
     
     GSSimConnect& m_simHandle;
@@ -91,6 +93,7 @@ protected:
     bool m_routePrepared = false;
     bool m_spawnRequested = false;
     bool m_arriveReverse = false;
+    bool m_quickArrive = false;
 };
 
 

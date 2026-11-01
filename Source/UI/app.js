@@ -225,11 +225,11 @@ document.getElementById("user-head").addEventListener("click", () => {
 
 /* ---- Aircrafts list (populated by the host via GSAirportUI) ---- */
 const aircraftList = document.getElementById("aircraft-list");
-const SVC_RANK = { inplace: 0, spawning: 1, none: 2 };
-const SVC_KEYS = ["none", "spawning", "inplace"]; // C++ AircraftService wire value -> internal key
+const SVC_RANK = { inplace: 0, spawning: 1, despawning: 2, none: 3 };
+const SVC_KEYS = ["none", "spawning", "inplace", "despawning"]; // C++ AircraftService wire value -> internal key
 const aircrafts = new Map(); // id -> { data, service, collapsed, el }
 
-function svcClass(s) { return s === "inplace" ? "inplace" : s === "spawning" ? "spawning" : ""; }
+function svcClass(s) { return s === "inplace" || s === "spawning" || s === "despawning" ? s : ""; }
 function fmt(v) { return v === null || v === undefined || v === "" ? "\u2014" : String(v); }
 
 function fieldRow(label, value) {
@@ -351,7 +351,7 @@ function setAircraftServices(payload) {
   if (id === undefined || id === null) return;
   const rec = aircrafts.get(id);
   if (!rec) return;
-  if (payload.service !== 0 && payload.service !== 1 && payload.service !== 2) return;
+  if (!Number.isInteger(payload.service) || payload.service < 0 || payload.service >= SVC_KEYS.length) return;
   rec.service = SVC_KEYS[payload.service];
   const el = buildCard(rec);
   if (rec.el && rec.el.parentNode) rec.el.replaceWith(el); else aircraftList.appendChild(el);

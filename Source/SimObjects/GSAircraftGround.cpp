@@ -44,6 +44,7 @@ void GSAircraftGround::Despawning()
 {
     m_spawnState = SpawnState::DESPAWNING;
     GSLogStream::Log("Services Despawning for: ") << m_aircraft.GetObjID();
+    m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::Despawning));
 }
 
 void GSAircraftGround::Unspawned()
@@ -53,7 +54,7 @@ void GSAircraftGround::Unspawned()
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::None));
 }
 
-void GSAircraftGround::OnRemoveGround()
+void GSAircraftGround::QuickArrive()
 {
     if (m_spawnState == SpawnState::SPAWNING) {
         for (auto& obj : m_objs) {

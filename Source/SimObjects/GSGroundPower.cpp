@@ -105,7 +105,7 @@ bool GSGroundPower::PreSpawn()
         ptrDriver->GetInitPos().Altitude = 1.0961 + m_initPos.Altitude;
         ptrDriver->GetInitPos().OnGround = 0;
         ptrDriver->PreSpawn();
-        m_attached.emplace_back(ptrDriver);
+        AddAttached(ptrDriver);
     }
 
     PrepareRoute();

@@ -387,6 +387,7 @@ html, body {
 
 .ac-svc.inplace { color: #052018; background: var(--ok); border-color: var(--ok); }
 .ac-svc.spawning { color: #041f2e; background: var(--accent); border-color: var(--accent); }
+.ac-svc.despawning { color: #101a26; background: #8ea3ba; border-color: #8ea3ba; }
 
 .ac-flight-state {
     margin-left: auto;

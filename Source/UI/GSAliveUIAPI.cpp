@@ -123,6 +123,7 @@ std::string GSAliveUIAPI::RemoveAircraft(std::uint32_t id)
 
 std::string GSAliveUIAPI::UpdateAircraftServices(std::uint32_t id, AircraftService service)
 {
+    // Serialize all AircraftService values, including Despawning, as their UI wire values.
     return std::string("{\"op\":\"aircraft.services\",\"id\":") + std::to_string(id)
         + ",\"service\":" + std::to_string(static_cast<std::uint8_t>(service)) + "}";
 }

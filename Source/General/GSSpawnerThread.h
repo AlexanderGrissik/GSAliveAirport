@@ -80,9 +80,9 @@ private:
     GroundMap m_groundUnspawned;
     GroundMap m_groundSpawned;
     GroundMap m_groundPendingDelete;
+    GroundMap m_groundSpawnEligable;
     std::unordered_map<DWORD, std::shared_ptr<GSAircraft>> m_groundPendingAdd;
     std::vector<std::reference_wrapper<GSAircraftGround>> m_groundHelper;
-    std::unordered_set<DWORD> m_groundSpawnEligable;
     std::unordered_set<DWORD> m_groundPendingUpdates;
     GSSimConnect& m_animThread;
     GSSimConnect& m_mvmntThread;
