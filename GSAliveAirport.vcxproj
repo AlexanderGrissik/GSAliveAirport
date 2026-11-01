@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" ExcludeAssets="build;buildTransitive" />
     <!-- VS 2026 (v180) C++ targets renamed the .rc item type from RC to ResourceCompile;
          the legacy <RC> item is silently ignored there. -->
-    <ResourceCompile Include="Source\General\App.rc" />
+    <ResourceCompile Include="Source\UI\App.rc" />
   </ItemGroup>
   <PropertyGroup>
     <RestorePackagesPath>$(ProjectDir)Packages</RestorePackagesPath>
@@ -104,6 +104,7 @@
     <ClInclude Include="Source\SimObjects\GSStatic.h" />
     <ClInclude Include="Source\SimObjects\GSTruckFacility.h" />
     <ClInclude Include="Source\SimObjects\GSWingmans.h" />
+    <ClInclude Include="Source\UI\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Animation\GSAnimationObject.cpp" />
@@ -169,6 +170,10 @@
     <None Include="Source\UI\index.html" />
     <None Include="Source\UI\style.css" />
     <None Include="Source\UI\app.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Source\UI\Logo.ico" />
+    <Image Include="Source\UI\Logo.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -7,3 +7,5 @@ x64/
 *.VC.opendb
 obj/
 Packages/
+# Resource compiler temporary files
+RC[a-z][0-9]*

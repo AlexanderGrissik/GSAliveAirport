@@ -13,6 +13,6 @@
 //  - C++ (GSAliveAirportApp::s_Version -> startup log banner -> UI version chip)
 //  - App.rc VS_VERSION_INFO (Windows Explorer .exe properties)
 #define APP_VERSION_MAJOR 0
-#define APP_VERSION_MINOR 6
+#define APP_VERSION_MINOR 7
 #define APP_VERSION_PATCH 0
-#define APP_VERSION "0.6.0"
+#define APP_VERSION "0.7.0"

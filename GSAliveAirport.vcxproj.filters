@@ -24,8 +24,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Source\General\App.rc">
-      <Filter>Source\General</Filter>
+    <ResourceCompile Include="Source\UI\App.rc">
+      <Filter>Source\UI</Filter>
     </ResourceCompile>
     <ClCompile Include="Source\Animation\GSAnimationObject.cpp">
       <Filter>Source\Animation</Filter>
