@@ -16,16 +16,16 @@ class GSCommand
 public:
 
     GSCommand(GSCommandID cmd): m_commandID(cmd) {}
-    GSCommand(GSCommandID cmd, GSTimePoint execTime): m_commandID(cmd), m_execTime(execTime) {}
+    GSCommand(GSCommandID cmd, std::shared_ptr<GSTimePoint>& execTime): m_commandID(cmd), m_execTime(execTime) {}
     virtual ~GSCommand() {}
 
     GSCommandID GetCmdID() const { return m_commandID; }
-    const std::optional<GSTimePoint>& GetExecTime() const { return m_execTime; }
+    const std::optional<std::shared_ptr<GSTimePoint>>& GetExecTime() const { return m_execTime; }
 
 private:
 
     GSCommandID m_commandID;
-    std::optional<GSTimePoint> m_execTime;
+    std::optional<std::shared_ptr<GSTimePoint>> m_execTime;
 };
 
 using GSCommandU = std::unique_ptr<GSCommand>;

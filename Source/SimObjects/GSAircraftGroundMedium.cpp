@@ -33,6 +33,7 @@ void GSAircraftGroundMedium::BuildObjs(bool full)
 	const auto* prk = m_aircraft.GetParking();
 	if (!prk || !prk->m_hasJetway) {
 		m_objs.emplace_back(new GSStaircase(m_simConnect, m_aircraft, *this, true));
+		m_objs.emplace_back(new GSStaircase(m_simConnect, m_aircraft, *this, false));
 	}
 
 	if (full) {

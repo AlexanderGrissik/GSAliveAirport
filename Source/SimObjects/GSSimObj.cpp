@@ -13,6 +13,8 @@
 #include "Requests/GSReqSimObjTxClientEvent.h"
 #include "Requests/GSReqSimObjContDespawn.h"
 
+using namespace std::chrono_literals;
+
 namespace NS_GSAliveAirport
 {
 
@@ -32,19 +34,39 @@ void GSSimObj::InitDatums(GSSimConnect& handler)
     handler.InvokeMapClientEvent(GSEventID_CloseDoors, "CLOSE_AIRCRAFT_DOORS");
 }
 
+GSTimePoint GSSimObj::NextSpawnTime()
+{
+    static GSTimePoint s_LastSpawnSlot = std::chrono::steady_clock::now();
+
+    GSTimePoint curr = std::chrono::steady_clock::now();
+    GSTimePoint next = s_LastSpawnSlot + 1s;
+
+    s_LastSpawnSlot = next < curr ? curr : next;
+    return s_LastSpawnSlot;
+}
+
+void GSSimObj::SetTgtSpawnTime(const GSTimePoint& tp)
+{
+    if (!m_tgtSpawnTime) {
+        m_tgtSpawnTime = std::make_shared<GSTimePoint>(tp);
+    } else {
+        *m_tgtSpawnTime = tp;
+    }
+}
+
 void GSSimObj::Spawn()
 {
     if (m_spawnRequested) {
         return;
     }
 
+    if (!m_tgtSpawnTime) {
+        SetTgtSpawnTime(NextSpawnTime());
+    }
+
     m_spawnRequested = true;
     auto* req = new GSReqSimObjCreate(m_simHandle, *this);
-    if (m_deferredSpawn.has_value()) {
-        m_simHandle.PostReqCommandDeferred(req, *m_deferredSpawn);
-    } else {
-        m_simHandle.PostReqCommand(req);
-    }
+    m_simHandle.PostReqCommandDeferred(req, m_tgtSpawnTime);
 }
 
 void GSSimObj::Despawn()
@@ -64,6 +86,7 @@ void GSSimObj::QuickArrive()
 {
     if (!m_quickArrive) {
         m_quickArrive = true;
+        SetTgtSpawnTime(std::chrono::steady_clock::now());
         if (!m_aiWaypoints.empty() && m_simObjectID != 0)
             m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, *this));
         
@@ -74,8 +97,11 @@ void GSSimObj::QuickArrive()
 
 void GSSimObj::AddAttached(GSSimObj* obj)
 {
-    if (m_quickArrive)
+    if (m_quickArrive) {
+        obj->SetTgtSpawnTime(std::chrono::steady_clock::now());
         obj->SetQuickArriveFlag();
+    }
+
     m_attached.emplace_back(std::unique_ptr<GSSimObj>(obj));
 }
 

@@ -268,7 +268,7 @@ void GSSimConnect::RunCommands()
         auto opt = m_commands.TryPop();
         if (opt.has_value()) {
             const auto& execTime = (*opt)->GetExecTime();
-            if (execTime.has_value() && *execTime > currTime) {
+            if (execTime.has_value() && **execTime > currTime) {
                 m_deferred.push_back(std::move(*opt));
                 continue;
             }
@@ -351,7 +351,7 @@ void GSSimConnect::PostReqCommand(GSRequest* req)
     PostCommand(new GSCmdReq(GS_CMD_REQ_PROCESS, req));
 }
 
-void GSSimConnect::PostReqCommandDeferred(GSRequest* req, GSTimePoint execTime)
+void GSSimConnect::PostReqCommandDeferred(GSRequest* req, std::shared_ptr<GSTimePoint>& execTime)
 {
     PostCommand(new GSCmdReq(GS_CMD_REQ_PROCESS, req, execTime));
 }

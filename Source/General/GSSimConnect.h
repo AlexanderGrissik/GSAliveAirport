@@ -55,7 +55,7 @@ public:
     void FlushPendingRequestsWithException();
     void PostCommand(GSCommand* cmd);
     void PostReqCommand(GSRequest* req);
-    void PostReqCommandDeferred(GSRequest* req, GSTimePoint execTime);
+    void PostReqCommandDeferred(GSRequest* req, std::shared_ptr<GSTimePoint>& execTime);
     void PostReqIdentCommand(GSRequest* req, GSCmdReqIdent::Callable&& clb);
     DWORD NextRequestID() { return m_nextRequestId++; }
 

@@ -83,7 +83,7 @@ void GSStaircase::TrySpawnPassengers()
         if (!m_quickArrive) { 
             // If the passangers were queued to spawn just before we set m_quickArrive,
             // We live with it and let them spawn using deferred.
-            passenger->SetDeferredSpawn(incrDelta);
+            passenger->SetTgtSpawnTime(incrDelta);
         }
         passenger->PreSpawn();
         incrDelta += DELTA_SPAWN;

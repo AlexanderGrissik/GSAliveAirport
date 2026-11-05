@@ -14,7 +14,7 @@ class GSCmdReq : public GSCommand
 public:
 
     GSCmdReq(GSCommandID cmd, GSRequest* req): GSCommand(cmd), m_Req(req) {}
-    GSCmdReq(GSCommandID cmd, GSRequest* req, GSTimePoint execTime): GSCommand(cmd, execTime), m_Req(req) {}
+    GSCmdReq(GSCommandID cmd, GSRequest* req, std::shared_ptr<GSTimePoint>& execTime): GSCommand(cmd, execTime), m_Req(req) {}
     virtual ~GSCmdReq() {}
 
     GSRequestU ReleaseReq() { return std::move(m_Req); }

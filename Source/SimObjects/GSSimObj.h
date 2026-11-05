@@ -59,8 +59,8 @@ public:
     void SetTitle(const std::string& title) { m_title = title; }
     void SetHeading(double heading) { m_initPos.Heading = heading; }
     void SetPosition(const GSCoord& pos) { m_initPos.Longitude = pos.Long(); m_initPos.Latitude = pos.Lat(); }
-    void SetDeferredSpawn(const GSTimePoint& val) { m_deferredSpawn = val; }
     bool IsRevArrive() const { return m_arriveReverse; }
+    void SetTgtSpawnTime(const GSTimePoint& tp); 
     void PrepareRoute();
     void FinalizeRoute();
     void ContinueSpawn();
@@ -71,6 +71,8 @@ public:
     void ShootWaypointsRev();
 
 protected:
+
+    static GSTimePoint NextSpawnTime();
 
     void AddAttached(GSSimObj* obj);
     void SetQuickArriveFlag() { m_quickArrive = true; }
@@ -84,8 +86,8 @@ protected:
     SIMCONNECT_DATA_INITPOSITION m_initPos{};
     std::vector<std::unique_ptr<GSSimObj>> m_attached; 
     std::vector<SIMCONNECT_DATA_WAYPOINT> m_aiWaypoints;
-    std::optional<GSTimePoint> m_deferredSpawn;
     GSTimePoint m_startMoveTime{};
+    std::shared_ptr<GSTimePoint> m_tgtSpawnTime{nullptr};
     GSCoord m_preMoveInitPos;
     size_t m_childSpawned = 0;
     size_t m_arriveIdx = 0;
