@@ -30,7 +30,7 @@ public:
         m_aircraft(*aircraft), m_simConnect(simConn), m_ui(ui) {}
     virtual ~GSAircraftGround() = default;
 
-    virtual void BuildObjs(bool full) = 0;
+    void BuildObjs(bool full);
 
     void OnSpawned(bool ok, GSSimObj& obj) override;
     void OnDespawned() override;

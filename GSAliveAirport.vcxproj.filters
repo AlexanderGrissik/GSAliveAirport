@@ -288,30 +288,6 @@
     <ClInclude Include="Source\SimObjects\GSAircraftGround.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundLarge.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundLarge.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundMedium.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundMedium.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundSmall.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundSmall.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundXL.cpp">
-      <Filter>Source\SimObjects</Filter>
-    </ClCompile>
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundXL.h">
-      <Filter>Source\SimObjects</Filter>
-    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSBuggageLoader.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>

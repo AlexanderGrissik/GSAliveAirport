@@ -3,10 +3,7 @@
 // See LICENSE for details
 #include "GSSpawnerThread.h"
 #include "GSLogStream.h"
-#include "SimObjects/GSAircraftGroundSmall.h"
-#include "SimObjects/GSAircraftGroundMedium.h"
-#include "SimObjects/GSAircraftGroundLarge.h"
-#include "SimObjects/GSAircraftGroundXL.h"
+#include "SimObjects/GSAircraftGround.h"
 #include "SimObjects/GSCateringCart.h"
 #include "SimObjects/GSGroundPower.h"
 #include "SimObjects/GSBuggageLoader.h"
@@ -144,21 +141,7 @@ void GSSpawnerThread::NewAircraft(std::shared_ptr<GSAircraft>& aircraft)
         return;
     }
 
-    GSAircraftGround* grnd = nullptr;
-    switch (aircraft->GetCategory()) {
-    case GSAircraft::AircraftSizeCategory::Small:
-        grnd = new GSAircraftGroundSmall(aircraft, *this, m_ui);
-        break;
-    case GSAircraft::AircraftSizeCategory::Large:
-        grnd = new GSAircraftGroundLarge(aircraft, *this, m_ui);
-        break;
-    case GSAircraft::AircraftSizeCategory::ExtraLarge:
-        grnd = new GSAircraftGroundXL(aircraft, *this, m_ui);
-        break;
-    default:
-        grnd = new GSAircraftGroundMedium(aircraft, *this, m_ui);
-        break;
-    }
+    auto* grnd = new GSAircraftGround(aircraft, *this, m_ui);
 
     auto itr = m_groundUnspawned.emplace(aircraft->GetObjID(), grnd);
     if (!itr.second) {

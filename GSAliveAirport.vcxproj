@@ -83,10 +83,6 @@
     <ClInclude Include="Source\UI\GSAliveUIAPI.h" />
     <ClInclude Include="Source\SimObjects\GSAircraft.h" />
     <ClInclude Include="Source\SimObjects\GSAircraftGround.h" />
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundLarge.h" />
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundMedium.h" />
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundSmall.h" />
-    <ClInclude Include="Source\SimObjects\GSAircraftGroundXL.h" />
     <ClInclude Include="Source\SimObjects\GSBuggageLoader.h" />
     <ClInclude Include="Source\SimObjects\GSBuggageTrain.h" />
     <ClInclude Include="Source\SimObjects\GSCateringCart.h" />
@@ -141,10 +137,6 @@
     <ClCompile Include="Source\Requests\GSReqSimObjTxClientEventEX1.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraft.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraftGround.cpp" />
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundLarge.cpp" />
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundMedium.cpp" />
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundSmall.cpp" />
-    <ClCompile Include="Source\SimObjects\GSAircraftGroundXL.cpp" />
     <ClCompile Include="Source\SimObjects\GSBuggageLoader.cpp" />
     <ClCompile Include="Source\SimObjects\GSBuggageTrain.cpp" />
     <ClCompile Include="Source\SimObjects\GSCateringCart.cpp" />
