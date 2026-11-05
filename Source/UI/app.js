@@ -225,11 +225,27 @@ document.getElementById("user-head").addEventListener("click", () => {
 
 /* ---- Aircrafts list (populated by the host via GSAirportUI) ---- */
 const aircraftList = document.getElementById("aircraft-list");
-const SVC_RANK = { inplace: 0, spawning: 1, despawning: 2, none: 3 };
 const SVC_KEYS = ["none", "spawning", "inplace", "despawning"]; // C++ AircraftService wire value -> internal key
 const aircrafts = new Map(); // id -> { data, service, collapsed, el }
 
 function svcClass(s) { return s === "inplace" || s === "spawning" || s === "despawning" ? s : ""; }
+function aircraftStatus(rec) {
+  if (rec.service === "inplace" || rec.service === "spawning")
+    return rec.data.departing ? "Boarding" : "Deboarding";
+  return rec.data.nav ? "Taxiing" : "Idle";
+}
+function aircraftSortRank(rec) {
+  const status = aircraftStatus(rec);
+  if (status === "Deboarding") return rec.service === "inplace" ? 0 : 1;
+  if (status === "Boarding") return rec.service === "inplace" ? 2 : 3;
+  return status === "Taxiing" ? 4 : 5;
+}
+
+function sortAircraft() {
+  Array.from(aircrafts.values()).sort((a, b) =>
+    aircraftSortRank(a) - aircraftSortRank(b) || a.data.id - b.data.id
+  ).forEach((rec) => aircraftList.appendChild(rec.el));
+}
 function fmt(v) { return v === null || v === undefined || v === "" ? "\u2014" : String(v); }
 
 function fieldRow(label, value) {
@@ -319,11 +335,10 @@ function buildCard(rec) {
   const modelText = (d.title || "").trim();
   if (atcText) { const atc = document.createElement("span"); atc.className = "ac-name-atc"; atc.textContent = atcText; name.appendChild(atc); }
   if (modelText) { const model = document.createElement("span"); model.className = "ac-name-model"; model.textContent = modelText; name.appendChild(model); }
-  const flightState = document.createElement("span");
-  flightState.className = "ac-flight-state " + (d.departing ? "departing" : "arriving");
-  flightState.textContent = d.departing ? "Departing" : "Arriving";
-  const svc = document.createElement("span"); svc.className = "ac-svc " + svcClass(rec.service); svc.textContent = rec.service === "none" ? "No Ground Services" : "Ground Services";
-  head.append(chev, idChip, name, flightState, svc);
+  const svc = document.createElement("span");
+  svc.className = "ac-svc " + svcClass(rec.service) + (d.departing ? " departing" : " arriving");
+  svc.textContent = aircraftStatus(rec);
+  head.append(chev, idChip, name, svc);
   card.append(head, buildBody(rec));
   head.addEventListener("click", () => { rec.collapsed = !rec.collapsed; card.classList.toggle("collapsed", rec.collapsed); });
   if (rec.collapsed) card.classList.add("collapsed");
@@ -339,11 +354,7 @@ function upsertAircraft(payload) {
   const el = buildCard(rec);
   if (rec.el && rec.el.parentNode) rec.el.replaceWith(el); else aircraftList.appendChild(el);
   rec.el = el;
-  const ordered = Array.from(aircrafts.values()).sort((a, b) => {
-    const r = SVC_RANK[a.service] - SVC_RANK[b.service];
-    return r !== 0 ? r : a.data.id - b.data.id;
-  });
-  ordered.forEach((x) => aircraftList.appendChild(x.el));
+  sortAircraft();
 }
 
 function setAircraftServices(payload) {
@@ -356,11 +367,7 @@ function setAircraftServices(payload) {
   const el = buildCard(rec);
   if (rec.el && rec.el.parentNode) rec.el.replaceWith(el); else aircraftList.appendChild(el);
   rec.el = el;
-  const ordered = Array.from(aircrafts.values()).sort((a, b) => {
-    const r = SVC_RANK[a.service] - SVC_RANK[b.service];
-    return r !== 0 ? r : a.data.id - b.data.id;
-  });
-  ordered.forEach((x) => aircraftList.appendChild(x.el));
+  sortAircraft();
 }
 
 window.GSAirportUI = {

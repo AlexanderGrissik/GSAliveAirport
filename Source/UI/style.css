@@ -387,23 +387,11 @@ html, body {
 
 .ac-svc.inplace { color: #052018; background: var(--ok); border-color: var(--ok); }
 .ac-svc.spawning { color: #041f2e; background: var(--accent); border-color: var(--accent); }
-.ac-svc.despawning { color: #101a26; background: #8ea3ba; border-color: #8ea3ba; }
-
-.ac-flight-state {
-    margin-left: auto;
-    flex-shrink: 0;
-    padding: 4px 14px;
-    border: 1px solid;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    background: transparent;
-}
-
-.ac-flight-state.departing { color: var(--accent); border-color: rgba(76, 194, 255, 0.5); }
-.ac-flight-state.arriving { color: var(--ok); border-color: rgba(86, 220, 156, 0.5); }
-.ac-flight-state + .ac-svc { margin-left: 0; }
+.ac-svc.despawning { color: #2a1a05; background: #f0b55a; border-color: #f0b55a; }
+.ac-svc.arriving:not(.inplace):not(.spawning):not(.despawning) { color: var(--ok); }
+.ac-svc.departing:not(.inplace):not(.spawning):not(.despawning) { color: var(--accent); }
+.ac-svc.despawning.arriving { color: #07512d; }
+.ac-svc.despawning.departing { color: #073d69; }
 
 .ac-body { padding: 12px 14px; border-top: 1px solid var(--border); overflow-x: auto; }
 .ac-card.collapsed .ac-body { display: none; }

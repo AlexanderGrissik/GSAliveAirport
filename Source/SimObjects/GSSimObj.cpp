@@ -60,13 +60,16 @@ void GSSimObj::Spawn()
         return;
     }
 
-    if (!m_tgtSpawnTime) {
+    if (!m_tgtSpawnTime && IsDelayedSpawnable()) {
         SetTgtSpawnTime(NextSpawnTime());
     }
 
     m_spawnRequested = true;
     auto* req = new GSReqSimObjCreate(m_simHandle, *this);
-    m_simHandle.PostReqCommandDeferred(req, m_tgtSpawnTime);
+    if (m_tgtSpawnTime)
+        m_simHandle.PostReqCommandDeferred(req, m_tgtSpawnTime);
+    else
+        m_simHandle.PostReqCommand(req);
 }
 
 void GSSimObj::Despawn()

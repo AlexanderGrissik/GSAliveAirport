@@ -34,7 +34,7 @@ public:
     virtual bool PreSpawn() = 0;
     virtual void OnArrived() = 0;
     virtual bool OnCreated() = 0;
-
+    
     void OnSpawned(bool ok, GSSimObj& obj) override;
     void OnDespawned() override; 
 
@@ -77,6 +77,7 @@ protected:
     void AddAttached(GSSimObj* obj);
     void SetQuickArriveFlag() { m_quickArrive = true; }
     virtual void OnDespawning() = 0;
+    virtual bool IsDelayedSpawnable() const = 0;
     
     GSSimConnect& m_simHandle;
     GSAircraft& m_aircraft;

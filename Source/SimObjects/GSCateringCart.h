@@ -39,6 +39,7 @@ private:
 
     bool PreSpawn() override;
     bool OnCreated() override;
+    bool IsDelayedSpawnable() const override { return true; }
     void OnArrived() override;
     void OnDespawning() override {}
         
