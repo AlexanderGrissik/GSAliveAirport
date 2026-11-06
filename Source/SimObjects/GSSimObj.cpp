@@ -78,20 +78,33 @@ void GSSimObj::Despawn()
     if (m_attached.size() > 0) {
         for (auto& obj : m_attached)
             obj->Despawn();
-    } else if (m_hasAnim) {
-        UnregisterAnim();
-    } else {
-        OnDespawning();
-        if (IsVehicle())
-            FinalizeBackRoute();
-        else
-            DespawnCommand();
     }
+    
+    if (m_hasAnim)
+        UnregisterAnim();
+    else
+        DespawnCont();
+}
+
+void GSSimObj::DespawnCont()
+{
+    OnDespawning();
+    if (IsVehicle())
+        FinalizeBackRoute();
+    else
+        DespawnReady();
+}
+
+void GSSimObj::DespawnReady()
+{
+    m_readyDespawn = true;
+    DespawnCommand();
 }
 
 void GSSimObj::DespawnCommand()
 {
-    m_simHandle.PostReqCommand(new GSReqSimObjDelete(m_simHandle, *this));
+    if (m_readyDespawn && m_attached.empty())
+        m_simHandle.PostReqCommand(new GSReqSimObjDelete(m_simHandle, *this));
 }
 
 void GSSimObj::QuickArrive()
@@ -127,7 +140,7 @@ void GSSimObj::OnDespawned()
 {
     if (--m_childSpawned <= 0) {
         m_attached.clear();
-        Despawn();
+        DespawnCommand();
     }
 }
 
@@ -173,7 +186,7 @@ void GSSimObj::AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float 
 void GSSimObj::OnArrival()
 {
     if (m_leaving)
-        DespawnCommand();
+        DespawnReady();
     else
         OnArrived();
 }
@@ -306,7 +319,7 @@ void GSSimObj::FinalizeRoute()
 void GSSimObj::FinalizeBackRoute()
 {
     if (m_aiWaypoints.size() <= 2) {
-        DespawnCommand();
+        DespawnReady();
         return;
     }
 
@@ -315,14 +328,13 @@ void GSSimObj::FinalizeBackRoute()
     m_aiWaypoints.pop_back();
 
     if (IsLeaveReverse()) {
-        auto revWaypoint = m_aiWaypoints.back();
+        const double halfWing = (m_aircraft.GetWingSpanMeters() / 2.0) * 1.5;
         const auto revLoc = GSGeography::RelativePosition(
-            m_initPos.Heading, { revWaypoint.Longitude, revWaypoint.Latitude }, -5.0, 0.0);
-        revWaypoint.Longitude = revLoc.Long();
-        revWaypoint.Latitude = revLoc.Lat();
-        m_aiWaypoints.push_back(revWaypoint);
+            m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -halfWing - 5.0, 0.0);
+        const auto flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED | SIMCONNECT_WAYPOINT_REVERSE;
+        m_aiWaypoints.emplace_back(revLoc.Lat(), revLoc.Long(), m_initPos.Altitude, flags, 5.0, 0.0);
         std::reverse(m_aiWaypoints.begin(), m_aiWaypoints.end());
-        m_aiWaypoints.front().Flags |= SIMCONNECT_WAYPOINT_REVERSE;
+        m_aiWaypoints.back().ktsSpeed = 5.0;
     } else {
         m_aiWaypoints.pop_back();
         std::reverse(m_aiWaypoints.begin(), m_aiWaypoints.end());

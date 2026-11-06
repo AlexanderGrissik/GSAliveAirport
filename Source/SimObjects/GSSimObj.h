@@ -40,6 +40,7 @@ public:
 
     void Spawn();
     void Despawn();
+    void DespawnCont();
     void QuickArrive();
     void OnArrival();
     void RegisterAnim(GSAnimationObject* animObj);
@@ -73,6 +74,7 @@ protected:
 
     static GSTimePoint NextSpawnTime();
 
+    void DespawnReady();
     void UnFreeze();
     void Freeze();
     void DespawnCommand();
@@ -104,6 +106,7 @@ protected:
     bool m_spawnRequested = false;
     bool m_leaving = false;
     bool m_quickArrive = false;
+    bool m_readyDespawn = false;
 };
 
 
