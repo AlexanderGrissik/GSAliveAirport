@@ -96,11 +96,13 @@ void GSStaircase::TrySpawnPassengers()
 
 void GSStaircase::OnDespawning()
 {
-    m_simHandle.PostReqIdentCommand(new GSReqSimObjTxClientEventEX1(
-        m_simHandle, *this, GSEventID_CloseDoors,
-        m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+    m_simHandle.PostReqIdentCommand(
+        new GSReqSimObjTxClientEventEX1(m_simHandle, *this, GSEventID_CloseDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_STAIRCASE, "Ident Exception: CloseDoors, ") << message->dwException; });
+
+    std::array updateData{ StateWireDataSet{ 0.0f, 0.0f } };
+    m_simHandle.PostReqCommand(new GSReqStaircaseSetData(m_simHandle, *this, std::move(updateData)));
 }
 
 bool GSStaircase::PreSpawn()

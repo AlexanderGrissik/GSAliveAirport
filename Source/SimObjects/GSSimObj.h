@@ -41,7 +41,7 @@ public:
     void Spawn();
     void Despawn();
     void QuickArrive();
-    void Freeze();
+    void OnArrival();
     void RegisterAnim(GSAnimationObject* animObj);
     void UnregisterAnim();
     
@@ -59,7 +59,6 @@ public:
     void SetTitle(const std::string& title) { m_title = title; }
     void SetHeading(double heading) { m_initPos.Heading = heading; }
     void SetPosition(const GSCoord& pos) { m_initPos.Longitude = pos.Long(); m_initPos.Latitude = pos.Lat(); }
-    bool IsRevArrive() const { return m_arriveReverse; }
     void SetTgtSpawnTime(const GSTimePoint& tp); 
     void PrepareRoute();
     void FinalizeRoute();
@@ -67,17 +66,24 @@ public:
     void RestoreInitPos();
 
     void AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float percThrot, unsigned flags);
-    void ShootWaypoints();
+    void ShootWaypoints(bool reverseArrival);
     void ShootWaypointsRev();
 
 protected:
 
     static GSTimePoint NextSpawnTime();
 
+    void UnFreeze();
+    void Freeze();
+    void DespawnCommand();
     void AddAttached(GSSimObj* obj);
+    void FinalizeBackRoute();
     void SetQuickArriveFlag() { m_quickArrive = true; }
     virtual void OnDespawning() = 0;
     virtual bool IsDelayedSpawnable() const = 0;
+    virtual bool IsVehicle() const = 0;
+    virtual bool IsArriveReverse() const = 0;
+    virtual bool IsLeaveReverse() const = 0;
     
     GSSimConnect& m_simHandle;
     GSAircraft& m_aircraft;
@@ -92,10 +98,11 @@ protected:
     GSCoord m_preMoveInitPos;
     size_t m_childSpawned = 0;
     size_t m_arriveIdx = 0;
+    bool m_isFullModel = true;
     bool m_hasAnim = false;
     bool m_routePrepared = false;
     bool m_spawnRequested = false;
-    bool m_arriveReverse = false;
+    bool m_leaving = false;
     bool m_quickArrive = false;
 };
 

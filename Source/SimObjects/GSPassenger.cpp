@@ -66,7 +66,7 @@ bool GSPassenger::OnCreated()
 {
     Freeze();
 
-    if (m_dynamic) {
+    if (m_isFullModel) {
         const auto& itr = s_ExtPassengerFrames.find(m_title);
         if (itr != s_ExtPassengerFrames.end()) {
             auto* anim = new GSAnimMulti(m_simObjectID, m_stairBasePos, true, GSDatumID_AnimVelocBodyY);
@@ -90,7 +90,7 @@ bool GSPassenger::PreSpawn()
     auto& catalog = GSCatalog::GetInstance();
     m_title = catalog.GetPassengerExt();
     if (m_title.empty()) {
-        m_dynamic = false;
+        m_isFullModel = false;
         m_title = catalog.GetTarmacHuman();
     } else if (!s_ExtPassengerFrames.contains(m_title)) {
         const auto index = GSRandom::RandSizeT(0, s_ExtPassengerFrames.size() - 1);
@@ -114,7 +114,7 @@ bool GSPassenger::PreSpawn()
         m_initPos.Heading = m_stairBaseHeading;
     }
 
-    if (m_dynamic) {
+    if (m_isFullModel) {
         BuildWalkPath();
     }
    

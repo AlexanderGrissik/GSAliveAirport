@@ -48,7 +48,7 @@ void GSBuggageLoader::OnArrived()
 
     Freeze();
 
-    if (m_ext) {
+    if (m_isFullModel) {
         GSCoord initPosLoc = { m_initPos.Longitude, m_initPos.Latitude };
         auto* anim = new GSAnimBFLO(m_simObjectID, initPosLoc);
         if (m_aircraft.IsDeparting()) {
@@ -92,6 +92,9 @@ void GSBuggageLoader::OnDespawning()
         m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: CloseDoors, ") << message->dwException; });
+
+    std::array updateData{ StateWireDataSet{ 0.0f } };
+    m_simHandle.PostReqCommand(new GSReqBuggageLoaderSetData(m_simHandle, *this, std::move(updateData)));
 }
 
 bool GSBuggageLoader::PreSpawn()
@@ -106,7 +109,7 @@ bool GSBuggageLoader::PreSpawn()
     m_title = GSCatalog::GetInstance().GetBuggageLoaderExt();
     if (m_title.empty()) {
         m_title = "Aso_Baggage_Loader_01";
-        m_ext = false;
+        m_isFullModel = false;
     }
 
     m_initPos.Airspeed = 0;

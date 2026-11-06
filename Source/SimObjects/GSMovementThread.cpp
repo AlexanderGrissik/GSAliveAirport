@@ -5,6 +5,7 @@
 #include "Requests/GSReqMvmntObjPos.h"
 #include "General/GSLogStream.h"
 #include "Commands/GSCmdSimObj.h"
+#include "Commands/GSCmdMvmntObjAdd.h"
 #include "General/GSGeography.h"
 
 namespace NS_GSAliveAirport
@@ -74,8 +75,9 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
 {
     switch (cmd.GetCmdID()) {
     case GS_CMD_MVMNT_OBJ_ADD: {
-        auto& cmdAnim = static_cast<GSCmdSimObj&>(cmd);
-        m_trackObjs.try_emplace(cmdAnim.SimObj().GetSimObjectID(), &cmdAnim.SimObj(), std::chrono::steady_clock::now(), GSCoord{0.0, 0.0}, false, false);
+        auto& cmdObj = static_cast<GSCmdMvmntObjAdd&>(cmd);
+        m_trackObjs.try_emplace(cmdObj.ObjID(), &cmdObj.SimObj(), std::chrono::steady_clock::now(),
+            GSCoord{0.0, 0.0}, false, false, cmdObj.ReverseArrival());
         break;
     }
     case GS_CMD_MVMNT_OBJ_QUICK: {
@@ -141,7 +143,8 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
     }
     
     if (arrived) {
-        if (!maxTime && track.m_simObj->IsRevArrive()) {
+        if (!maxTime && track.m_reversePending) {
+            track.m_reversePending = false;
             track.m_simObj->ShootWaypointsRev();
 
             track.m_lastPosCheckTime = nowTime;

@@ -32,10 +32,12 @@ bool GSStandingHuman::PreSpawn()
 
     if (m_humanType == PILOT) {
         const auto& title = catalog.GetPilotExt();
-        m_title = (title.empty() ? catalog.GetTarmacHuman() : title);
+        m_isFullModel = !title.empty();
+        m_title = (m_isFullModel ? title : catalog.GetTarmacHuman());
     } else if (m_humanType == PASSENGER) {
         const auto& title = catalog.GetPassengerExt();
-        m_title = (title.empty() ? catalog.GetTarmacHuman() : title);
+        m_isFullModel = !title.empty();
+        m_title = (m_isFullModel ? title : catalog.GetTarmacHuman());
     } 
 
     return true;

@@ -33,6 +33,7 @@ public:
 		GSCoord m_lastPosition;
 		bool m_inProgress;
 		bool m_quick;
+		bool m_reversePending;
 	};
 
 	void Start();

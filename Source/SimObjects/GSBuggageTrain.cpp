@@ -26,11 +26,11 @@ bool GSBuggageTrain::PreSpawn()
     m_initPos.OnGround = 1;
     m_initPos.Altitude = loaderPos.Altitude;
 
-    bool driver = true;
+    m_isFullModel = true;
     m_title = GSCatalog::GetInstance().GetTugExt();
     if (m_title.empty()) {
         m_title = "ASO_Tug01_White";
-        driver = false;
+        m_isFullModel = false;
     }
     
     const auto tugPos = GSGeography::RelativePosition(
@@ -38,7 +38,7 @@ bool GSBuggageTrain::PreSpawn()
     m_initPos.Longitude = tugPos.Long();
     m_initPos.Latitude = tugPos.Lat();
 
-    if (driver) {
+    if (m_isFullModel) {
         const auto driverPos = GSGeography::RelativePosition(
             m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -0.65318, -0.35635);
 

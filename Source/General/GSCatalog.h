@@ -33,7 +33,7 @@ public:
     const std::string& GetGPULargeExt() const { return m_extGPULarge; }
     const std::string& GetGPUMediumExt() const { return m_extGPUMedium; }
     const std::string& GetLavatoryExt() const { return m_extLavatory; }
-    const std::string& GetTugExt() { return GetEntry(m_entiresTarmac); }
+    const std::string& GetTugExt() { return GetEntry(m_entiresTugExt); }
     const std::string& GetBuggageLoaderExt() { return GetEntry(m_entiresBuggageLoaderExt); }
     const std::string& GetBuggageWorkerExt() { return GetEntry(m_entiresBuggageWorkerExt); }
     const std::string& GetStaircaseExt() { return GetEntry(m_entiresStaircaseExt); }

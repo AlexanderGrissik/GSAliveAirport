@@ -7,6 +7,7 @@
 #include "General/GSSimConnect.h"
 #include "General/GSGeography.h"
 #include "Commands/GSCmdSimObj.h"
+#include "Commands/GSCmdMvmntObjAdd.h"
 #include "Requests/GSReqSimObjCreate.h"
 #include "Requests/GSReqSimObjDelete.h"
 #include "Requests/GSReqSimObjSetData.h"
@@ -81,8 +82,16 @@ void GSSimObj::Despawn()
         UnregisterAnim();
     } else {
         OnDespawning();
-        m_simHandle.PostReqCommand(new GSReqSimObjDelete(m_simHandle, *this));
+        if (IsVehicle())
+            FinalizeBackRoute();
+        else
+            DespawnCommand();
     }
+}
+
+void GSSimObj::DespawnCommand()
+{
+    m_simHandle.PostReqCommand(new GSReqSimObjDelete(m_simHandle, *this));
 }
 
 void GSSimObj::QuickArrive()
@@ -122,6 +131,13 @@ void GSSimObj::OnDespawned()
     }
 }
 
+void GSSimObj::UnFreeze()
+{
+    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_LongLat, 0));
+    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Altitude, 0));
+    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Attitude, 0));
+}
+
 void GSSimObj::Freeze()
 {
     //auto reqID = m_simHandle.NextRequestID();
@@ -154,7 +170,15 @@ void GSSimObj::AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float 
     m_aiWaypoints.emplace_back(SIMCONNECT_DATA_WAYPOINT{ pos.Lat(), pos.Long(), alt, flags, ktsSpeed, percThrot });
 }
 
-void GSSimObj::ShootWaypoints()
+void GSSimObj::OnArrival()
+{
+    if (m_leaving)
+        DespawnCommand();
+    else
+        OnArrived();
+}
+
+void GSSimObj::ShootWaypoints(bool reverseArrival)
 {
     //GSLogStream::Log("GSSimObj::ShootWaypoints - object ") << m_simObjectID << " points=" << m_aiWaypoints.size();
     //for (size_t index = 0; index < m_aiWaypoints.size(); ++index) {
@@ -162,7 +186,7 @@ void GSSimObj::ShootWaypoints()
     //    GSLogStream::Log() << "  [" << index << "] lat=" << waypoint.Latitude << " long=" << waypoint.Longitude << " alt=" << waypoint.Altitude;
     //}
 
-    size_t skipLast = m_arriveReverse ? 1 : 0;
+    size_t skipLast = reverseArrival ? 1 : 0;
     m_arriveIdx = m_aiWaypoints.size() - skipLast - 1U;
     m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
         GSDatumID_AIWaypoints, m_simObjectID, 0U, static_cast<DWORD>(m_aiWaypoints.size() - skipLast),
@@ -170,12 +194,11 @@ void GSSimObj::ShootWaypoints()
         m_aiWaypoints.data());
 
     m_startMoveTime = std::chrono::steady_clock::now();
-    m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ADD, *this));
+    m_simHandle.PostCommand(new GSCmdMvmntObjAdd(*this, reverseArrival));
 }
 
 void GSSimObj::ShootWaypointsRev()
 {
-    m_arriveReverse = false;
     m_arriveIdx = m_aiWaypoints.size() - 1U;
     m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
         GSDatumID_AIWaypoints, m_simObjectID, 0U, 1U,
@@ -247,7 +270,7 @@ void GSSimObj::FinalizeRoute()
         const auto& lastRoadPntWP = m_aiWaypoints.back();
         GSCoord lastRoadPnt(lastRoadPntWP.Longitude, lastRoadPntWP.Latitude);
         double roadHeading = GSGeography::Azz(lastRoadPnt, m_aircraft.GetLongLat());
-        if (m_arriveReverse)
+        if (IsArriveReverse())
             endIntrersection = otherIntersection;
         
         GSCoord startIntersection = endIntrersection;
@@ -268,7 +291,7 @@ void GSSimObj::FinalizeRoute()
 
         m_aiWaypoints.emplace_back(endIntrersection.Lat(), endIntrersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
 
-        if (m_arriveReverse) {
+        if (IsArriveReverse()) {
             otherIntersection = GSGeography::RelativePosition(m_initPos.Heading, endIntrersection, 15.0, 0.0);
             m_aiWaypoints.emplace_back(otherIntersection.Lat(), otherIntersection.Long(), m_initPos.Altitude, flags, 15.0, 0.0);
             flags |= SIMCONNECT_WAYPOINT_REVERSE;
@@ -277,7 +300,36 @@ void GSSimObj::FinalizeRoute()
     
     m_aiWaypoints.emplace_back(m_initPos.Latitude, m_initPos.Longitude, m_initPos.Altitude, flags, 5.0, 0.0);
 
-    ShootWaypoints();
+    ShootWaypoints(IsArriveReverse());
+}
+
+void GSSimObj::FinalizeBackRoute()
+{
+    if (m_aiWaypoints.size() <= 2) {
+        DespawnCommand();
+        return;
+    }
+
+    UnFreeze();
+
+    m_aiWaypoints.pop_back();
+
+    if (IsLeaveReverse()) {
+        auto revWaypoint = m_aiWaypoints.back();
+        const auto revLoc = GSGeography::RelativePosition(
+            m_initPos.Heading, { revWaypoint.Longitude, revWaypoint.Latitude }, -5.0, 0.0);
+        revWaypoint.Longitude = revLoc.Long();
+        revWaypoint.Latitude = revLoc.Lat();
+        m_aiWaypoints.push_back(revWaypoint);
+        std::reverse(m_aiWaypoints.begin(), m_aiWaypoints.end());
+        m_aiWaypoints.front().Flags |= SIMCONNECT_WAYPOINT_REVERSE;
+    } else {
+        m_aiWaypoints.pop_back();
+        std::reverse(m_aiWaypoints.begin(), m_aiWaypoints.end());
+    }
+
+    m_leaving = true;
+    ShootWaypoints(false);
 }
 
 void GSSimObj::RestoreInitPos()

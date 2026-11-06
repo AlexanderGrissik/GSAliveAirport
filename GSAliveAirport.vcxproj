@@ -35,6 +35,7 @@
     <ClInclude Include="Source\Animation\GSAnimSingle.h" />
     <ClInclude Include="Source\Commands\GSCmdAircraft.h" />
     <ClInclude Include="Source\Commands\GSCmdAnimObj.h" />
+    <ClInclude Include="Source\Commands\GSCmdMvmntObjAdd.h" />
     <ClInclude Include="Source\Commands\GSCmdReq.h" />
     <ClInclude Include="Source\Commands\GSCmdReqIdent.h" />
     <ClInclude Include="Source\Commands\GSCmdSimObj.h" />

@@ -11,6 +11,7 @@
 #include "Commands/GSCmdAircraft.h"
 #include "Commands/GSCmdAnimObj.h"
 #include "Commands/GSCmdSimObj.h"
+#include "Commands/GSCmdMvmntObjAdd.h"
 #include "UI/GSAliveUIAPI.h"
 #include "GSCatalog.h"
 #include "GSGeography.h"
@@ -114,16 +115,18 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
     case GS_CMD_ANIM_OBJ_REM_DONE:
         static_cast<GSCmdAnimObj&>(cmd).GetReq().Process();
         break;
-    case GS_CMD_MVMNT_OBJ_ADD:
+    case GS_CMD_MVMNT_OBJ_ADD: {
+        auto& cmdObj = static_cast<GSCmdMvmntObjAdd&>(cmd);
         m_mvmntThread.PostCommand(
-            new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ADD, static_cast<GSCmdSimObj&>(cmd).SimObj()));
+            new GSCmdMvmntObjAdd(cmdObj.SimObj(), cmdObj.ReverseArrival()));
         break;
+    }
     case GS_CMD_MVMNT_OBJ_QUICK:
         m_mvmntThread.PostCommand(
-            new GSCmdSimObj(static_cast<GSCmdSimObj&>(cmd)));
+            new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
     case GS_CMD_MVMNT_OBJ_ARR:
-        static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrived();
+        static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrival();
         break;
     default:
         GSLogStream::LogError("GSSpawnerThread - Unexpected cmd: ") << cmd.GetCmdID();

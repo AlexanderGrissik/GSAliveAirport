@@ -38,8 +38,11 @@ private:
     bool PreSpawn() override;
     bool OnCreated() override;
     bool IsDelayedSpawnable() const override { return true; }
+    bool IsArriveReverse() const override { return true; }
+    bool IsVehicle() const override { return true; }
+    bool IsLeaveReverse() const override { return false; }
     void OnArrived() override;
-    void OnDespawning() override {}
+    void OnDespawning() override;
     
     GPUType m_gpuType;
 

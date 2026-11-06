@@ -14,7 +14,7 @@ bool GSMarshaller::OnCreated()
 {
     Freeze();
 
-    if (m_hasAnimMarshall) {
+    if (m_isFullModel) {
         GSCoord initPosLoc = { m_initPos.Longitude, m_initPos.Latitude };
         auto* anim = new GSAnimSingle(m_simObjectID, initPosLoc, GSDatumID_AnimVelocBodyY);
         anim->AddFrameSet({ 0, 2179, 30.0 });
@@ -28,7 +28,7 @@ bool GSMarshaller::PreSpawn()
 {
     auto& title = GSCatalog::GetInstance().GetMarshallerExt();
     if (title.empty()) {
-        m_hasAnimMarshall = false;
+        m_isFullModel = false;
         m_title = GSCatalog::GetInstance().GetMarshaller();
     } else {
         m_title = title;

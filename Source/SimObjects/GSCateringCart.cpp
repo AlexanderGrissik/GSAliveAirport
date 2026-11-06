@@ -4,6 +4,7 @@
 #include "GSCateringCart.h"
 #include "Requests/GSReqCateringCartGetData.h"
 #include "Requests/GSReqCateringCartSetData.h"
+#include "Requests/GSReqSimObjTxClientEventEX1.h"
 #include "General/GSGeography.h"
 #include "SimObjects/GSAircraft.h"
 
@@ -35,11 +36,25 @@ bool GSCateringCart::OnCreated()
 
 void GSCateringCart::OnArrived()
 {
+    m_simHandle.PostReqIdentCommand(new GSReqSimObjTxClientEventEX1(m_simHandle, *this, GSEventID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        [](SIMCONNECT_RECV_EXCEPTION* message) {
+            GSLogStream::LogError("GSCateringCart::OnArrived OpenDoors exception: ") << message->dwException; });
+
     std::array updateData{ StateWireDataSet{ m_initPos.Longitude, m_initPos.Latitude, m_doorPosElev, 1.0f } };
     m_simHandle.PostReqCommand(new GSReqCateringCartSetData(m_simHandle, *this, std::move(updateData)));
 
     Freeze();
     ContinueSpawn();
+}
+
+void GSCateringCart::OnDespawning()
+{
+    m_simHandle.PostReqIdentCommand(new GSReqSimObjTxClientEventEX1(m_simHandle, *this, GSEventID_CloseDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
+        [](SIMCONNECT_RECV_EXCEPTION* message) {
+            GSLogStream::LogError("GSCateringCart::OnDespawning CloseDoors exception: ") << message->dwException; });
+
+    std::array updateData{ StateWireDataSet{ m_initPos.Longitude, m_initPos.Latitude, 0.0f, 0.0f } };
+    m_simHandle.PostReqCommand(new GSReqCateringCartSetData(m_simHandle, *this, std::move(updateData)));
 }
 
 bool GSCateringCart::PreSpawn()
@@ -50,6 +65,8 @@ bool GSCateringCart::PreSpawn()
     if (!cateringDoor) {
         return false;
     }
+
+    m_doorIdx = static_cast<DWORD>(rearRightDoor.has_value() ? rearRightDoor->second : frontRightDoor->second);
 
     m_title = "ASO_Catering_Truck_01";
     m_initPos.Airspeed = 0;

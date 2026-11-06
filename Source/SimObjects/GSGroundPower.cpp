@@ -45,6 +45,13 @@ void GSGroundPower::OnArrived()
     ContinueSpawn();
 }
 
+void GSGroundPower::OnDespawning()
+{
+    std::array updateData{ StateWireDataSet{ 0.0f } };
+    const auto definitionID = m_isFullModel ? GSDatumID_GroundPowerExtStateSet : GSDatumID_GroundPowerStateSet;
+    m_simHandle.PostReqCommand(new GSReqGroundPowerSetData(m_simHandle, *this, definitionID, std::move(updateData)));
+}
+
 bool GSGroundPower::PreSpawn()
 {
     double YMeters = 0.0, XMeters = 0.0;
@@ -65,17 +72,16 @@ bool GSGroundPower::PreSpawn()
         return false;
     }
 
-    bool driver = false;
+    m_isFullModel = true;
 
     if (m_gpuType == GPU_LARGE && !GSCatalog::GetInstance().GetGPULargeExt().empty()) {
         m_title = GSCatalog::GetInstance().GetGPULargeExt();
         m_initPos.Heading = m_aircraft.GetHeading();
-        driver = true;
     } else if (m_gpuType == GPU_MEDIUM && !GSCatalog::GetInstance().GetGPUMediumExt().empty()) {
         m_title = GSCatalog::GetInstance().GetGPUMediumExt();
         m_initPos.Heading = m_aircraft.GetHeading();
-        driver = true;
     } else {
+        m_isFullModel = false;
         m_title = "Car Ground Power Unit";
         m_initPos.Heading = GSGeography::NormDeg(m_aircraft.GetHeading() + 180.0);
     }
@@ -93,7 +99,7 @@ bool GSGroundPower::PreSpawn()
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 
-    if (driver) {
+    if (m_isFullModel) {
         const auto driverPos = GSGeography::RelativePosition(
             m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, 1.54733, -0.35635);
         

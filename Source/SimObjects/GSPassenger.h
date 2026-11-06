@@ -34,6 +34,9 @@ private:
 
     bool OnCreated() override;
     bool IsDelayedSpawnable() const override { return false; }
+    bool IsArriveReverse() const override { return false; }
+    bool IsVehicle() const override { return false; }
+    bool IsLeaveReverse() const override { return true; }
     void OnArrived() override {}
     void OnDespawning() override {}
 
@@ -45,7 +48,6 @@ private:
     GSCoord m_busPos;
     float m_doorAltFeet = 0.0f;
     float m_stairBaseHeading = 0.0f;
-    bool m_dynamic = true;
 };
 
 }

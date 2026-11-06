@@ -12,14 +12,13 @@ namespace NS_GSAliveAirport
 
 bool GSLavatoryTruck::OnCreated()
 {
-    m_arriveReverse = true;
     FinalizeRoute();
     return false;
 }
 
 void GSLavatoryTruck::OnArrived()
 {
-    if (m_hasAnimLavaratory) {
+    if (m_isFullModel) {
         auto* anim = new GSAnimBFLOT(m_simObjectID, { m_initPos.Longitude, m_initPos.Latitude });
         anim->AddFrameSet({ 50, 51, 30.0 }, { 0, 1755, 30 }, { 0, 1942, 30 });
         RegisterAnim(anim);
@@ -51,7 +50,7 @@ bool GSLavatoryTruck::PreSpawn()
     if (!GSCatalog::GetInstance().GetLavatoryExt().empty()) {
         m_title = GSCatalog::GetInstance().GetLavatoryExt();
     } else {
-        m_hasAnimLavaratory = false;
+        m_isFullModel = false;
         m_title = "Microsoft_Truck_Lavatory";
     }
         
