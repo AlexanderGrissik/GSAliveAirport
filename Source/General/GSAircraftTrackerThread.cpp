@@ -12,6 +12,7 @@
 #include "GSGeography.h"
 #include "GSLogStream.h"
 #include "Commands/GSCmdAircraft.h"
+#include "Commands/GSCmdAirport.h"
 #include "GSSpawnerThread.h"
 #include "GSStringUtils.h"
 #include <algorithm>
@@ -101,6 +102,8 @@ void GSAircraftTrackerThread::OnSimStop()
 
     UnsubscribeAirportList();
     m_tracked.clear();
+    m_userAircraft.SetParking(nullptr);
+    m_userAircraft.GetAirportPtr().reset();
     m_airportCache.clear();
     m_activeAirports.clear();
 }
@@ -135,11 +138,7 @@ void GSAircraftTrackerThread::HandleRemoved()
     std::for_each(toRemove.begin(), toRemove.end(), [this](DWORD id) {
         auto node = m_tracked.extract(id);
         if (node.mapped()->GetAirport()) {
-            auto itrAirport = m_activeAirports.find(node.mapped()->GetAirport()->GetICAO());
-            if (--itrAirport->second.first == 0 && m_activeAirports.size() > 10) {
-                m_activeAirports.erase(itrAirport);
-                GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Airport erased: ") << node.mapped()->GetAirport()->GetICAO();
-            }
+            ClearAirport(node.mapped()->GetAirport()->GetICAO());
         }
 
         m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_SPAWNER_AIRCRAFT_REMOVED, node.mapped()));
@@ -196,22 +195,30 @@ void GSAircraftTrackerThread::HandleAircraftUser(std::shared_ptr<GSAircraft>& ai
 { 
     m_userAircraft.CopyDynInfo(*aircraft);
     
-    if (!m_userAircraft.GetAirport() || 
-        GSGeography::DistanceDegPow(m_userAircraft.GetAirport()->GetLongLat(), m_userAircraft.GetLongLat()) > (MinAirportRefreshDistDegPow / 2.0)) {
+    if (!m_userAircraft.IsOnGround() && m_userAircraft.GetAltitudeAboveGroundFeet() >= 3000.0f) {
+        if (m_userAircraft.GetAirport()) {
+            ClearAirport(m_userAircraft.GetAirport()->GetICAO());
+            m_userAircraft.SetParking(nullptr);
+            m_userAircraft.GetAirportPtr().reset();
+        }
+    } else if (m_userAircraft.IsOnGround() && (!m_userAircraft.GetAirport() ||
+        GSGeography::DistanceDegPow(m_userAircraft.GetAirport()->GetLongLat(), m_userAircraft.GetLongLat()) > (MinAirportRefreshDistDegPow / 2.0))) {
         const auto* airportInfo = FindClosesAirportToAircraft(m_userAircraft);
         if (airportInfo) {
             if (!m_userAircraft.GetAirport() || m_userAircraft.GetAirport()->GetICAO() != airportInfo->first) {
-                auto newAirport = std::make_shared<GSAirport>(airportInfo->first, airportInfo->second, 0);
-                m_userAircraft.SetAirport(newAirport);
+                if (m_userAircraft.GetAirport()) {
+                    ClearAirport(m_userAircraft.GetAirport()->GetICAO());
+                }
+                if (FetchActiveAirport(m_userAircraft, *airportInfo)) {
+                    m_utilityThread.PostCommand(new GSCmdAirport(GS_CMD_AIRPORT_USER, m_userAircraft.GetAirportPtr()));
+                }
             }
         }
     }
 
     aircraft->SetAirport(m_userAircraft.GetAirportPtr());
-    if (m_userAircraft.GetAirport()) {
-        m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_AIRCRAFT_USER, aircraft));
-        m_animThread.PostCommand(new GSCmdAircraft(GS_CMD_AIRCRAFT_USER, aircraft));
-    }
+    m_singleObserver.PostCommand(new GSCmdAircraft(GS_CMD_AIRCRAFT_USER, aircraft));
+    m_animThread.PostCommand(new GSCmdAircraft(GS_CMD_AIRCRAFT_USER, aircraft));
 }
 
 bool GSAircraftTrackerThread::HandleExistingAircraft(
@@ -291,21 +298,41 @@ void GSAircraftTrackerThread::HandleAircraftConstScan(const SIMCONNECT_RECV_SIMO
     GSAircraft& aircraft = *itr->second;
     aircraft.LoadFullState(entry);
 
+    if (FetchActiveAirport(aircraft, airportInfo)) {
+        PostNewAircraft(itr->second);
+    }
+}
+
+void GSAircraftTrackerThread::ClearAirport(const std::string& icao)
+{
+    auto itrAirport = m_activeAirports.find(icao);
+    if (itrAirport != m_activeAirports.end()) {
+        if (--itrAirport->second.first == 0 && m_activeAirports.size() > 10) {
+            GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Airport erased: ") << icao;
+            m_activeAirports.erase(itrAirport);
+        }
+    }
+}
+
+bool GSAircraftTrackerThread::FetchActiveAirport(GSAircraft& aircraft, const AirportScanCache::value_type& airportInfo)
+{
     auto itrAirport = m_activeAirports.find(airportInfo.first);
     if (itrAirport != m_activeAirports.end()) {
         ++itrAirport->second.first;
         aircraft.SetAirport(itrAirport->second.second);
         if (itrAirport->second.second->IsFinalized()) {
-            PostNewAircraft(itr->second);
-        } else {
-            PostReqCommand(new GSReqTrackerAirportInfo(*this, entry.dwObjectID, airportInfo)); // Wait to be loaded.
-        }
+            return true;
+        } 
+        
+        PostReqCommand(new GSReqTrackerAirportInfo(*this, aircraft.GetObjID(), airportInfo)); // Wait to be loaded.
     } else {
         aircraft.SetAirport(m_activeAirports.emplace(
             airportInfo.first, std::make_pair<size_t, std::shared_ptr<GSAirport>>(
-                1, std::make_shared<GSAirport>(airportInfo.first, airportInfo.second, entry.dwObjectID))).first->second.second);
-        PostReqCommand(new GSReqTrackerAirportInfo(*this, entry.dwObjectID, airportInfo));
+                1, std::make_shared<GSAirport>(airportInfo.first, airportInfo.second, aircraft.GetObjID()))).first->second.second);
+        PostReqCommand(new GSReqTrackerAirportInfo(*this, aircraft.GetObjID(), airportInfo));
     }
+
+    return false;
 }
 
 void GSAircraftTrackerThread::HandleAirportInfoMessage(const SIMCONNECT_RECV& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo)
@@ -319,8 +346,12 @@ void GSAircraftTrackerThread::HandleAirportInfoMessage(const SIMCONNECT_RECV& en
     }
 
     if (entry.dwID == SIMCONNECT_RECV_ID_FACILITY_DATA_END) {
-        if (itrAirport->second.second->LoadingReqID() == aircraftID)
+        if (itrAirport->second.second->LoadingReqID() == aircraftID) {
             itrAirport->second.second->OrganizeStructures();
+            if (m_userAircraft.GetAirport() == itrAirport->second.second.get()) {
+                m_utilityThread.PostCommand(new GSCmdAirport(GS_CMD_AIRPORT_USER, m_userAircraft.GetAirportPtr()));
+            }
+        }
         
         if (!itrAirport->second.second->IsFinalized()) { // Rare case of simultaneous load.
             // Try again. Let the LoadingRequestID to finalize the airport

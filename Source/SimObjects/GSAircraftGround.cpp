@@ -21,8 +21,13 @@
 namespace NS_GSAliveAirport
 {
 
-void GSAircraftGround::BuildObjs(bool full)
+void GSAircraftGround::BuildObjs()
 {
+    m_aircraft.SetParking(nullptr);
+    SetClosestParking();
+
+    // MSFS injects traffic with parking assigned. Skip MSFS already provided ground services.
+    const bool full = !m_aircraft.HasParking();
     const auto category = m_aircraft.GetCategory();
     if (category == GSAircraft::AircraftSizeCategory::Small) {
         m_objs.emplace_back(new GSTruckFacility(m_simConnect, m_aircraft, *this));
@@ -108,87 +113,11 @@ void GSAircraftGround::Unspawned()
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::None));
 }
 
-void GSAircraftGround::QuickArrive()
-{
-    if (m_spawnState == SpawnState::SPAWNING) {
-        for (auto& obj : m_objs) {
-            obj->QuickArrive();
-        }
-    }
-}
-
 void GSAircraftGround::SetClosestParking()
 {
     const auto prk = m_aircraft.GetAirport()->GetRoadNet().GetClosestNormalParking(m_aircraft.GetLongLat());
     if (prk.has_value()) {
         m_aircraft.SetParking(prk.value());
-    }
-}
-
-void GSAircraftGround::Spawn()
-{
-    if (m_spawnState == SpawnState::SPAWNING || m_spawnState == SpawnState::SPAWNED) {
-        GSLogStream::LogError("Double Spawn: ") << m_aircraft.GetObjID();
-        return;
-    }
-
-    m_aircraft.SetParking(nullptr);
-    SetClosestParking();
-
-    Spawning(); 
-
-    // MSFS injects traffic with parking assigned. Skip MSFS already provided ground services.
-    BuildObjs(!m_aircraft.HasParking());
-
-    std::erase_if(m_objs, [](const auto& item) {
-        return !item->PreSpawn(); // remove items that do not match
-    });
-
-    if (m_objs.empty()) {
-        Spawned();
-    }
-
-    for (auto& itr : m_objs)
-        itr->Spawn();
-}
-
-void GSAircraftGround::Despawn()
-{
-    if (m_spawnState == SpawnState::DESPAWNING || m_spawnState == SpawnState::UNSPAWNED) {
-        GSLogStream::LogError("Double Despawn: ") << m_aircraft.GetObjID();
-        return;
-    }
-
-    if (m_objs.size() > 0) {
-        Despawning();
-        for (auto& itr : m_objs)
-            itr->Despawn();
-    } else {
-        Unspawned(); 
-    }
-}
-
-void GSAircraftGround::OnSpawned(bool ok, GSSimObj& obj)
-{
-    if (ok) {
-        ++m_spawnedObjs;
-    } else {
-        std::erase_if(m_objs, [&obj](const auto& item) {
-            return (item.get() == &obj); // remove items that do not match
-        });
-    }
-
-    if (m_spawnedObjs == m_objs.size()) {
-        Spawned(); 
-    }
-}
-
-void GSAircraftGround::OnDespawned()
-{
-    --m_spawnedObjs;
-    if (!m_spawnedObjs) {
-        m_objs.clear();
-        Unspawned(); 
     }
 }
 

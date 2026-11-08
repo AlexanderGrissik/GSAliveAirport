@@ -28,6 +28,7 @@ int GSAliveAirportApp::Run()
 
     m_aircraftTracker.Start();
     m_spawner.Start();
+    m_utilityGroundThread.Start();
     m_animThread.Start();
     m_mvmntThread.Start();
 

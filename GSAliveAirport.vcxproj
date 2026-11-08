@@ -34,6 +34,7 @@
     <ClInclude Include="Source\Animation\GSAnimMulti.h" />
     <ClInclude Include="Source\Animation\GSAnimSingle.h" />
     <ClInclude Include="Source\Commands\GSCmdAircraft.h" />
+    <ClInclude Include="Source\Commands\GSCmdAirport.h" />
     <ClInclude Include="Source\Commands\GSCmdAnimObj.h" />
     <ClInclude Include="Source\Commands\GSCmdMvmntObjAdd.h" />
     <ClInclude Include="Source\Commands\GSCmdReq.h" />
@@ -54,6 +55,7 @@
     <ClInclude Include="Source\General\GSRoadsNetwork.h" />
     <ClInclude Include="Source\General\GSSimConnect.h" />
     <ClInclude Include="Source\General\GSSpawnerThread.h" />
+    <ClInclude Include="Source\General\GSUtilityGroundThread.h" />
     <ClInclude Include="Source\Requests\GSReqSimObjCreate.h" />
     <ClInclude Include="Source\Requests\GSReqSimObjDelete.h" />
     <ClInclude Include="Source\Requests\GSReqSimObjGetData.h" />
@@ -84,6 +86,8 @@
     <ClInclude Include="Source\UI\GSAliveUIAPI.h" />
     <ClInclude Include="Source\SimObjects\GSAircraft.h" />
     <ClInclude Include="Source\SimObjects\GSAircraftGround.h" />
+    <ClInclude Include="Source\SimObjects\GSGroupGround.h" />
+    <ClInclude Include="Source\SimObjects\GSUtilityGround.h" />
     <ClInclude Include="Source\SimObjects\GSBuggageLoader.h" />
     <ClInclude Include="Source\SimObjects\GSBuggageTrain.h" />
     <ClInclude Include="Source\SimObjects\GSCateringCart.h" />
@@ -119,6 +123,7 @@
     <ClCompile Include="Source\General\GSRoadsNetwork.cpp" />
     <ClCompile Include="Source\General\GSSimConnect.cpp" />
     <ClCompile Include="Source\General\GSSpawnerThread.cpp" />
+    <ClCompile Include="Source\General\GSUtilityGroundThread.cpp" />
     <ClCompile Include="Source\Requests\GSReqSimObjCreate.cpp" />
     <ClCompile Include="Source\Requests\GSReqSimObjDelete.cpp" />
     <ClCompile Include="Source\Requests\GSReqSimObjGetData.cpp" />
@@ -138,6 +143,8 @@
     <ClCompile Include="Source\Requests\GSReqSimObjTxClientEventEX1.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraft.cpp" />
     <ClCompile Include="Source\SimObjects\GSAircraftGround.cpp" />
+    <ClCompile Include="Source\SimObjects\GSGroupGround.cpp" />
+    <ClCompile Include="Source\SimObjects\GSUtilityGround.cpp" />
     <ClCompile Include="Source\SimObjects\GSBuggageLoader.cpp" />
     <ClCompile Include="Source\SimObjects\GSBuggageTrain.cpp" />
     <ClCompile Include="Source\SimObjects\GSCateringCart.cpp" />

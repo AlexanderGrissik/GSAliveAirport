@@ -66,6 +66,9 @@
     <ClInclude Include="Source\Commands\GSCmdAircraft.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Commands\GSCmdAirport.h">
+      <Filter>Source\Commands</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Commands\GSCmdAnimObj.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
@@ -148,6 +151,12 @@
       <Filter>Source\General</Filter>
     </ClCompile>
     <ClInclude Include="Source\General\GSSpawnerThread.h">
+      <Filter>Source\General</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\General\GSUtilityGroundThread.cpp">
+      <Filter>Source\General</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\General\GSUtilityGroundThread.h">
       <Filter>Source\General</Filter>
     </ClInclude>
     <ClInclude Include="Source\General\GSStringUtils.h">
@@ -291,6 +300,18 @@
     <ClInclude Include="Source\SimObjects\GSAircraftGround.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
+    <ClInclude Include="Source\SimObjects\GSGroupGround.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSGroupGround.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSUtilityGround.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSUtilityGround.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
     <ClCompile Include="Source\SimObjects\GSBuggageLoader.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>

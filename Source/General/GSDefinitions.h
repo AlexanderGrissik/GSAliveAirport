@@ -26,6 +26,14 @@ namespace NS_GSAliveAirport {
 
 using GSTimePoint = std::chrono::steady_clock::time_point;
 
+enum SpawnState
+{
+    UNSPAWNED = 0,
+    SPAWNING,
+    SPAWNED,
+    DESPAWNING
+};
+
 struct GSInvokeID {
     DWORD sendID;
     DWORD requestID;
@@ -63,7 +71,7 @@ enum GSCommandID
     GS_CMD_MVMNT_OBJ_ADD,
     GS_CMD_MVMNT_OBJ_QUICK,
     GS_CMD_MVMNT_OBJ_ARR,
-    GS_CMD_AIRPORT,
+    GS_CMD_AIRPORT_USER,
 };
 
 enum GSDatumID : SIMCONNECT_DATA_DEFINITION_ID {

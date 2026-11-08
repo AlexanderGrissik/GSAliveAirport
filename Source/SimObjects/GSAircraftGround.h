@@ -6,7 +6,7 @@
 #include "GSAircraft.h"
 #include "General/GSAirport.h"
 #include "UI/GSAliveUI.h"
-#include "GSSimObj.h"
+#include "GSGroupGround.h"
 #include <cstddef>
 #include <list>
 #include <memory>
@@ -14,48 +14,28 @@
 namespace NS_GSAliveAirport
 {
 
-class GSAircraftGround : public GSSimObjUpdate
+class GSAircraftGround : public GSGroupGround
 {
 public:
 
-    enum SpawnState
-    {
-        UNSPAWNED = 0,
-        SPAWNING,
-        SPAWNED,
-        DESPAWNING
-    };
-
     GSAircraftGround(std::shared_ptr<GSAircraft>& aircraft, GSSimConnect& simConn, GSAliveUI& ui) :
-        m_aircraft(*aircraft), m_simConnect(simConn), m_ui(ui) {}
+        GSGroupGround(simConn, ui), m_aircraft(*aircraft) {}
     virtual ~GSAircraftGround() = default;
 
-    void BuildObjs(bool full);
+    void BuildObjs() override;
 
-    void OnSpawned(bool ok, GSSimObj& obj) override;
-    void OnDespawned() override;
-    
-    void Spawn();
-    void Despawn();
-    void QuickArrive();
     void UpdateAircraft(const GSAircraft& aircraft);
-    SpawnState GetSpawnState() const { return m_spawnState; }
     const GSAircraft& Aircraft() const { return m_aircraft; }
 
 protected:
 
-    void Spawning();
-    void Spawned();
-    void Despawning();
-    void Unspawned();
+    void Spawning() override;
+    void Spawned() override;
+    void Despawning() override;
+    void Unspawned() override;
     void SetClosestParking();
 
     GSAircraft m_aircraft;
-    GSSimConnect& m_simConnect;
-    SpawnState m_spawnState = SpawnState::UNSPAWNED;
-    std::list<std::unique_ptr<GSSimObj>> m_objs;
-    size_t m_spawnedObjs = 0U;
-    GSAliveUI& m_ui;
 };
 
 }

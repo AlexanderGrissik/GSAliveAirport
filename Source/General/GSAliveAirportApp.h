@@ -5,6 +5,7 @@
 
 #include "GSAircraftTrackerThread.h"
 #include "GSSpawnerThread.h"
+#include "GSUtilityGroundThread.h"
 #include "Animation/GSAnimationThread.h"
 #include "SimObjects/GSMovementThread.h"
 #include "UI/GSAliveUI.h"
@@ -22,8 +23,9 @@ public:
     static constexpr const char* s_Version = APP_VERSION;
     GSAliveAirportApp():
         m_spawner(m_animThread, m_mvmntThread, m_ui),
-        m_aircraftTracker(m_spawner, m_animThread) {}
-    ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); m_animThread.Stop(); m_mvmntThread.Stop(); }
+        m_utilityGroundThread(m_ui, m_mvmntThread),
+        m_aircraftTracker(m_spawner, m_animThread, m_utilityGroundThread) {}
+    ~GSAliveAirportApp() { m_aircraftTracker.Stop(); m_spawner.Stop(); m_utilityGroundThread.Stop(); m_animThread.Stop(); m_mvmntThread.Stop(); }
 
     GSAliveAirportApp(const GSAliveAirportApp &) = delete;
     GSAliveAirportApp &operator=(const GSAliveAirportApp &) = delete;
@@ -51,6 +53,7 @@ private:
     GSMovementThread m_mvmntThread;
     GSAnimationThread m_animThread;
     GSSpawnerThread m_spawner;
+    GSUtilityGroundThread m_utilityGroundThread;
     GSAircraftTrackerThread m_aircraftTracker;
 };
 } // namespace NS_GSAliveAirport

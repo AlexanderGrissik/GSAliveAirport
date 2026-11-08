@@ -233,7 +233,7 @@ bool GSSpawnerThread::DespawnCond(const GSAircraft& aircraft)
 
 void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd)
 {
-    if (SpawnCond(grnd.Aircraft()) && grnd.GetSpawnState() == GSAircraftGround::SpawnState::UNSPAWNED) {
+    if (SpawnCond(grnd.Aircraft()) && grnd.GetSpawnState() == SpawnState::UNSPAWNED) {
         if (IsSIInjector() || (GSRandom::RandSizeT(1, 100) <= ServicedPerc())) {
             grnd.Spawn();
             m_groundSpawned.insert(m_groundUnspawned.extract(grnd.Aircraft().GetObjID()));
@@ -246,7 +246,7 @@ void GSSpawnerThread::CheckForUnspawned(GSAircraftGround& grnd)
 void GSSpawnerThread::CheckForSpawned(GSAircraftGround& grnd)
 {
     if (DespawnCond(grnd.Aircraft())) {
-        if (grnd.GetSpawnState() == GSAircraftGround::SpawnState::SPAWNED) {
+        if (grnd.GetSpawnState() == SpawnState::SPAWNED) {
             grnd.Despawn();
             TrySpawnEligable();
             m_groundUnspawned.insert(m_groundSpawned.extract(grnd.Aircraft().GetObjID()));
@@ -265,7 +265,7 @@ void GSSpawnerThread::CheckForPendingUpdates()
             it = m_groundPendingUpdates.erase(it); // Already removed aircraft.
         } else {
             GSAircraftGround& grnd = *spawned->second.get();
-            if (grnd.GetSpawnState() == GSAircraftGround::SpawnState::SPAWNING) {
+            if (grnd.GetSpawnState() == SpawnState::SPAWNING) {
                 ++it;
             } else {
                 it = m_groundPendingUpdates.erase(it);
@@ -282,14 +282,14 @@ void GSSpawnerThread::CheckForPendingRemove()
     for (auto& itr : m_groundPendingDelete) {
         GSAircraftGround& grnd = *(itr.second);
         switch (grnd.GetSpawnState()) {
-        case GSAircraftGround::SpawnState::SPAWNING:
+        case SpawnState::SPAWNING:
             grnd.QuickArrive();
             break;
-        case GSAircraftGround::SpawnState::SPAWNED:
+        case SpawnState::SPAWNED:
             grnd.Despawn();
             TrySpawnEligable();
             break;
-        case GSAircraftGround::SpawnState::DESPAWNING:
+        case SpawnState::DESPAWNING:
             break;
         default:
             m_groundHelper.emplace_back(*itr.second);
@@ -329,7 +329,7 @@ void GSSpawnerThread::TrySpawnEligable()
     while (!m_groundSpawnEligable.empty()) {
         auto itr = m_groundSpawnEligable.begin();
         GSAircraftGround& grnd = *itr->second;
-        if (grnd.GetSpawnState() == GSAircraftGround::SpawnState::UNSPAWNED && SpawnCond(grnd.Aircraft())) {
+        if (grnd.GetSpawnState() == SpawnState::UNSPAWNED && SpawnCond(grnd.Aircraft())) {
             grnd.Spawn();
             m_groundSpawned.insert(m_groundSpawnEligable.extract(itr));
             return;
