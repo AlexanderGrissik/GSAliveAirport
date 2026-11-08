@@ -46,6 +46,9 @@ void GSRoadsNetwork::AddPath(DWORD idA, DWORD idB, RoadPathType pathType)
 
 	itrA->second.m_paths.push_back(&path);
 	itrB->second.m_paths.push_back(&path);
+    if (path.m_pathType == PATH_VEHICLE) {
+        m_totalRoadLengthMeters += path.m_distMeters;
+    }
 }
 
 void GSRoadsNetwork::AddPath(const RoadPath& path)
@@ -58,6 +61,14 @@ void GSRoadsNetwork::AddPath(const RoadPath& path)
     RoadPath& newPath = m_roadPaths.emplace_back(path);   // copies m_distMeters as-is
     path.m_nodeA->m_paths.push_back(&newPath);
     path.m_nodeB->m_paths.push_back(&newPath);
+    if (newPath.m_pathType == PATH_VEHICLE) {
+        m_totalRoadLengthMeters += newPath.m_distMeters;
+    }
+}
+
+double GSRoadsNetwork::GetTotalVehiclePathLengthMeters() const
+{
+    return m_totalRoadLengthMeters;
 }
 
 std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetClosestNormalParking(const GSCoord& location) const
@@ -116,6 +127,8 @@ void GSRoadsNetwork::MergeNetwork(GSRoadsNetwork& network)
     // Move the paths in. list::splice moves the list nodes, so every RoadPath keeps its
     // address — the nodes' m_paths therefore stay valid.
     m_roadPaths.splice(m_roadPaths.end(), network.m_roadPaths);
+    m_totalRoadLengthMeters += network.m_totalRoadLengthMeters;
+    network.m_totalRoadLengthMeters = 0.0;
 
     // The index vectors hold RoadNode* which are still valid — just append them.
     m_allNodes.insert(m_allNodes.end(), network.m_allNodes.begin(), network.m_allNodes.end());
