@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSSpawnerThread.h"
+#include "SimObjects/GSSimServObj.h"
 #include "GSLogStream.h"
 #include "SimObjects/GSAircraftGround.h"
 #include "SimObjects/GSCateringCart.h"
@@ -55,7 +56,7 @@ void GSSpawnerThread::Stop()
 
 void GSSpawnerThread::OnConnect() 
 {
-    GSSimObj::InitDatums(*this);
+    GSSimServObj::InitDatums(*this);
     GSCateringCart::InitDatums(*this); 
     GSGroundPower::InitDatums(*this);
     GSBuggageLoader::InitDatums(*this);

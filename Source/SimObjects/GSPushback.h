@@ -3,12 +3,12 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 
 namespace NS_GSAliveAirport
 {
 
-class GSPushback : public GSSimObj
+class GSPushback : public GSSimServObj
 {
 public:
 
@@ -19,7 +19,7 @@ public:
     };
 
     GSPushback(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, PushType tp):
-        GSSimObj(simHandle, aircraft, parent), m_pushType(tp) {}
+        GSSimServObj(simHandle, aircraft, parent), m_pushType(tp) {}
 
 private:
 

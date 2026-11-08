@@ -3,19 +3,19 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 #include "GSBuggageLoader.h"
 #include <cstddef>
 
 namespace NS_GSAliveAirport
 {
 
-class GSBuggageTrain : public GSSimObj
+class GSBuggageTrain : public GSSimServObj
 {
 public:
 
     GSBuggageTrain(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, GSBuggageLoader& loader) :
-        GSSimObj(simHandle, aircraft, parent), m_loader(loader) {}
+        GSSimServObj(simHandle, aircraft, parent), m_loader(loader) {}
 
     bool PreSpawn() override;
 

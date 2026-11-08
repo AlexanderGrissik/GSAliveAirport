@@ -3,16 +3,16 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 
 namespace NS_GSAliveAirport
 {
 
-class GSLavatoryTruck : public GSSimObj
+class GSLavatoryTruck : public GSSimServObj
 {
 public:
 
-    using GSSimObj::GSSimObj;
+    using GSSimServObj::GSSimServObj;
 
 private:
 

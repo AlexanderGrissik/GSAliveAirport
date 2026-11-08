@@ -288,6 +288,9 @@
     <ClInclude Include="Source\Requests\GSSimObjReq.h">
       <Filter>Source\Requests</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Requests\GSSimServObjReq.h">
+      <Filter>Source\Requests</Filter>
+    </ClInclude>
     <ClCompile Include="Source\SimObjects\GSAircraft.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
@@ -382,6 +385,12 @@
       <Filter>Source\SimObjects</Filter>
     </ClCompile>
     <ClInclude Include="Source\SimObjects\GSSimObj.h">
+      <Filter>Source\SimObjects</Filter>
+    </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSSimServObj.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClInclude Include="Source\SimObjects\GSSimServObj.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
     <ClCompile Include="Source\SimObjects\GSSmallCones.cpp">

@@ -3,7 +3,7 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 #include "General/GSDefinitions.h"
 #include "General/GSLogStream.h"
 #include <array>
@@ -12,7 +12,7 @@
 namespace NS_GSAliveAirport
 {
 
-class GSCateringCart : public GSSimObj
+class GSCateringCart : public GSSimServObj
 {
 public:
 
@@ -30,7 +30,7 @@ public:
     };
     #pragma pack(pop)
 
-    using GSSimObj::GSSimObj;
+    using GSSimServObj::GSSimServObj;
 
     static void InitDatums(GSSimConnect& handler);
     void SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry);

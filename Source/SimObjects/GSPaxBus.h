@@ -3,18 +3,18 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 
 namespace NS_GSAliveAirport
 {
 
-class GSPaxBus : public GSSimObj
+class GSPaxBus : public GSSimServObj
 {
 public:
 
     GSPaxBus(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent,
              const GSCoord& targetPos, double targetHeading, bool& isArrived):
-        GSSimObj(simHandle, aircraft, parent), m_targetPos(targetPos),
+        GSSimServObj(simHandle, aircraft, parent), m_targetPos(targetPos),
         m_targetHeading(targetHeading), m_isArrived(isArrived) {}
 
     bool PreSpawn() override;

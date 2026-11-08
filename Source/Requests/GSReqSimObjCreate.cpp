@@ -26,7 +26,7 @@ bool GSReqSimObjCreate::OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) {
     if (message->dwID == SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID) {
         auto* msg = static_cast<SIMCONNECT_RECV_ASSIGNED_OBJECT_ID*>(message);
         m_simObj.SetSimObjectID(msg->dwObjectID);
-        m_simObj.RestoreInitPos();
+        m_simObj.OnObjCreated();
         if (m_simObj.OnCreated()) {
             m_simObj.ContinueSpawn();
         }

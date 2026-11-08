@@ -3,14 +3,14 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 #include <array>
 #include <utility>
 
 namespace NS_GSAliveAirport
 {
 
-class GSGroundPower : public GSSimObj
+class GSGroundPower : public GSSimServObj
 {
 public:
 
@@ -28,7 +28,7 @@ public:
     #pragma pack(pop)
 
     GSGroundPower(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, GPUType tp) :
-        GSSimObj(simHandle, aircraft, parent), m_gpuType(tp) {
+        GSSimServObj(simHandle, aircraft, parent), m_gpuType(tp) {
     }
 
     static void InitDatums(GSSimConnect& handler);

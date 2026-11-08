@@ -7,9 +7,6 @@
 #include "General/GSLogStream.h"
 #include "Requests/GSSimObjReq.h"
 #include "General/GSSimConnect.h"
-#include "Animation/GSAnimationObject.h"
-#include "General/GSRoadsNetwork.h"
-#include "GSAircraft.h"
 #include "GSSimObjUpdate.h"
 #include <array>
 #include <memory>
@@ -25,26 +22,21 @@ class GSSimObj : public GSSimObjUpdate
 {
 public:
 
-    GSSimObj(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent):
-        m_simHandle(simHandle), m_aircraft(aircraft), m_parent(parent) {}
+    GSSimObj(GSSimConnect& simHandle, GSSimObjUpdate& parent):
+        m_simHandle(simHandle), m_parent(parent) {}
     virtual ~GSSimObj() {}
 
-    static void InitDatums(GSSimConnect& handler);
-    
     virtual bool PreSpawn() = 0;
-    virtual void OnArrived() = 0;
     virtual bool OnCreated() = 0;
+    virtual void OnObjCreated() = 0;
     
     void OnSpawned(bool ok, GSSimObj& obj) override;
     void OnDespawned() override; 
 
-    void Spawn();
-    void Despawn();
-    void DespawnCont();
-    void QuickArrive();
-    void OnArrival();
-    void RegisterAnim(GSAnimationObject* animObj);
-    void UnregisterAnim();
+    virtual void Spawn() = 0;
+    virtual void Despawn() = 0;
+    virtual void QuickArrive() = 0;
+    virtual void OnArrival() = 0;
     
     const std::string& GetTitle() const { return m_title; }
     const SIMCONNECT_DATA_INITPOSITION& GetInitPos() const { return m_initPos; }
@@ -60,11 +52,8 @@ public:
     void SetTitle(const std::string& title) { m_title = title; }
     void SetHeading(double heading) { m_initPos.Heading = heading; }
     void SetPosition(const GSCoord& pos) { m_initPos.Longitude = pos.Long(); m_initPos.Latitude = pos.Lat(); }
-    void SetTgtSpawnTime(const GSTimePoint& tp); 
-    void PrepareRoute();
-    void FinalizeRoute();
+    void SetQuickArriveFlag() { m_quickArrive = true; }
     void ContinueSpawn();
-    void RestoreInitPos();
 
     void AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float percThrot, unsigned flags);
     void ShootWaypoints(bool reverseArrival);
@@ -72,23 +61,10 @@ public:
 
 protected:
 
-    static GSTimePoint NextSpawnTime();
-
     void DespawnReady();
-    void UnFreeze();
-    void Freeze();
     void DespawnCommand();
-    void AddAttached(GSSimObj* obj);
-    void FinalizeBackRoute();
-    void SetQuickArriveFlag() { m_quickArrive = true; }
-    virtual void OnDespawning() = 0;
-    virtual bool IsDelayedSpawnable() const = 0;
-    virtual bool IsVehicle() const = 0;
-    virtual bool IsArriveReverse() const = 0;
-    virtual bool IsLeaveReverse() const = 0;
     
     GSSimConnect& m_simHandle;
-    GSAircraft& m_aircraft;
     SIMCONNECT_OBJECT_ID m_simObjectID = 0;
     GSSimObjUpdate& m_parent;
     std::string m_title;
@@ -96,15 +72,9 @@ protected:
     std::vector<std::unique_ptr<GSSimObj>> m_attached; 
     std::vector<SIMCONNECT_DATA_WAYPOINT> m_aiWaypoints;
     GSTimePoint m_startMoveTime{};
-    std::shared_ptr<GSTimePoint> m_tgtSpawnTime{nullptr};
-    GSCoord m_preMoveInitPos;
     size_t m_childSpawned = 0;
     size_t m_arriveIdx = 0;
-    bool m_isFullModel = true;
-    bool m_hasAnim = false;
-    bool m_routePrepared = false;
     bool m_spawnRequested = false;
-    bool m_leaving = false;
     bool m_quickArrive = false;
     bool m_readyDespawn = false;
 };

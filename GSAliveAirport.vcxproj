@@ -81,6 +81,7 @@
     <ClInclude Include="Source\Requests\GSReqSimObjContDespawn.h" />
     <ClInclude Include="Source\Requests\GSRequest.h" />
     <ClInclude Include="Source\Requests\GSSimObjReq.h" />
+    <ClInclude Include="Source\Requests\GSSimServObjReq.h" />
     <ClInclude Include="Source\SimObjects\GSStaircase.h" />
     <ClInclude Include="Source\UI\GSAliveUI.h" />
     <ClInclude Include="Source\UI\GSAliveUIAPI.h" />
@@ -100,6 +101,7 @@
     <ClInclude Include="Source\SimObjects\GSPaxBus.h" />
     <ClInclude Include="Source\SimObjects\GSPushback.h" />
     <ClInclude Include="Source\SimObjects\GSSimObj.h" />
+    <ClInclude Include="Source\SimObjects\GSSimServObj.h" />
     <ClInclude Include="Source\SimObjects\GSSmallCones.h" />
     <ClInclude Include="Source\SimObjects\GSStandingHuman.h" />
     <ClInclude Include="Source\SimObjects\GSStatic.h" />
@@ -157,6 +159,7 @@
     <ClCompile Include="Source\SimObjects\GSPaxBus.cpp" />
     <ClCompile Include="Source\SimObjects\GSPushback.cpp" />
     <ClCompile Include="Source\SimObjects\GSSimObj.cpp" />
+    <ClCompile Include="Source\SimObjects\GSSimServObj.cpp" />
     <ClCompile Include="Source\SimObjects\GSSmallCones.cpp" />
     <ClCompile Include="Source\SimObjects\GSStaircase.cpp" />
     <ClCompile Include="Source\SimObjects\GSStandingHuman.cpp" />

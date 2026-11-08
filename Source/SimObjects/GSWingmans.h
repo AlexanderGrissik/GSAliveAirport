@@ -3,13 +3,13 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 #include <cstddef>
 
 namespace NS_GSAliveAirport
 {
 
-class GSWingmans : public GSSimObj
+class GSWingmans : public GSSimServObj
 {
 public:
 
@@ -19,7 +19,7 @@ public:
     };
 
     GSWingmans(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, CountType tp):
-        GSSimObj(simHandle, aircraft, parent), m_countTP(tp) {}
+        GSSimServObj(simHandle, aircraft, parent), m_countTP(tp) {}
 
 private:
 

@@ -3,15 +3,15 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObjReq.h"
-#include "SimObjects/GSSimObj.h"
+#include "GSSimServObjReq.h"
+#include "SimObjects/GSSimServObj.h"
 
 namespace NS_GSAliveAirport
 {
 
-class GSReqSimObjContDespawn : public GSSimObjReq {
+class GSReqSimObjContDespawn : public GSSimServObjReq {
 public:
-    using GSSimObjReq::GSSimObjReq;
+    using GSSimServObjReq::GSSimServObjReq;
     GSReqRC Process() override { m_simObj.DespawnCont(); return { {{0,0},NOERROR},false }; }
     bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override { return true; };
     void OnException(SIMCONNECT_RECV_EXCEPTION* message) override { };

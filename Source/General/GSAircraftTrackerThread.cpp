@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAircraftTrackerThread.h"
+#include "SimObjects/GSSimServObj.h"
 #include "Requests/GSReqTrackerScanAircrafts.h"
 #include "Requests/GSReqTrackerAircraftsInfo.h"
 #include "Requests/GSReqTrackerAirportInfo.h"
@@ -73,7 +74,7 @@ void GSAircraftTrackerThread::OnConnect()
 {
     GSAirport::InitDatums(*this);
     GSAircraft::InitDatums(*this);
-    GSSimObj::InitDatums(*this);
+    GSSimServObj::InitDatums(*this);
     InvokeMapClientEvent(GSEventID_Jetway, "TOGGLE_JETWAY");
     InvokeMapClientEvent(GSEventID_BeaconLights, "BEACON_LIGHTS_SET");
     m_lastScanTime = std::chrono::steady_clock::now() - 10s;

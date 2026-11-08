@@ -3,12 +3,12 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 
 namespace NS_GSAliveAirport
 {
 
-class GSStatic : public GSSimObj
+class GSStatic : public GSSimServObj
 {
 public:
 
@@ -17,7 +17,7 @@ public:
         REL_AIRCRAFT
     };
 
-    using GSSimObj::GSSimObj;
+    using GSSimServObj::GSSimServObj;
 
     void SetPosRel(PosRelation rel) { m_posRel = rel; }
     void SetAnimObj(GSAnimationObject* animObj) { m_animObj.reset(animObj); }

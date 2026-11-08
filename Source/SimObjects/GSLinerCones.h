@@ -3,17 +3,17 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 #include <cstddef>
 
 namespace NS_GSAliveAirport
 {
 
-class GSLinerCones : public GSSimObj
+class GSLinerCones : public GSSimServObj
 {
 public:
 
-    using GSSimObj::GSSimObj;
+    using GSSimServObj::GSSimServObj;
 
 private:
 

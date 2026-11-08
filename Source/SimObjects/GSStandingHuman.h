@@ -3,13 +3,13 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 #include "General/GSCoord.h"
 
 namespace NS_GSAliveAirport
 {
 
-class GSStandingHuman : public GSSimObj
+class GSStandingHuman : public GSSimServObj
 {
 public:
 
@@ -19,7 +19,7 @@ public:
     };
 
     GSStandingHuman(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent, HumanType humanType, const GSCoord& loc):
-        GSSimObj(simHandle, aircraft, parent), m_humanType(humanType), m_loc(loc){}
+        GSSimServObj(simHandle, aircraft, parent), m_humanType(humanType), m_loc(loc){}
 
     bool PreSpawn() override;
 

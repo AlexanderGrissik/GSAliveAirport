@@ -3,7 +3,7 @@
 // See LICENSE for details
 #pragma once
 
-#include "GSSimObj.h"
+#include "GSSimServObj.h"
 #include "General/GSCoord.h"
 #include "Animation/GSAnimationObject.h"
 
@@ -14,14 +14,14 @@
 namespace NS_GSAliveAirport
 {
 
-class GSPassenger : public GSSimObj
+class GSPassenger : public GSSimServObj
 {
 public:
 
     GSPassenger(GSSimConnect& simHandle, GSAircraft& aircraft, GSSimObjUpdate& parent,
                 const GSCoord& stairBasePos, const GSCoord& stairTopPos, const GSCoord& doorPos,
                 float stairBaseHeading, float doorAltFeet):
-        GSSimObj(simHandle, aircraft, parent), m_stairBasePos(stairBasePos), m_stairTopPos(stairTopPos), m_doorPos(doorPos),
+        GSSimServObj(simHandle, aircraft, parent), m_stairBasePos(stairBasePos), m_stairTopPos(stairTopPos), m_doorPos(doorPos),
         m_doorAltFeet(doorAltFeet), m_stairBaseHeading(stairBaseHeading) {}
 
     bool PreSpawn() override;
