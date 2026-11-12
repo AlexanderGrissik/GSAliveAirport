@@ -56,13 +56,16 @@ public:
 	void AddPath(DWORD idA, DWORD idB, RoadPathType pathType);
 	void AddPath(const RoadPath& path);
 	bool HasNode(DWORD id) const { return m_roadNodes.contains(id); }
-    double GetTotalVehiclePathLengthMeters() const;
+	size_t GetRoadPathCount() const { return m_vehiclePaths.size(); }
+	double GetTotalVehiclePathLengthMeters() const { return m_totalRoadLengthMeters; }
 
     std::optional<const RoadNode*> GetClosestNormalParking(const GSCoord& location) const;
     std::optional<const RoadNode*> GetRandomVehicleParking() const;
 	std::optional<const RoadNode*> GetRandomNode() const;
+    const RoadNode* GetRandomRoadNode(const RoadNode* except) const;
 
     void MergeNetwork(GSRoadsNetwork& network);
+    void BuildVehiclePaths();
     void FindShortestPath(const RoadNode& start, const RoadNode& end, std::list<const RoadNode*>& out) const;
     std::optional<const RoadNode*> GetClosestJetwayParking(const GSCoord& location) const;
 	RoadPath GetClosestDisjointNodes(GSRoadsNetwork& other);
@@ -72,10 +75,11 @@ private:
 
 	std::unordered_map<DWORD, RoadNode> m_roadNodes;
 	std::list<RoadPath> m_roadPaths; // Removing elements will break pointers.
-    double m_totalRoadLengthMeters = 0.0;
+    std::vector<const RoadPath*> m_vehiclePaths;
 	std::vector<const RoadNode*> m_normalParkings;
 	std::vector<const RoadNode*> m_vehicleParkings;
     std::vector<const RoadNode*> m_allNodes;
+	double m_totalRoadLengthMeters = 0.0;
 };
 
 }

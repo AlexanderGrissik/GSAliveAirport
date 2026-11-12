@@ -26,7 +26,6 @@ public:
     void OnDespawned() override;
     void Spawn();
     void Despawn();
-    void QuickArrive();
 
     SpawnState GetSpawnState() const { return m_spawnState; }
 

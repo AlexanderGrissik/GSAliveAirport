@@ -45,15 +45,6 @@ void GSGroupGround::Despawn()
     }
 }
 
-void GSGroupGround::QuickArrive()
-{
-    if (m_spawnState == SpawnState::SPAWNING) {
-        for (auto& obj : m_objs) {
-            obj->QuickArrive();
-        }
-    }
-}
-
 void GSGroupGround::OnSpawned(bool ok, GSSimObj& obj)
 {
     if (ok) {

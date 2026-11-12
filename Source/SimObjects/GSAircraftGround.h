@@ -23,6 +23,7 @@ public:
     virtual ~GSAircraftGround() = default;
 
     void BuildObjs() override;
+    void QuickArrive();
 
     void UpdateAircraft(const GSAircraft& aircraft);
     const GSAircraft& Aircraft() const { return m_aircraft; }

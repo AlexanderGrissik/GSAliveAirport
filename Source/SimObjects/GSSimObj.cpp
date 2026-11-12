@@ -8,6 +8,15 @@
 namespace NS_GSAliveAirport
 {
 
+constexpr std::array GSDatums_AIWaypoints{
+    GSDatum{"AI WAYPOINT LIST", "number", SIMCONNECT_DATATYPE_WAYPOINT},
+};
+
+void GSSimObj::InitDatums(GSSimConnect& handler)
+{
+    handler.InvokeAddDatums(GSDatums_AIWaypoints, GSDatumID_AIWaypoints);
+}
+
 void GSSimObj::DespawnReady()
 {
     m_readyDespawn = true;
@@ -18,6 +27,14 @@ void GSSimObj::DespawnCommand()
 {
     if (m_readyDespawn && m_attached.empty())
         m_simHandle.PostReqCommand(new GSReqSimObjDelete(m_simHandle, *this));
+}
+
+void GSSimObj::DespawnAttached()
+{
+    if (m_attached.size() > 0) {
+        for (auto& obj : m_attached)
+            obj->Despawn();
+    }
 }
 
 void GSSimObj::OnSpawned(bool ok, GSSimObj& obj)
@@ -48,11 +65,13 @@ void GSSimObj::ShootWaypoints(bool reverseArrival)
     //}
 
     size_t skipLast = reverseArrival ? 1 : 0;
-    m_arriveIdx = m_aiWaypoints.size() - skipLast - 1U;
-    m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
-        GSDatumID_AIWaypoints, m_simObjectID, 0U, static_cast<DWORD>(m_aiWaypoints.size() - skipLast),
-        static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), 
-        m_aiWaypoints.data());
+    if (m_aiWaypoints.size() > skipLast) {
+        m_arriveIdx = m_aiWaypoints.size() - skipLast - 1U;
+        m_simHandle.Invoke(SimConnect_SetDataOnSimObject,
+            GSDatumID_AIWaypoints, m_simObjectID, 0U, static_cast<DWORD>(m_aiWaypoints.size() - skipLast),
+            static_cast<DWORD>(sizeof(SIMCONNECT_DATA_WAYPOINT)), 
+            m_aiWaypoints.data());
+    }
 
     m_startMoveTime = std::chrono::steady_clock::now();
     m_simHandle.PostCommand(new GSCmdMvmntObjAdd(*this, reverseArrival));

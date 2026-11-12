@@ -181,6 +181,7 @@ void GSAirport::MergeAllRoadNetworks(std::list<GSRoadsNetwork>& roadNetworks)
 
     // Move the single merged network into the member.
     m_roadNetwork = std::move(roadNetworks.front());
+    m_roadNetwork.BuildVehiclePaths();
 
     m_roadNetwork.Print();
 }

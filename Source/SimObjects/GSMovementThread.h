@@ -33,6 +33,7 @@ public:
 		GSCoord m_lastPosition;
 		bool m_inProgress;
 		bool m_quick;
+		bool m_remove;
 		bool m_reversePending;
 	};
 
@@ -59,6 +60,7 @@ private:
 	void RunLoopMoveTracking(std::stop_token stopToken);
 	void RequestTracking();
 	void Arrived(GSMovementThread::TrackState& track);
+	void Removed(GSMovementThread::TrackState& track);
 
 	std::unordered_map<SIMCONNECT_OBJECT_ID, TrackState> m_trackObjs;
 	GSTimePoint m_lastTrackTime{};

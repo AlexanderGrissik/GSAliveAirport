@@ -21,15 +21,11 @@ using namespace std::chrono_literals;
 namespace NS_GSAliveAirport
 {
 
-constexpr std::array GSDatums_AIWaypoints{
-    GSDatum{"AI WAYPOINT LIST", "number", SIMCONNECT_DATATYPE_WAYPOINT},
-};
-
 void GSSimServObj::InitDatums(GSSimConnect& handler)
 {
+    GSSimObj::InitDatums(handler);
     GSAnimationObject::InitDatums(handler);
-    handler.InvokeAddDatums(GSDatums_AIWaypoints, GSDatumID_AIWaypoints);
-
+    
     handler.InvokeMapClientEvent(GSEventID_Freeze_LongLat, "FREEZE_LATITUDE_LONGITUDE_SET");
     handler.InvokeMapClientEvent(GSEventID_Freeze_Altitude, "FREEZE_ALTITUDE_SET");
     handler.InvokeMapClientEvent(GSEventID_Freeze_Attitude, "FREEZE_ATTITUDE_SET");
@@ -77,10 +73,7 @@ void GSSimServObj::Spawn()
 
 void GSSimServObj::Despawn()
 {
-    if (m_attached.size() > 0) {
-        for (auto& obj : m_attached)
-            obj->Despawn();
-    }
+    DespawnAttached();
     
     if (m_hasAnim)
         UnregisterAnim();
@@ -106,7 +99,7 @@ void GSSimServObj::QuickArrive()
             m_simHandle.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, *this));
         
         for (auto& obj : m_attached)
-            obj->QuickArrive();
+            static_cast<GSSimServObj&>(*obj).QuickArrive();
     }
 }
 
@@ -114,7 +107,7 @@ void GSSimServObj::AddAttached(GSSimServObj* obj)
 {
     if (m_quickArrive) {
         obj->SetTgtSpawnTime(std::chrono::steady_clock::now());
-        obj->SetQuickArriveFlag();
+        obj->m_quickArrive = true;
     }
 
     m_attached.emplace_back(std::unique_ptr<GSSimObj>(obj));

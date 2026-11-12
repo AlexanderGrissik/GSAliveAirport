@@ -162,6 +162,8 @@
     <ClCompile Include="Source\SimObjects\GSPushback.cpp" />
     <ClCompile Include="Source\SimObjects\GSSimObj.cpp" />
     <ClCompile Include="Source\SimObjects\GSSimServObj.cpp" />
+    <ClCompile Include="Source\SimObjects\GSUtilityVehicle.cpp" />
+    <ClCompile Include="Source\SimObjects\GSSimUtilObj.cpp" />
     <ClCompile Include="Source\SimObjects\GSSmallCones.cpp" />
     <ClCompile Include="Source\SimObjects\GSStaircase.cpp" />
     <ClCompile Include="Source\SimObjects\GSStandingHuman.cpp" />

@@ -399,6 +399,12 @@
     <ClInclude Include="Source\SimObjects\GSUtilityVehicle.h">
       <Filter>Source\SimObjects</Filter>
     </ClInclude>
+    <ClCompile Include="Source\SimObjects\GSUtilityVehicle.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SimObjects\GSSimUtilObj.cpp">
+      <Filter>Source\SimObjects</Filter>
+    </ClCompile>
     <ClCompile Include="Source\SimObjects\GSSmallCones.cpp">
       <Filter>Source\SimObjects</Filter>
     </ClCompile>

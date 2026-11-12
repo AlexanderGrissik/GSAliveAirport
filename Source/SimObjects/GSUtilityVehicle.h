@@ -13,6 +13,8 @@ class GSUtilityVehicle : public GSSimUtilObj
 public:
     using GSSimUtilObj::GSSimUtilObj;
     ~GSUtilityVehicle() override = default;
+
+    bool PreSpawn() override;
 };
 
 } // namespace NS_GSAliveAirport

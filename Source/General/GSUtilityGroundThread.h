@@ -27,7 +27,7 @@ public:
     void Start();
     void Stop();
 
-    void OnConnect() override {}
+    void OnConnect() override;
     void OnDisconnect() override { OnSimStop(); }
     void OnSimStart() override {}
     void OnSimStop() override;

@@ -77,7 +77,20 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
     case GS_CMD_MVMNT_OBJ_ADD: {
         auto& cmdObj = static_cast<GSCmdMvmntObjAdd&>(cmd);
         m_trackObjs.try_emplace(cmdObj.ObjID(), &cmdObj.SimObj(), std::chrono::steady_clock::now(),
-            GSCoord{0.0, 0.0}, false, false, cmdObj.ReverseArrival());
+            GSCoord{0.0, 0.0}, false, false, false, cmdObj.ReverseArrival());
+        break;
+    }
+    case GS_CMD_MVMNT_OBJ_REM: {
+        auto& cmdObj = static_cast<GSCmdSimObj&>(cmd);
+        auto itr = m_trackObjs.find(cmdObj.ObjID());
+        if (itr != m_trackObjs.end()) {
+            itr->second.m_remove = true;
+            if (!itr->second.m_inProgress) {
+                Removed(itr->second);
+            }
+        } else {
+            cmdObj.SimObj().GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_DONE, cmdObj.SimObj()));
+        }
         break;
     }
     case GS_CMD_MVMNT_OBJ_QUICK: {
@@ -104,11 +117,22 @@ void GSMovementThread::Arrived(GSMovementThread::TrackState& track)
     simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ARR, *simObj));
 }
 
+void GSMovementThread::Removed(GSMovementThread::TrackState& track)
+{
+    auto simObj = track.m_simObj;
+    m_trackObjs.erase(track.m_simObj->GetSimObjectID());
+    simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_DONE, *simObj));
+}
+
 void GSMovementThread::OnErrorPosReq(GSMovementThread::TrackState& track)
 {
     track.m_inProgress = false;
     DecrInflight();
-    Arrived(track);
+    if (track.m_remove) {
+        Removed(track);
+    } else {
+        Arrived(track);
+    }
 }
 
 void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, GSMovementThread::TrackState& track)
@@ -122,13 +146,18 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
         return;
     }
 
+    if (track.m_remove) {
+        Removed(track);
+        return;
+    }
+
     StateWireDataGet rawStateGet;
     GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
     const auto nowTime = std::chrono::steady_clock::now();
     const GSCoord currentPos{rawStateGet.posLong, rawStateGet.posLat};
-    const auto& dst = track.m_simObj->GetDestPoint();
-    const auto distToDest = GSGeography::DistanceMeters({ dst.Longitude, dst.Latitude }, currentPos);
+    const auto* dst = track.m_simObj->GetDestPoint();
+    const auto distToDest = (dst ? GSGeography::DistanceMeters({ dst->Longitude, dst->Latitude }, currentPos) : 0);
 
     bool arrived = false;
     bool maxTime = (nowTime - track.m_simObj->GetStartMoveTime() > 900s);

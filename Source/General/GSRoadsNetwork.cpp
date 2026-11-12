@@ -66,11 +66,6 @@ void GSRoadsNetwork::AddPath(const RoadPath& path)
     }
 }
 
-double GSRoadsNetwork::GetTotalVehiclePathLengthMeters() const
-{
-    return m_totalRoadLengthMeters;
-}
-
 std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetClosestNormalParking(const GSCoord& location) const
 {
     const RoadNode* closest = nullptr;
@@ -108,6 +103,33 @@ std::optional<const GSRoadsNetwork::RoadNode*> GSRoadsNetwork::GetRandomNode() c
 	}
 
 	return m_allNodes[GSRandom::RandSizeT(0, m_allNodes.size() - 1)];
+}
+
+const GSRoadsNetwork::RoadNode* GSRoadsNetwork::GetRandomRoadNode(const RoadNode* except) const
+{
+    if (m_vehiclePaths.empty()) {
+        return nullptr;
+    }
+
+    const auto* path = m_vehiclePaths[GSRandom::RandSizeT(0, m_vehiclePaths.size() - 1)];
+	if (except == path->m_nodeA)
+		return path->m_nodeB;
+	
+	if (except == path->m_nodeB)
+		return path->m_nodeA;
+
+    return GSRandom::RandSizeT(0, 1) == 0 ? path->m_nodeA : path->m_nodeB;
+}
+
+void GSRoadsNetwork::BuildVehiclePaths()
+{
+    m_vehiclePaths.clear();
+    m_vehiclePaths.reserve(m_roadPaths.size());
+    for (const auto& path : m_roadPaths) {
+        if (path.m_pathType == PATH_VEHICLE) {
+            m_vehiclePaths.push_back(&path);
+        }
+    }
 }
 
 void GSRoadsNetwork::MergeNetwork(GSRoadsNetwork& network)

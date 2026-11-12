@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // See LICENSE for details
 #include "GSAircraftGround.h"
+#include "GSSimServObj.h"
 #include <algorithm>
 #include "General/GSLogStream.h"
 #include "General/GSRandom.h"
@@ -111,6 +112,15 @@ void GSAircraftGround::Unspawned()
     m_spawnState = SpawnState::UNSPAWNED;
     GSLogStream::Log("Services Despawned for: ") << m_aircraft.GetObjID();
     m_ui.PostMessageUI(GSAliveUIAPI::UpdateAircraftServices(m_aircraft.GetObjID(), GSAliveUIAPI::AircraftService::None));
+}
+
+void GSAircraftGround::QuickArrive()
+{
+    if (m_spawnState == SpawnState::SPAWNING) {
+        for (auto& obj : m_objs) {
+            static_cast<GSSimServObj&>(*obj).QuickArrive();
+        }
+    }
 }
 
 void GSAircraftGround::SetClosestParking()

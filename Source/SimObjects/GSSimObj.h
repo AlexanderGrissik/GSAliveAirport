@@ -26,24 +26,24 @@ public:
         m_simHandle(simHandle), m_parent(parent) {}
     virtual ~GSSimObj() {}
 
+    static void InitDatums(GSSimConnect& handler);
+
     virtual bool PreSpawn() = 0;
     virtual bool OnCreated() = 0;
     virtual void OnObjCreated() = 0;
+    virtual void Spawn() = 0;
+    virtual void Despawn() = 0;
+    virtual void OnArrival() = 0;
     
     void OnSpawned(bool ok, GSSimObj& obj) override;
     void OnDespawned() override; 
 
-    virtual void Spawn() = 0;
-    virtual void Despawn() = 0;
-    virtual void QuickArrive() = 0;
-    virtual void OnArrival() = 0;
-    
     const std::string& GetTitle() const { return m_title; }
     const SIMCONNECT_DATA_INITPOSITION& GetInitPos() const { return m_initPos; }
     SIMCONNECT_DATA_INITPOSITION& GetInitPos() { return m_initPos; }
     SIMCONNECT_OBJECT_ID GetSimObjectID() const { return m_simObjectID; }
     GSSimConnect& GetSimConnect() const { return m_simHandle; }
-    const SIMCONNECT_DATA_WAYPOINT& GetDestPoint() const { return m_aiWaypoints[m_arriveIdx]; }
+    const SIMCONNECT_DATA_WAYPOINT* GetDestPoint() const { return m_aiWaypoints.size() ? &m_aiWaypoints[m_arriveIdx] : nullptr; }
     const GSTimePoint& GetStartMoveTime() const { return m_startMoveTime; } 
 
     void SetSimObjectID(DWORD id) { m_simObjectID = static_cast<SIMCONNECT_OBJECT_ID>(id); }
@@ -52,8 +52,8 @@ public:
     void SetTitle(const std::string& title) { m_title = title; }
     void SetHeading(double heading) { m_initPos.Heading = heading; }
     void SetPosition(const GSCoord& pos) { m_initPos.Longitude = pos.Long(); m_initPos.Latitude = pos.Lat(); }
-    void SetQuickArriveFlag() { m_quickArrive = true; }
     void ContinueSpawn();
+    void DespawnAttached();
 
     void AddWaypoint(const GSCoord& pos, float alt, float ktsSpeed, float percThrot, unsigned flags);
     void ShootWaypoints(bool reverseArrival);
@@ -75,7 +75,6 @@ protected:
     size_t m_childSpawned = 0;
     size_t m_arriveIdx = 0;
     bool m_spawnRequested = false;
-    bool m_quickArrive = false;
     bool m_readyDespawn = false;
 };
 

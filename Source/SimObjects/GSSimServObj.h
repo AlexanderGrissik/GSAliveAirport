@@ -24,31 +24,32 @@ public:
 
     void Spawn() override;
     void Despawn() override;
-    void DespawnCont();
-    void QuickArrive() override;
     void OnArrival() override;
     void OnObjCreated() override;
-    void RestoreInitPos();
-    void SetTgtSpawnTime(const GSTimePoint& tp);
 
-    void RegisterAnim(GSAnimationObject* animObj);
-    void UnregisterAnim();
-    void PrepareRoute();
-    void FinalizeRoute();
+    void DespawnCont();
+    void QuickArrive();
+    void SetTgtSpawnTime(const GSTimePoint& tp);
 
 protected:
     static GSTimePoint NextSpawnTime();
 
-    void UnFreeze();
-    void Freeze();
-    void AddAttached(GSSimServObj* obj);
-    void FinalizeBackRoute();
     virtual void OnDespawning() = 0;
     virtual bool IsDelayedSpawnable() const = 0;
     virtual bool IsVehicle() const = 0;
     virtual bool IsArriveReverse() const = 0;
     virtual bool IsLeaveReverse() const = 0;
 
+    void RegisterAnim(GSAnimationObject* animObj);
+    void FinalizeRoute();
+    void PrepareRoute();
+    void UnregisterAnim();
+    void RestoreInitPos();
+    void UnFreeze();
+    void Freeze();
+    void AddAttached(GSSimServObj* obj);
+    void FinalizeBackRoute();
+    
     GSAircraft& m_aircraft;
     std::shared_ptr<GSTimePoint> m_tgtSpawnTime{nullptr};
     GSCoord m_preMoveInitPos;
@@ -56,6 +57,7 @@ protected:
     bool m_hasAnim = false;
     bool m_routePrepared = false;
     bool m_leaving = false;
+    bool m_quickArrive = false;
 };
 
 } // namespace NS_GSAliveAirport

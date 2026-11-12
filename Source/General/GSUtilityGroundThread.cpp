@@ -3,6 +3,9 @@
 // See LICENSE for details
 #include "GSUtilityGroundThread.h"
 #include "Commands/GSCmdAirport.h"
+#include "Commands/GSCmdSimObj.h"
+#include "Commands/GSCmdMvmntObjAdd.h"
+#include "SimObjects/GSSimUtilObj.h"
 #include "GSLogStream.h"
 #include <chrono>
 #include <stop_token>
@@ -33,6 +36,11 @@ void GSUtilityGroundThread::Stop()
     m_thread.join();
 }
 
+void GSUtilityGroundThread::OnConnect()
+{
+    GSSimObj::InitDatums(*this);
+}
+
 void GSUtilityGroundThread::OnSimStop()
 {
     RemoveActiveAirport();
@@ -43,6 +51,20 @@ void GSUtilityGroundThread::OnCommand(GSCommand& cmd)
     switch (cmd.GetCmdID()) {
     case GS_CMD_AIRPORT_USER:
         OnUserAirport(static_cast<GSCmdAirport&>(cmd).GetAirport());
+        break;
+    case GS_CMD_MVMNT_OBJ_ADD: {
+        auto& cmdObj = static_cast<GSCmdMvmntObjAdd&>(cmd);
+        m_mvmntThread.PostCommand(new GSCmdMvmntObjAdd(cmdObj.SimObj(), cmdObj.ReverseArrival()));
+        break;
+    }
+    case GS_CMD_MVMNT_OBJ_REM:
+        m_mvmntThread.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM, static_cast<GSCmdSimObj&>(cmd).SimObj()));
+        break;
+    case GS_CMD_MVMNT_OBJ_ARR:
+        static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrival();
+        break;
+    case GS_CMD_MVMNT_OBJ_REM_DONE: 
+        static_cast<GSSimUtilObj&>(static_cast<GSCmdSimObj&>(cmd).SimObj()).DespawnCont();
         break;
     default:
         GSLogStream::LogError("GSUtilityGroundThread - Unexpected cmd: ") << cmd.GetCmdID();
