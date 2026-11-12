@@ -13,13 +13,23 @@ namespace NS_GSAliveAirport
 
 void GSCatalog::LoadCatalog()
 {
-    m_entires.clear();
-    m_entires.reserve(1024);
     m_entiresBuggageLoaderExt.clear();
     m_entiresBuggageLoaderExt.reserve(64);
+    m_entiresBuggageWorkerExt.clear();
     m_entiresStaircaseExt.clear();
     m_entiresStaircaseExt.reserve(64);
+    m_entiresTugExt.clear();
+    m_entiresTruckFacility.clear();
+    m_entiresTarmac.clear();
+    m_entriesPilotExt.clear();
+    m_entriesPassengerExt.clear();
+    m_entriesMarshallerExt.clear();
+    m_entriesMarshaller.clear();
+    m_entriesWingwalkerExt.clear();
+    m_entires.clear();
+    m_entires.reserve(1024);
     
+    m_source = std::stop_source{};
     auto stop = m_source.get_token();
     while (!stop.stop_requested()) {
         RunDispatch(stop);

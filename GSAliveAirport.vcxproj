@@ -102,6 +102,8 @@
     <ClInclude Include="Source\SimObjects\GSPushback.h" />
     <ClInclude Include="Source\SimObjects\GSSimObj.h" />
     <ClInclude Include="Source\SimObjects\GSSimServObj.h" />
+    <ClInclude Include="Source\SimObjects\GSSimUtilObj.h" />
+    <ClInclude Include="Source\SimObjects\GSUtilityVehicle.h" />
     <ClInclude Include="Source\SimObjects\GSSmallCones.h" />
     <ClInclude Include="Source\SimObjects\GSStandingHuman.h" />
     <ClInclude Include="Source\SimObjects\GSStatic.h" />
