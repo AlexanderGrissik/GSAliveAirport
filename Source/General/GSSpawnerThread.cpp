@@ -106,11 +106,11 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
         UserAircraft();
         break;
     case GS_CMD_ANIM_OBJ_ADD:
-        m_animThread.PostCommand(
+        m_animThread.PostCommandExt(
             new GSCmdAnimObj(GS_CMD_ANIM_OBJ_ADD, *this, static_cast<GSCmdAnimObj&>(cmd).AnimObj().release()));
         break;
     case GS_CMD_ANIM_OBJ_REM:
-        m_animThread.PostCommand(
+        m_animThread.PostCommandExt(
             new GSCmdAnimObj(GS_CMD_ANIM_OBJ_REM, *this, static_cast<GSCmdAnimObj&>(cmd).ObjID(), static_cast<GSCmdAnimObj&>(cmd).ReleaseReq()));
         break;
     case GS_CMD_ANIM_OBJ_REM_DONE:
@@ -118,12 +118,12 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
         break;
     case GS_CMD_MVMNT_OBJ_ADD: {
         auto& cmdObj = static_cast<GSCmdMvmntObjAdd&>(cmd);
-        m_mvmntThread.PostCommand(
+        m_mvmntThread.PostCommandExt(
             new GSCmdMvmntObjAdd(cmdObj.SimObj(), cmdObj.ReverseArrival()));
         break;
     }
     case GS_CMD_MVMNT_OBJ_QUICK:
-        m_mvmntThread.PostCommand(
+        m_mvmntThread.PostCommandExt(
             new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
     case GS_CMD_MVMNT_OBJ_ARR:

@@ -54,11 +54,11 @@ void GSUtilityGroundThread::OnCommand(GSCommand& cmd)
         break;
     case GS_CMD_MVMNT_OBJ_ADD: {
         auto& cmdObj = static_cast<GSCmdMvmntObjAdd&>(cmd);
-        m_mvmntThread.PostCommand(new GSCmdMvmntObjAdd(cmdObj.SimObj(), cmdObj.ReverseArrival()));
+        m_mvmntThread.PostCommandExt(new GSCmdMvmntObjAdd(cmdObj.SimObj(), cmdObj.ReverseArrival()));
         break;
     }
     case GS_CMD_MVMNT_OBJ_REM:
-        m_mvmntThread.PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM, static_cast<GSCmdSimObj&>(cmd).SimObj()));
+        m_mvmntThread.PostCommandExt(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
     case GS_CMD_MVMNT_OBJ_ARR:
         static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrival();

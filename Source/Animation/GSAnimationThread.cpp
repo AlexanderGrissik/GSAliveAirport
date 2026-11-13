@@ -82,7 +82,7 @@ void GSAnimationThread::OnCommand(GSCommand& cmd)
     case GS_CMD_ANIM_OBJ_REM: {
         auto& cmdAnim = static_cast<GSCmdAnimObj&>(cmd);
         m_animObjs.erase(cmdAnim.ObjID());
-        cmdAnim.RetSimConn().PostCommand(
+        cmdAnim.RetSimConn().PostCommandExt(
             new GSCmdAnimObj(GS_CMD_ANIM_OBJ_REM_DONE, *this, cmdAnim.ObjID(), cmdAnim.ReleaseReq()));
         break;
     }

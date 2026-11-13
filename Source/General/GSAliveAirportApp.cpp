@@ -90,10 +90,10 @@ void GSAliveAirportApp::HandleCommand(const AppCommand &command)
         }
         break;
     case AT::Test:
-        m_aircraftTracker.PostCommand(new GSCommand(GS_CMD_SPAWN_TEST_AIRCRAFTS));
+        m_aircraftTracker.PostCommandExt(new GSCommand(GS_CMD_SPAWN_TEST_AIRCRAFTS));
         break;
     case AT::TestJetway:
-        m_aircraftTracker.PostCommand(new GSCommand(GS_CMD_SPAWN_TEST_AIRCRAFTS_JETWAY));
+        m_aircraftTracker.PostCommandExt(new GSCommand(GS_CMD_SPAWN_TEST_AIRCRAFTS_JETWAY));
         break;
     case AT::Injector:
     {

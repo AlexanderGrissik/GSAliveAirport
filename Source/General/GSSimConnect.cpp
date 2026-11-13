@@ -111,6 +111,7 @@ void GSSimConnect::RunDispatch(std::stop_token stopToken)
         }
 
         RunCommands();
+        RunCommandsSelf();
         if (!m_handle) {
             std::this_thread::sleep_for(2000ms);
         }
@@ -258,32 +259,41 @@ void GSSimConnect::InvokeMapClientEvent(SIMCONNECT_CLIENT_EVENT_ID EventID, cons
 
 void GSSimConnect::RunCommands()
 {
-    while (!m_deferred.empty() && m_commands.TryPush(m_deferred.front())) {
-        m_deferred.pop_front();
-    }
-
-    const auto currTime = std::chrono::steady_clock::now();
-    bool cont = true;
+    size_t cont = 1024;
     do {
         auto opt = m_commands.TryPop();
         if (opt.has_value()) {
-            const auto& execTime = (*opt)->GetExecTime();
-            if (execTime.has_value() && **execTime > currTime) {
-                m_deferred.push_back(std::move(*opt));
-                continue;
-            }
-
-            m_lastLoopMsg = true;
-            if (opt->get()->GetCmdID() == GS_CMD_REQ_PROCESS)
-                HandleCmdReqProcess(static_cast<GSCmdReq&>(*opt->get()));
-            else if (opt->get()->GetCmdID() == GS_CMD_REQ_PROCESS_IDENT)
-                HandleCmdReqIdentProcess(static_cast<GSCmdReqIdent&>(*opt->get()));
-            else
-                OnCommand(*opt->get());
+            ExecuteCommand(**opt);
         } else {
-            cont = false;
+            cont = 1;
         }
-    } while (cont);
+    } while (--cont > 0);
+}
+
+void GSSimConnect::RunCommandsSelf()
+{
+    m_commandsSelf.swap(m_commandsSelfBatch);
+    const auto currTime = std::chrono::steady_clock::now();
+    for (auto& pending : m_commandsSelfBatch) {
+        const auto& execTime = pending->GetExecTime();
+        if (execTime.has_value() && **execTime > currTime) {
+            PostCommand(pending.release());
+        } else {
+            ExecuteCommand(*pending);
+        }
+    }
+    m_commandsSelfBatch.clear();
+}
+
+void GSSimConnect::ExecuteCommand(GSCommand& cmd)
+{
+    m_lastLoopMsg = true;
+    if (cmd.GetCmdID() == GS_CMD_REQ_PROCESS)
+        HandleCmdReqProcess(static_cast<GSCmdReq&>(cmd));
+    else if (cmd.GetCmdID() == GS_CMD_REQ_PROCESS_IDENT)
+        HandleCmdReqIdentProcess(static_cast<GSCmdReqIdent&>(cmd));
+    else
+        OnCommand(cmd);
 }
 
 void GSSimConnect::HandleCmdReqProcess(GSCmdReq& cmd)
@@ -340,10 +350,19 @@ void GSSimConnect::ReadMsgData(void* dest, size_t offset, size_t destSize, const
     }
 }
 
-void GSSimConnect::PostCommand(GSCommand* cmd)
+void GSSimConnect::PostCommandExt(GSCommand* cmd)
 {
     GSCommandU cmdU(cmd);
     m_commands.Push(cmdU);
+}
+
+void GSSimConnect::PostCommand(GSCommand* cmd)
+{
+    GSCommandU cmdU(cmd);
+    if (m_commandsSelf.size() >= m_commandsSelf.capacity()) {
+        m_commandsSelf.reserve(m_commandsSelf.capacity() + 1024);
+    }
+    m_commandsSelf.push_back(std::move(cmdU));
 }
 
 void GSSimConnect::PostReqCommand(GSRequest* req)

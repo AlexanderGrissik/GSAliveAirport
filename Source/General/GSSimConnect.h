@@ -9,7 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
-#include <list>
+#include <vector>
 #include <stop_token>
 #include <unordered_map>
 #include <utility>
@@ -53,6 +53,7 @@ public:
     static void ReadMsgData(void* dest, size_t offset, size_t dstSize, const SIMCONNECT_RECV_SIMOBJECT_DATA& entry);
 
     void FlushPendingRequestsWithException();
+    void PostCommandExt(GSCommand* cmd);
     void PostCommand(GSCommand* cmd);
     void PostReqCommand(GSRequest* req);
     void PostReqCommandDeferred(GSRequest* req, std::shared_ptr<GSTimePoint>& execTime);
@@ -65,6 +66,7 @@ protected:
 
     void RunDispatch(std::stop_token stopToken);
     void RunCommands();
+    void RunCommandsSelf();
     void Disconnect();  
     HANDLE GetHandle() const { return m_handle; }
     bool IsLastLoopMessage() const { return m_lastLoopMsg; }
@@ -75,6 +77,7 @@ protected:
 private:
     
     void OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSize);
+    void ExecuteCommand(GSCommand& cmd);
     void HandleCmdReqProcess(GSCmdReq& cmd);
     void HandleCmdReqIdentProcess(GSCmdReqIdent& cmd);
     
@@ -92,7 +95,8 @@ private:
     bool m_simStarted = false;
     bool m_reportedWaiting = false;
     GSCommandUQueue m_commands;
-    std::list<GSCommandU> m_deferred;
+    std::vector<GSCommandU> m_commandsSelf;
+    std::vector<GSCommandU> m_commandsSelfBatch;
 
     std::unordered_map<GSInvokeID, GSRequestR, decltype(&HashReqID), decltype(&EqualReqID)> m_reqIDToPtr{ 1, &HashReqID, &EqualReqID };
     std::unordered_map<GSInvokeID, GSRequestU, decltype(&HashSendID), decltype(&EqualSendID)> m_sendIDToPtr{ 1, &HashSendID, &EqualSendID };

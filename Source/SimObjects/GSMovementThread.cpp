@@ -89,7 +89,7 @@ void GSMovementThread::OnCommand(GSCommand& cmd)
                 Removed(itr->second);
             }
         } else {
-            cmdObj.SimObj().GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_DONE, cmdObj.SimObj()));
+            cmdObj.SimObj().GetSimConnect().PostCommandExt(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_DONE, cmdObj.SimObj()));
         }
         break;
     }
@@ -114,14 +114,14 @@ void GSMovementThread::Arrived(GSMovementThread::TrackState& track)
 {
     auto simObj = track.m_simObj;
     m_trackObjs.erase(track.m_simObj->GetSimObjectID());
-    simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ARR, *simObj));
+    simObj->GetSimConnect().PostCommandExt(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_ARR, *simObj));
 }
 
 void GSMovementThread::Removed(GSMovementThread::TrackState& track)
 {
     auto simObj = track.m_simObj;
     m_trackObjs.erase(track.m_simObj->GetSimObjectID());
-    simObj->GetSimConnect().PostCommand(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_DONE, *simObj));
+    simObj->GetSimConnect().PostCommandExt(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM_DONE, *simObj));
 }
 
 void GSMovementThread::OnErrorPosReq(GSMovementThread::TrackState& track)
