@@ -183,8 +183,11 @@ void GSSimServObj::PrepareRoute()
 
     static unsigned flags = SIMCONNECT_WAYPOINT_ON_GROUND | SIMCONNECT_WAYPOINT_SPEED_REQUESTED;
     m_aiWaypoints.reserve(route.size() + 10);
+    const auto* prevPnt = route.front();
     for (const auto* pnt : route) {
-        m_aiWaypoints.emplace_back(pnt->m_loc.Lat(), pnt->m_loc.Long(), m_initPos.Altitude, flags, 30.0, 0.0);
+        double speed = SpeedByDist(GSGeography::DistanceMeters(prevPnt->m_loc, pnt->m_loc));
+        m_aiWaypoints.emplace_back(pnt->m_loc.Lat(), pnt->m_loc.Long(), m_initPos.Altitude, flags, speed, 0.0);
+        prevPnt = pnt;
     }
 
     m_aiWaypoints.pop_back();

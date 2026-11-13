@@ -63,7 +63,8 @@ protected:
 
     void DespawnReady();
     void DespawnCommand();
-    
+    double SpeedByDist(double distMeters);
+
     GSSimConnect& m_simHandle;
     SIMCONNECT_OBJECT_ID m_simObjectID = 0;
     GSSimObjUpdate& m_parent;

@@ -95,4 +95,15 @@ void GSSimObj::ContinueSpawn()
         OnObjSpawned(true);
 }
 
+double GSSimObj::SpeedByDist(double distMeters)
+{
+    double speed = 50.0;
+    if (distMeters < 5.0)
+        speed = 10.0;
+    else if (distMeters < 50.0)
+        speed = 30.0;
+
+    return speed;
+}
+
 } // namespace NS_GSAliveAirport
