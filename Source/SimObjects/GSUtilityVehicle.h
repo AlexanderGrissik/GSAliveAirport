@@ -11,10 +11,28 @@ namespace NS_GSAliveAirport
 class GSUtilityVehicle : public GSSimUtilObj
 {
 public:
-    using GSSimUtilObj::GSSimUtilObj;
+    enum UtilityVehicleType {
+        WATER = 0,
+        FUEL,
+        TRUCKUTIL,
+        PICKUP,
+        TUCKFACILITY,
+        OPERTRUCK,
+        CARUTIL,
+        SUV,
+        GENERAL
+    };
+
+    GSUtilityVehicle(GSSimConnect& simHandle, const GSAirport& airport, GSSimObjUpdate& parent, UtilityVehicleType vehicleType):
+        GSSimUtilObj(simHandle, airport, parent), m_vehicleType(vehicleType) {}
     ~GSUtilityVehicle() override = default;
 
+    static UtilityVehicleType VehicleTypeFromIdx(size_t idx);
+
     bool PreSpawn() override;
+
+private:
+    UtilityVehicleType m_vehicleType;
 };
 
 } // namespace NS_GSAliveAirport

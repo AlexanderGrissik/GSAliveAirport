@@ -5,6 +5,7 @@
 #include "Requests/GSReqCatalog.h"
 #include "GSLogStream.h"
 #include "GSRandom.h"
+#include <algorithm>
 #include <random>
 #include <regex>
 
@@ -38,7 +39,7 @@ void GSCatalog::LoadCatalog()
         "Truck Utility",
         "Pickup",
         "ASO_TruckFacility",
-        "ASO_Operational_Truck",
+        "ASO_Operation_Truck",
         "ASO_CarUtility01",
         "SUV_NorthAm"
     });
@@ -57,6 +58,15 @@ void GSCatalog::LoadCatalog()
     m_entriesMarshaller.clear();
     m_entriesWingwalkerExt.clear();
     m_entriesUtilityVehicle.clear();
+    m_entriesWaterTruck.clear();
+    m_entriesFuelTruck.clear();
+    m_entriesUtilityTruck.clear();
+    m_entriesPickup.clear();
+    m_entriesUtilityTruckFacility.clear();
+    m_entriesOperationTruck.clear();
+    m_extGPULarge.clear();
+    m_extGPUMedium.clear();
+    m_extLavatory.clear();
     m_entires.clear();
     m_entires.reserve(1024);
     
@@ -95,8 +105,23 @@ void GSCatalog::LoadCatalog()
             m_entiresBuggageWorkerExt.push_back(&pr);
         else if (pr.first.starts_with(strStaircaseExt))
             m_entiresStaircaseExt.push_back(&pr);
-        else if (std::find(strUtilityVehicle.begin(), strUtilityVehicle.end(), pr.first) != strUtilityVehicle.end())
+        if (std::any_of(strUtilityVehicle.begin(), strUtilityVehicle.end(), 
+            [&pr](const auto& prefix) { return pr.first.starts_with(prefix); })) {
             m_entriesUtilityVehicle.push_back(&pr);
+
+            if (pr.first.starts_with("Truck Water"))
+                m_entriesWaterTruck.push_back(&pr);
+            else if (pr.first.starts_with("Truck Fuel"))
+                m_entriesFuelTruck.push_back(&pr);
+            else if (pr.first.starts_with("Truck Utility"))
+                m_entriesUtilityTruck.push_back(&pr);
+            else if (pr.first.starts_with("Pickup"))
+                m_entriesPickup.push_back(&pr);
+            else if (pr.first.starts_with("ASO_TruckFacility"))
+                m_entriesUtilityTruckFacility.push_back(&pr);
+            else if (pr.first.starts_with("ASO_Operation_Truck"))
+                m_entriesOperationTruck.push_back(&pr);
+        }
     }
 
     Disconnect();

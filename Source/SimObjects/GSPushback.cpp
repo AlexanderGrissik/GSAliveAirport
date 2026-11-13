@@ -11,8 +11,13 @@ namespace NS_GSAliveAirport
 
 bool GSPushback::OnCreated()
 {
-    FinalizeRoute();
-    return false;
+    if (m_pushType != PUSH_SMALL) {
+        FinalizeRoute();
+        return false;
+    }
+
+    Freeze();
+    return true;
 }
 
 void GSPushback::OnArrived()
@@ -48,7 +53,8 @@ bool GSPushback::PreSpawn()
     m_initPos.Longitude = doorPos.Long();
     m_initPos.Latitude = doorPos.Lat();
 
-    PrepareRoute();
+    if (m_pushType != PUSH_SMALL)
+        PrepareRoute();
 
     return true;
 }

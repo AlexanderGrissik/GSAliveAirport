@@ -15,12 +15,13 @@ void GSUtilityGround::BuildObjs()
         return;
     }
 
-    if (pathCount < 4 || pathMeters < 500.0) {
-        m_objs.emplace_back(new GSUtilityVehicle(m_simConnect, *m_airport, *this));
+    if (pathCount < 4 || pathMeters < 1000.0) {
+        m_objs.emplace_back(new GSUtilityVehicle(m_simConnect, *m_airport, *this, GSUtilityVehicle::GENERAL));
     } else {
-        size_t vehicleNum = static_cast<size_t>(pathMeters / 500.0);
+        size_t vehicleNum = static_cast<size_t>(pathMeters / 1000.0);
         while (vehicleNum-- > 0)
-            m_objs.emplace_back(new GSUtilityVehicle(m_simConnect, *m_airport, *this));
+            m_objs.emplace_back(new GSUtilityVehicle(m_simConnect, *m_airport, *this,
+                                GSUtilityVehicle::VehicleTypeFromIdx(vehicleNum)));
     }
 }
 
