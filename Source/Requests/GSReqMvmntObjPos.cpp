@@ -7,16 +7,14 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqMvmntObjPos::Process()
+GSInvokeRC GSReqMvmntObjPos::Process()
 {
     auto id = m_simHandle.NextRequestID();
-    GSReqRC rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObject, id, GSDatumID_PlanePosition,
-            m_simObj.GetSimObjectID(), SIMCONNECT_PERIOD_ONCE, 0U, 0U, 0U, 0U), true };
+    GSInvokeRC rc = m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObject, id, GSDatumID_PlanePosition,
+            m_simObj.GetSimObjectID(), SIMCONNECT_PERIOD_ONCE, 0U, 0U, 0U, 0U);
 
     if (!rc.isOK()) {
         GSLogStream::LogError("GSReqMvmntObjPos::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
         static_cast<GSMovementThread&>(m_simHandle).OnErrorPosReq(*m_track);
     }
 

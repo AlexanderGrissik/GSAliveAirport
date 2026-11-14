@@ -78,9 +78,6 @@
     <ClInclude Include="Source\Commands\GSCmdReq.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Commands\GSCmdReqIdent.h">
-      <Filter>Source\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Commands\GSCmdSimObj.h">
       <Filter>Source\Commands</Filter>
     </ClInclude>

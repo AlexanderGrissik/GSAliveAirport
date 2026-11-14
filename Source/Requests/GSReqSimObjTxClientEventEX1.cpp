@@ -9,7 +9,7 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqSimObjTxClientEventEX1::Process()
+GSInvokeRC GSReqSimObjTxClientEventEX1::Process()
 {
     auto simRC = m_simHandle.Invoke(
         SimConnect_TransmitClientEvent_EX1, m_objID, m_eventID,
@@ -18,7 +18,7 @@ GSReqRC GSReqSimObjTxClientEventEX1::Process()
         GSLogStream::LogError("GSReqSimObjTxClientEventEX1::Process Failed call: ") << simRC.rc;
     }
 
-    return {simRC, false};
+    return simRC;
 }
 
 }

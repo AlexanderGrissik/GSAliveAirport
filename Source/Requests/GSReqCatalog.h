@@ -11,7 +11,7 @@ namespace NS_GSAliveAirport
 class GSReqCatalog : public GSRequest {
 public:
     using GSRequest::GSRequest;
-    GSReqRC Process() override;
+    GSInvokeRC Process() override;
     bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
     void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
 };

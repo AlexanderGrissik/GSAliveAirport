@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Commands/GSCmdReq.h"
-#include "Commands/GSCmdReqIdent.h"
 #include "GSDefinitions.h"
 #include <array>
 #include <cstddef>
@@ -57,7 +56,8 @@ public:
     void PostCommand(GSCommand* cmd);
     void PostReqCommand(GSRequest* req);
     void PostReqCommandDeferred(GSRequest* req, std::shared_ptr<GSTimePoint>& execTime);
-    void PostReqIdentCommand(GSRequest* req, GSCmdReqIdent::Callable&& clb);
+    void PostMsgCommand(GSRequest* req);
+    void PostMsgCommand(GSRequest* req, GSCmdReq::Callable&& exceptionCallback);
     DWORD NextRequestID() { return m_nextRequestId++; }
 
 protected:
@@ -79,7 +79,7 @@ private:
     void OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSize);
     void ExecuteCommand(GSCommand& cmd);
     void HandleCmdReqProcess(GSCmdReq& cmd);
-    void HandleCmdReqIdentProcess(GSCmdReqIdent& cmd);
+    bool RegisterRequest(const GSInvokeID& id, GSRequestU& req);
     
     static void CALLBACK DispatchThunk(SIMCONNECT_RECV *message, DWORD messageSize, void *context) noexcept;
     static std::size_t HashReqID(const GSInvokeID& key) noexcept { return std::hash<DWORD>{}(key.requestID); }
@@ -100,7 +100,7 @@ private:
 
     std::unordered_map<GSInvokeID, GSRequestR, decltype(&HashReqID), decltype(&EqualReqID)> m_reqIDToPtr{ 1, &HashReqID, &EqualReqID };
     std::unordered_map<GSInvokeID, GSRequestU, decltype(&HashSendID), decltype(&EqualSendID)> m_sendIDToPtr{ 1, &HashSendID, &EqualSendID };
-    std::deque<std::pair<GSInvokeID, GSCmdReqIdent::Callable>> m_sendIDToIdent;
+    std::deque<std::pair<GSInvokeID, GSCmdReq::Callable>> m_msgSendID;
 };
 
 template <size_t SZ>

@@ -12,7 +12,7 @@ namespace NS_GSAliveAirport
 class GSReqSimObjContDespawn : public GSSimServObjReq {
 public:
     using GSSimServObjReq::GSSimServObjReq;
-    GSReqRC Process() override { m_simObj.DespawnCont(); return { {{0,0},NOERROR},false }; }
+    GSInvokeRC Process() override { m_simObj.DespawnCont(); return {{0, 0}, NOERROR}; }
     bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override { return true; };
     void OnException(SIMCONNECT_RECV_EXCEPTION* message) override { };
 };

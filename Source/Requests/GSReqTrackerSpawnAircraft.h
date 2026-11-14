@@ -12,7 +12,7 @@ class GSReqTrackerSpawnAircraft : public GSRequest {
 public:
     GSReqTrackerSpawnAircraft(GSSimConnect& simHandle, int t):
         GSRequest(simHandle), m_type(t) {}
-    GSReqRC Process() override;
+    GSInvokeRC Process() override;
     bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
     void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
 private:

@@ -8,17 +8,15 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqTrackerScanAircrafts::Process()
+GSInvokeRC GSReqTrackerScanAircrafts::Process()
 {
     GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Starting Aircraft Scan");
 
     auto id = m_simHandle.NextRequestID();
-    GSReqRC rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObjectType, id, GSDatumID_Aircraft, GSAircraftTrackerThread::DiscoveryRadiusMeters, SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT), true };
+    GSInvokeRC rc = m_simHandle.InvokeRequest(id, SimConnect_RequestDataOnSimObjectType, id, GSDatumID_Aircraft, GSAircraftTrackerThread::DiscoveryRadiusMeters, SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT);
     
     if (!rc.isOK()) {
         GSLogStream::LogError("GSReqTrackerScanAircrafts::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
     } 
 
     return rc;

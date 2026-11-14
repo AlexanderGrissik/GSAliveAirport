@@ -12,7 +12,7 @@ namespace NS_GSAliveAirport
 
 using namespace std::chrono_literals;
 
-GSReqRC GSReqTrackerSpawnAircraft::Process()
+GSInvokeRC GSReqTrackerSpawnAircraft::Process()
 {
     GSAircraftTrackerThread& tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
     return tracker.SpawnTestAircraft(m_type, m_pos);

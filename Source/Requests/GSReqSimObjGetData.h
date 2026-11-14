@@ -13,7 +13,7 @@ class GSReqSimObjGetData : public GSSimObjReq {
 public:
     GSReqSimObjGetData(GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID):
         GSSimObjReq(simHandle, simObj), m_definitionID(definitionID) {}
-    GSReqRC Process() override;
+    GSInvokeRC Process() override;
 private:
     SIMCONNECT_DATA_DEFINITION_ID m_definitionID;
 };

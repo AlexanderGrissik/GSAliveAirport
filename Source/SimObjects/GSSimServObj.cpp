@@ -115,9 +115,9 @@ void GSSimServObj::AddAttached(GSSimServObj* obj)
 
 void GSSimServObj::UnFreeze()
 {
-    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_LongLat, 0));
-    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Altitude, 0));
-    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Attitude, 0));
+    m_simHandle.PostMsgCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_LongLat, 0));
+    m_simHandle.PostMsgCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Altitude, 0));
+    m_simHandle.PostMsgCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Attitude, 0));
 }
 
 void GSSimServObj::Freeze()
@@ -125,12 +125,12 @@ void GSSimServObj::Freeze()
     //auto reqID = m_simHandle.NextRequestID();
     //m_simHandle.Invoke(SimConnect_AIReleaseControl, m_simObjectID, reqID);
 
-    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_LongLat, 1));
-    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Altitude, 1));
-    m_simHandle.PostReqCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Attitude, 1));
+    m_simHandle.PostMsgCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_LongLat, 1));
+    m_simHandle.PostMsgCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Altitude, 1));
+    m_simHandle.PostMsgCommand(new GSReqSimObjTxClientEvent(m_simHandle, *this, GSEventID_Freeze_Attitude, 1));
 
     std::array updatePos{ m_initPos };
-    m_simHandle.PostReqCommand(new GSReqSimObjSetData<SIMCONNECT_DATA_INITPOSITION, 1>(
+    m_simHandle.PostMsgCommand(new GSReqSimObjSetData<SIMCONNECT_DATA_INITPOSITION, 1>(
         m_simHandle, *this, GSDatumID_Position, std::move(updatePos)));
 }
 

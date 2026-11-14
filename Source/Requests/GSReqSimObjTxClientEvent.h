@@ -12,7 +12,7 @@ class GSReqSimObjTxClientEvent : public GSSimObjReq {
 public:
     GSReqSimObjTxClientEvent(GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_CLIENT_EVENT_ID eventID, DWORD data):
         GSSimObjReq(simHandle, simObj), m_eventID(eventID), m_data(data) {}
-    GSReqRC Process() override;
+    GSInvokeRC Process() override;
     bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { return true; }
     void OnException(SIMCONNECT_RECV_EXCEPTION *message) override {}
 private:

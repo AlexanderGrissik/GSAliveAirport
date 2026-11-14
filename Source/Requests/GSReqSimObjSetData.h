@@ -18,7 +18,7 @@ class GSReqSimObjSetData : public GSSimObjReq {
 public:
     GSReqSimObjSetData(GSSimConnect& simHandle, GSSimObj& simObj, SIMCONNECT_DATA_DEFINITION_ID definitionID, std::array<T,N>&& data):
         GSSimObjReq(simHandle, simObj), m_definitionID(definitionID), m_data(std::forward<std::array<T,N>>(data)) {}
-    GSReqRC Process() override;
+    GSInvokeRC Process() override;
     bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override { return true; }
     void OnException(SIMCONNECT_RECV_EXCEPTION *message) override {}
 private:
@@ -28,7 +28,7 @@ private:
 
 
 template <typename T, DWORD N>
-GSReqRC GSReqSimObjSetData<T,N>::Process()
+GSInvokeRC GSReqSimObjSetData<T,N>::Process()
 {
     auto simRC = m_simHandle.Invoke(
         SimConnect_SetDataOnSimObject, m_definitionID, m_simObj.GetSimObjectID(), 0U, N, static_cast<DWORD>(sizeof(T)), m_data.data());
@@ -36,7 +36,7 @@ GSReqRC GSReqSimObjSetData<T,N>::Process()
         GSLogStream::LogError("GSReqSimObjSetData::Process Failed call: ") << simRC.rc;
     }
 
-    return {simRC, false};
+    return simRC;
 }
 
 }

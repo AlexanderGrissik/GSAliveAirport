@@ -8,20 +8,18 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqTrackerAircraftsInfo::Process()
+GSInvokeRC GSReqTrackerAircraftsInfo::Process()
 {
     GSLogStream::LogDebug(GSLogStream::DBG_LOG_AIRCRAFT_TRACKER, "Starting Aircraft Const Info");
 
     auto id = m_simHandle.NextRequestID();
-    GSReqRC rc = {
-        m_simHandle.InvokeRequest(
-            id, SimConnect_RequestDataOnSimObject, id, GSDatumID_AircraftConst, m_objectID, SIMCONNECT_PERIOD_ONCE, 0U, 0U, 0U, 0U), true };
+    GSInvokeRC rc = m_simHandle.InvokeRequest(
+            id, SimConnect_RequestDataOnSimObject, id, GSDatumID_AircraftConst, m_objectID, SIMCONNECT_PERIOD_ONCE, 0U, 0U, 0U, 0U);
     
     if (!rc.isOK()) {
         GSAircraftTrackerThread &tracker = static_cast<GSAircraftTrackerThread&>(m_simHandle);
         tracker.ClearFailedAircraft(m_objectID);
         GSLogStream::LogError("GSReqTrackerAircraftsInfo::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
     } 
 
     return rc;

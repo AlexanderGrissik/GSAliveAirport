@@ -34,11 +34,11 @@ bool GSGroundPower::OnCreated()
 void GSGroundPower::OnArrived()
 {
     std::array updateData1{ StateWireDataSet{ 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqGroundPowerSetData(
+    m_simHandle.PostMsgCommand(new GSReqGroundPowerSetData(
         m_simHandle, *this, GSDatumID_GroundPowerStateSet, std::move(updateData1)));
 
     std::array updateData2{ StateWireDataSet{ 1.0f } };
-    m_simHandle.PostReqCommand(new GSReqGroundPowerSetData(
+    m_simHandle.PostMsgCommand(new GSReqGroundPowerSetData(
         m_simHandle, *this, GSDatumID_GroundPowerExtStateSet, std::move(updateData2)));
 
     Freeze();
@@ -49,7 +49,7 @@ void GSGroundPower::OnDespawning()
 {
     std::array updateData{ StateWireDataSet{ 0.0f } };
     const auto definitionID = m_isFullModel ? GSDatumID_GroundPowerExtStateSet : GSDatumID_GroundPowerStateSet;
-    m_simHandle.PostReqCommand(new GSReqGroundPowerSetData(m_simHandle, *this, definitionID, std::move(updateData)));
+    m_simHandle.PostMsgCommand(new GSReqGroundPowerSetData(m_simHandle, *this, definitionID, std::move(updateData)));
 }
 
 bool GSGroundPower::PreSpawn()

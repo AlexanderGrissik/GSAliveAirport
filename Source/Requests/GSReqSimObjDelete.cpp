@@ -8,7 +8,7 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqSimObjDelete::Process() 
+GSInvokeRC GSReqSimObjDelete::Process()
 {
     auto id = m_simHandle.NextRequestID();
     auto simRC = m_simHandle.Invoke(SimConnect_AIRemoveObject, m_simObj.GetSimObjectID(), id);
@@ -18,7 +18,7 @@ GSReqRC GSReqSimObjDelete::Process()
         m_simObj.OnObjDespawned();
         //m_simObj.SetInProgress(true); // Unclear if SimConnect_AIRemoveObject fires OnMessage.
     }
-    return {simRC, true};
+    return simRC;
 }
 
 }

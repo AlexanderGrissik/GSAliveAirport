@@ -41,7 +41,7 @@ bool GSBuggageLoader::OnCreated()
 
 void GSBuggageLoader::OnArrived()
 {
-    m_simHandle.PostReqIdentCommand(
+    m_simHandle.PostMsgCommand(
         new GSReqSimObjTxClientEventEX1(m_simHandle, *this, GSEventID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: OpenDoors, ") << message->dwException; });
@@ -87,14 +87,14 @@ void GSBuggageLoader::OnArrived()
 
 void GSBuggageLoader::OnDespawning()
 {
-    m_simHandle.PostReqIdentCommand(new GSReqSimObjTxClientEventEX1(
+    m_simHandle.PostMsgCommand(new GSReqSimObjTxClientEventEX1(
         m_simHandle, *this, GSEventID_CloseDoors,
         m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: CloseDoors, ") << message->dwException; });
 
     std::array updateData{ StateWireDataSet{ 0.0f } };
-    m_simHandle.PostReqCommand(new GSReqBuggageLoaderSetData(m_simHandle, *this, std::move(updateData)));
+    m_simHandle.PostMsgCommand(new GSReqBuggageLoaderSetData(m_simHandle, *this, std::move(updateData)));
 }
 
 bool GSBuggageLoader::PreSpawn()
@@ -136,7 +136,7 @@ void GSBuggageLoader::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& e
     GSSimConnect::ReadMsgData(&rawStateGet, 0, sizeof(rawStateGet), entry);
 
     std::array updateData{ StateWireDataSet{ CalcLoaderOpenAngle(rawStateGet) } };
-    m_simHandle.PostReqCommand(new GSReqBuggageLoaderSetData(m_simHandle, *this, std::move(updateData)));
+    m_simHandle.PostMsgCommand(new GSReqBuggageLoaderSetData(m_simHandle, *this, std::move(updateData)));
 
     const auto loaderPos = GSGeography::RelativePosition(m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -rawStateGet.endRampZMeters - 0.5, 0.0);
     m_initPos.Longitude = loaderPos.Long();

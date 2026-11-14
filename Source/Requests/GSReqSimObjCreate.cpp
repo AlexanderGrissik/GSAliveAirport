@@ -8,14 +8,12 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqSimObjCreate::Process() {
+GSInvokeRC GSReqSimObjCreate::Process() {
     auto id = m_simHandle.NextRequestID();
-    GSReqRC rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_AICreateSimulatedObject_EX1, m_simObj.GetTitle().c_str(), "", m_simObj.GetInitPos(), id), true };
+    GSInvokeRC rc = m_simHandle.InvokeRequest(id, SimConnect_AICreateSimulatedObject_EX1, m_simObj.GetTitle().c_str(), "", m_simObj.GetInitPos(), id);
     
     if (!rc.isOK()) {
         GSLogStream::LogError("GSReqCreate::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
         m_simObj.OnObjSpawned(false);
     } 
 

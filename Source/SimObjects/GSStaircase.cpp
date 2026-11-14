@@ -53,7 +53,7 @@ void GSStaircase::OnSpawned(bool ok, GSSimObj& obj)
 
 void GSStaircase::OnArrived()
 {
-    m_simHandle.PostReqIdentCommand(
+    m_simHandle.PostMsgCommand(
         new GSReqSimObjTxClientEventEX1(m_simHandle, *this, GSEventID_OpenDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_BUGGAGE_LOADER, "Ident Exception: OpenDoors, ") << message->dwException; });
@@ -96,13 +96,13 @@ void GSStaircase::TrySpawnPassengers()
 
 void GSStaircase::OnDespawning()
 {
-    m_simHandle.PostReqIdentCommand(
+    m_simHandle.PostMsgCommand(
         new GSReqSimObjTxClientEventEX1(m_simHandle, *this, GSEventID_CloseDoors, m_aircraft.GetObjID(), m_doorIdx + 1, 0),
         [](SIMCONNECT_RECV_EXCEPTION* message) {
             GSLogStream::LogDebug(GSLogStream::DBG_LOG_STAIRCASE, "Ident Exception: CloseDoors, ") << message->dwException; });
 
     std::array updateData{ StateWireDataSet{ 0.0f, 0.0f } };
-    m_simHandle.PostReqCommand(new GSReqStaircaseSetData(m_simHandle, *this, std::move(updateData)));
+    m_simHandle.PostMsgCommand(new GSReqStaircaseSetData(m_simHandle, *this, std::move(updateData)));
 }
 
 bool GSStaircase::PreSpawn()
@@ -148,7 +148,7 @@ void GSStaircase::SetFinalPositionAndState(SIMCONNECT_RECV_SIMOBJECT_DATA& entry
     const float extZMeters = rawStateGet.rampStartPosZMeters + yRelation * (rawStateGet.rampEndPosZMeters - rawStateGet.rampStartPosZMeters);
 
     std::array updateData{ StateWireDataSet{ yRelation * 100.0f, m_doorPosElev } };
-    m_simHandle.PostReqCommand(new GSReqStaircaseSetData(m_simHandle, *this, std::move(updateData)));
+    m_simHandle.PostMsgCommand(new GSReqStaircaseSetData(m_simHandle, *this, std::move(updateData)));
 
     const auto stairPos = GSGeography::RelativePosition(
         m_initPos.Heading, { m_initPos.Longitude, m_initPos.Latitude }, -extZMeters - 0.1, 0.0);

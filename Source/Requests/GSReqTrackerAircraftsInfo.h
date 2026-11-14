@@ -15,7 +15,7 @@ class GSReqTrackerAircraftsInfo : public GSRequest {
 public:
     GSReqTrackerAircraftsInfo(GSSimConnect& simHandle, DWORD objID, const std::pair<const std::string, GSCoord>& airportInfo):
         GSRequest(simHandle), m_objectID(objID), m_airportInfo(airportInfo) {}
-    GSReqRC Process() override;
+    GSInvokeRC Process() override;
     bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) override;
     void OnException(SIMCONNECT_RECV_EXCEPTION *message) override;
 private:

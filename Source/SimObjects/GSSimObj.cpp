@@ -26,7 +26,7 @@ void GSSimObj::DespawnReady()
 void GSSimObj::DespawnCommand()
 {
     if (m_readyDespawn && m_attached.empty())
-        m_simHandle.PostReqCommand(new GSReqSimObjDelete(m_simHandle, *this));
+        m_simHandle.PostMsgCommand(new GSReqSimObjDelete(m_simHandle, *this));
 }
 
 void GSSimObj::DespawnAttached()

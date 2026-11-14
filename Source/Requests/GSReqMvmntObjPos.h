@@ -12,7 +12,7 @@ namespace NS_GSAliveAirport
 class GSReqMvmntObjPos : public GSSimObjReq {
 public:
     GSReqMvmntObjPos(GSSimConnect& simHandle, GSSimObj& simObj, GSMovementThread::TrackState* track) : GSSimObjReq(simHandle, simObj), m_track(track) {}
-    GSReqRC Process() override;
+    GSInvokeRC Process() override;
     bool OnMessage(SIMCONNECT_RECV* message, DWORD messageSize) override;
     void OnException(SIMCONNECT_RECV_EXCEPTION* message) override;
 private:

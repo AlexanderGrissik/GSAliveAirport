@@ -194,7 +194,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
             m_reqIDToPtr.erase(id);
         } else {
             bool found = false;
-            for (const auto& itrIdent : m_sendIDToIdent) {
+            for (const auto& itrIdent : m_msgSendID) {
                 if (itrIdent.first.sendID == msg.dwSendID) {
                     itrIdent.second(&msg);
                     found = true;
@@ -290,8 +290,6 @@ void GSSimConnect::ExecuteCommand(GSCommand& cmd)
     m_lastLoopMsg = true;
     if (cmd.GetCmdID() == GS_CMD_REQ_PROCESS)
         HandleCmdReqProcess(static_cast<GSCmdReq&>(cmd));
-    else if (cmd.GetCmdID() == GS_CMD_REQ_PROCESS_IDENT)
-        HandleCmdReqIdentProcess(static_cast<GSCmdReqIdent&>(cmd));
     else
         OnCommand(cmd);
 }
@@ -299,32 +297,47 @@ void GSSimConnect::ExecuteCommand(GSCommand& cmd)
 void GSSimConnect::HandleCmdReqProcess(GSCmdReq& cmd)
 {
     auto req(cmd.ReleaseReq());
-    GSReqRC rc = req->Process();
-    if (rc.isOK() && rc.keepReq) {
-        m_reqIDToPtr.emplace(rc, *(req.get()));
-        m_sendIDToPtr.emplace(rc, std::move(req));
+    GSInvokeRC rc = req->Process();
+    if (rc.isOK()) {
+        if (rc.requestID != 0) {
+            RegisterRequest(rc, req);
+        } else if (cmd.GetExceptionCallback()) {
+            m_msgSendID.emplace_back(rc, std::move(cmd.GetExceptionCallback()));
+            if (m_msgSendID.size() > 1000) {
+                m_msgSendID.pop_front();
+            }
+        }
     } else if (!rc.isOK()) {
         GSLogStream::LogError("Command Post Failed");
     }
 }
 
-void GSSimConnect::HandleCmdReqIdentProcess(GSCmdReqIdent& cmd)
+bool GSSimConnect::RegisterRequest(const GSInvokeID& id, GSRequestU& req)
 {
-    auto req(cmd.ReleaseReq());
-    GSReqRC rc = req->Process();
-    if (rc.isOK()) {
-        if (rc.keepReq) {
-            m_reqIDToPtr.emplace(rc, *(req.get()));
-            m_sendIDToPtr.emplace(rc, std::move(req));
+    // try_emplace leaves req untouched if the send ID is already registered.
+    auto [ownerIt, ownerInserted] = m_sendIDToPtr.try_emplace(id, std::move(req));
+    if (!ownerInserted) {
+        GSLogStream::LogError("GSSimConnect - Duplicate send ID: ") << GetDebugName()
+            << ", sendID: " << id.sendID << ", requestID: " << id.requestID
+            << ", existing requestID: " << ownerIt->first.requestID;
+    } else {
+        auto [requestIt, requestInserted] = m_reqIDToPtr.emplace(id, *ownerIt->second);
+        if (requestInserted) {
+            return true;
         }
 
-        m_sendIDToIdent.emplace_back(rc, std::move(cmd.GetCallable()));
-        if (m_sendIDToIdent.size() > 1000) {
-            m_sendIDToIdent.pop_front();
-        }
-    } else if (!rc.isOK()) {
-        GSLogStream::LogError("Command Post Failed");
+        GSLogStream::LogError("GSSimConnect - Duplicate request ID: ") << GetDebugName()
+            << ", requestID: " << id.requestID << ", sendID: " << id.sendID
+            << ", existing sendID: " << requestIt->first.sendID;
+
+        req = std::move(ownerIt->second);
+        m_sendIDToPtr.erase(ownerIt);
     }
+
+    // Notify the rejected request instead of leaving its caller waiting forever.
+    SIMCONNECT_RECV_EXCEPTION exc{{0, 0, SIMCONNECT_RECV_ID_EXCEPTION}, SIMCONNECT_EXCEPTION_ERROR, id.sendID, 0};
+    req->OnException(&exc);
+    return false;
 }
 
 GSInvokeRC GSSimConnect::CaptureResult(HRESULT result, DWORD requestID) const
@@ -375,9 +388,14 @@ void GSSimConnect::PostReqCommandDeferred(GSRequest* req, std::shared_ptr<GSTime
     PostCommand(new GSCmdReq(GS_CMD_REQ_PROCESS, req, execTime));
 }
 
-void GSSimConnect::PostReqIdentCommand(GSRequest* req, GSCmdReqIdent::Callable&& clb)
+void GSSimConnect::PostMsgCommand(GSRequest* req)
 {
-    PostCommand(new GSCmdReqIdent(GS_CMD_REQ_PROCESS_IDENT, req, std::move(clb)));
+    PostCommand(new GSCmdReq(GS_CMD_REQ_PROCESS, req));
+}
+
+void GSSimConnect::PostMsgCommand(GSRequest* req, GSCmdReq::Callable&& exceptionCallback)
+{
+    PostCommand(new GSCmdReq(GS_CMD_REQ_PROCESS, req, std::move(exceptionCallback)));
 }
 
 void GSSimConnect::FlushPendingRequestsWithException()

@@ -8,15 +8,13 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqTrackerScanAirports::Process()
+GSInvokeRC GSReqTrackerScanAirports::Process()
 {
     auto id = m_simHandle.NextRequestID();
-    GSReqRC rc = {
-        m_simHandle.InvokeRequest(id, SimConnect_RequestFacilitiesList_EX1, SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, id), true };
+    GSInvokeRC rc = m_simHandle.InvokeRequest(id, SimConnect_RequestFacilitiesList_EX1, SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT, id);
     
     if (!rc.isOK()) {
         GSLogStream::LogError("GSReqTrackerScanAirports::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
     } 
 
     return rc;

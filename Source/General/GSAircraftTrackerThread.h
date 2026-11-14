@@ -60,7 +60,7 @@ public:
     bool HandleScanAirportMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
     void HandleScanAirportRemovedMessage(const SIMCONNECT_RECV_AIRPORT_LIST &entry);
     void HandleAirportInfoMessage(const SIMCONNECT_RECV& entry, DWORD aircraftID, const AirportScanCache::value_type& airportInfo);
-    GSReqRC SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos);
+    GSInvokeRC SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos);
 
   private:
 

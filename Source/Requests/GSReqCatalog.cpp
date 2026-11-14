@@ -8,14 +8,12 @@
 namespace NS_GSAliveAirport
 {
 
-GSReqRC GSReqCatalog::Process()
+GSInvokeRC GSReqCatalog::Process()
 {
     const DWORD requestId = m_simHandle.NextRequestID();
-    GSReqRC rc = {
-        m_simHandle.InvokeRequest(requestId, SimConnect_EnumerateSimObjectsAndLiveries, requestId, SIMCONNECT_SIMOBJECT_TYPE_ALL), true };
+    GSInvokeRC rc = m_simHandle.InvokeRequest(requestId, SimConnect_EnumerateSimObjectsAndLiveries, requestId, SIMCONNECT_SIMOBJECT_TYPE_ALL);
     if (!rc.isOK()) {
         GSLogStream::LogError("GSReqCatalog::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
         static_cast<GSCatalog&>(m_simHandle).Done();
     }
 

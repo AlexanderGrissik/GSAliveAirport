@@ -13,7 +13,7 @@ class GSRequest {
 public:
     GSRequest(GSSimConnect& simHandle): m_simHandle(simHandle) {}
     virtual ~GSRequest() {}
-    virtual GSReqRC Process() = 0;
+    virtual GSInvokeRC Process() = 0;
     virtual bool OnMessage(SIMCONNECT_RECV *message, DWORD messageSize) = 0;
     virtual void OnException(SIMCONNECT_RECV_EXCEPTION *message) = 0;
 protected:

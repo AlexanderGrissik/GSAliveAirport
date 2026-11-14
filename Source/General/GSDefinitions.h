@@ -44,10 +44,6 @@ struct GSInvokeRC : public GSInvokeID{
     bool isOK() const { return SUCCEEDED(rc); }
 };
 
-struct GSReqRC : public GSInvokeRC {
-    bool keepReq;
-};
-    
 struct GSDatum
 {
     const char *name;
@@ -58,7 +54,6 @@ struct GSDatum
 enum GSCommandID
 {
     GS_CMD_REQ_PROCESS = 0,
-    GS_CMD_REQ_PROCESS_IDENT,
     GS_CMD_SPAWN_TEST_AIRCRAFTS,
     GS_CMD_SPAWN_TEST_AIRCRAFTS_JETWAY,
     GS_CMD_SPAWNER_AIRCRAFT_ADDED,

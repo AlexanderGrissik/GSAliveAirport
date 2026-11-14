@@ -411,12 +411,12 @@ const GSAircraftTrackerThread::AirportScanCache::value_type* GSAircraftTrackerTh
     return closest;
 }
 
-GSReqRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos)
+GSInvokeRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INITPOSITION& pos)
 {
     const auto posUser = m_userAircraft.GetLongLat();
     if (!m_userAircraft.GetAirport()) {
         GSLogStream::LogError("GSAircraftTrackerThread::GSReqTrackerSpawnAircraft::Process No User Aircrat/Airport");
-        return { {{0,0},E_FAIL}, false };
+        return {{0, 0}, E_FAIL};
     }
 
     pos.Altitude = m_userAircraft.GetAltitudeFeet();
@@ -445,7 +445,7 @@ GSReqRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INI
         }
 
         if (!found) {
-            return { {{0,0},E_FAIL}, false };
+            return {{0, 0}, E_FAIL};
         }
     }
     else if (type == 3) {
@@ -466,12 +466,10 @@ GSReqRC GSAircraftTrackerThread::SpawnTestAircraft(int type, SIMCONNECT_DATA_INI
     }
 
     auto id = NextRequestID();
-    GSReqRC rc = {
-        InvokeRequest(id, SimConnect_AICreateSimulatedObject_EX1, title.c_str(), "", pos, id), true };
+    GSInvokeRC rc = InvokeRequest(id, SimConnect_AICreateSimulatedObject_EX1, title.c_str(), "", pos, id);
 
     if (!rc.isOK()) {
         GSLogStream::LogError("GSAircraftTrackerThread::GSReqTrackerSpawnAircraft::Process Failed call: ") << rc.rc;
-        rc.keepReq = false;
     }
 
     return rc;
