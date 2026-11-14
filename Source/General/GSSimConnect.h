@@ -22,7 +22,7 @@ class GSSimConnect
 public:
 
     GSSimConnect() = default;
-    virtual ~GSSimConnect() { Disconnect(); }
+    virtual ~GSSimConnect() { CloseSimConnectHandle(); }
     GSSimConnect(const GSSimConnect &) = delete;
     GSSimConnect &operator=(const GSSimConnect &) = delete;
 
@@ -67,7 +67,7 @@ protected:
     void RunDispatch(std::stop_token stopToken);
     void RunCommands();
     void RunCommandsSelf();
-    void Disconnect();  
+    void Disconnect();
     HANDLE GetHandle() const { return m_handle; }
     bool IsLastLoopMessage() const { return m_lastLoopMsg; }
     bool IsSimStarted() const { return m_simStarted; }
@@ -75,7 +75,9 @@ protected:
     void AddRawRequestHandler(DWORD reqID, GSRequest& req) { m_reqIDToPtr.emplace(GSInvokeID{0, reqID}, req); }
     
 private:
-    
+    void SimStopped();
+    void CloseSimConnectHandle();
+
     void OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSize);
     void ExecuteCommand(GSCommand& cmd);
     void HandleCmdReqProcess(GSCmdReq& cmd);

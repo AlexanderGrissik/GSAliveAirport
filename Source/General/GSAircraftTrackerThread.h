@@ -28,7 +28,7 @@ public:
     static constexpr double MinAirportRefreshDistMtr = 2000;
     static constexpr double MinAirportRefreshDistDegPow = GSGeography::DegDistPowFromMeters(MinAirportRefreshDistMtr);
 
-    ~GSAircraftTrackerThread() override {}
+    ~GSAircraftTrackerThread() override { Stop(); }
 #pragma warning(push)
 #pragma warning(disable : 4355)
     GSAircraftTrackerThread(GSSimConnect& singleObserver, GSSimConnect& animThread, GSSimConnect& utilityThread):

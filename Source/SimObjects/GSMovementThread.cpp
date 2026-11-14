@@ -48,7 +48,6 @@ void GSMovementThread::RunLoopMoveTracking(std::stop_token stopToken)
         std::this_thread::sleep_for(m_trackObjs.size() ? 500ms : 2s);
     }
 
-    OnDisconnect();
     Disconnect();
 }
 

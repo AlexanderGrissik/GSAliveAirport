@@ -127,8 +127,7 @@ void GSSimConnect::Connect()
 
         if (m_handle && FAILED(SimConnect_SubscribeToSystemEvent(m_handle, GSEventID_SimState, "Sim"))) {
             GSLogStream::Log(std::string("Failed to subscribe to SimConnect event: Sim"));
-            SimConnect_Close(m_handle);
-            m_handle = nullptr;
+            CloseSimConnectHandle();
             return;
         }
 
@@ -148,6 +147,27 @@ void GSSimConnect::Connect()
 
 void GSSimConnect::Disconnect()
 {
+    if (!m_handle) return;
+    SimStopped();
+    OnDisconnect();
+    CloseSimConnectHandle();
+}
+
+void GSSimConnect::SimStopped()
+{
+    if (!m_simStarted) {
+        FlushPendingRequestsWithException();
+        return;
+    }
+
+    GSLogStream::Log("Simulation stopped.");
+    m_simStarted = false;
+    FlushPendingRequestsWithException();
+    OnSimStop();
+}
+
+void GSSimConnect::CloseSimConnectHandle()
+{
     if (m_handle) {
         SimConnect_Close(m_handle);
         m_handle = nullptr;
@@ -163,7 +183,6 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
     case SIMCONNECT_RECV_ID_QUIT:
         GSLogStream::Log("MSFS24 closed the SimConnect connection.");
         m_disconnectRequested = true;
-        OnDisconnect();
         break;
     case SIMCONNECT_RECV_ID_EVENT: {
         const auto &event = *static_cast<SIMCONNECT_RECV_EVENT *>(message);
@@ -173,10 +192,7 @@ void GSSimConnect::OnSimConnectMessage(SIMCONNECT_RECV *message, DWORD messageSi
                 m_simStarted = true;
                 OnSimStart();
             } else {
-                GSLogStream::Log("Simulation stopped.");
-                m_simStarted = false;
-                FlushPendingRequestsWithException();
-                OnSimStop();
+                SimStopped();
             }
         } else {
             GSLogStream::Log("Unexpected Event: ") << event.uEventID;
@@ -400,8 +416,9 @@ void GSSimConnect::PostMsgCommand(GSRequest* req, GSCmdReq::Callable&& exception
 
 void GSSimConnect::FlushPendingRequestsWithException()
 {
-    if (m_sendIDToPtr.empty()) return;
-    
+    m_reqIDToPtr.clear(); // For AddRawRequestHandler
+    m_msgSendID.clear();
+
     std::vector<GSRequest*> toFlush;
     toFlush.reserve(m_sendIDToPtr.size());
     for (auto& [key, req] : m_sendIDToPtr) {
@@ -415,8 +432,7 @@ void GSSimConnect::FlushPendingRequestsWithException()
     }
     
     m_sendIDToPtr.clear();
-    m_reqIDToPtr.clear();
-    
+
     GSLogStream::Log("GSSimConnect - SimStop: flushed ") << toFlush.size() << " pending request(s) for: " << GetDebugName();
 }
 

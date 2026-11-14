@@ -20,6 +20,7 @@ namespace NS_GSAliveAirport
 class GSAnimationThread final : public GSSimConnect
 {
 public:
+	~GSAnimationThread() override { Stop(); }
 
 	static constexpr double s_AnimDistDegPow = GSGeography::DegDistPowFromMeters(500.0);
 

@@ -35,7 +35,7 @@ public:
 
     GSSpawnerThread(GSSimConnect& animThread, GSSimConnect& mvmntThread, GSAliveUI& ui):
         m_animThread(animThread), m_mvmntThread(mvmntThread), m_ui(ui) {}
-    ~GSSpawnerThread() override {}
+    ~GSSpawnerThread() override { Stop(); }
     GSSpawnerThread(const GSSpawnerThread &) = delete;
     GSSpawnerThread &operator=(const GSSpawnerThread &) = delete;
 

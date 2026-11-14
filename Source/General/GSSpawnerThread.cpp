@@ -42,7 +42,6 @@ void GSSpawnerThread::Start()
                 std::this_thread::sleep_for(50ms);
             }
         }
-        OnDisconnect();
         Disconnect();
     });
 }
@@ -68,7 +67,6 @@ void GSSpawnerThread::OnConnect()
 
 void GSSpawnerThread::OnDisconnect()
 { 
-    OnSimStop(); 
     m_ui.PostMessageUI(GSAliveUIAPI::SetGlobalStatus(false));
 }
 

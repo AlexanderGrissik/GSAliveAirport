@@ -66,7 +66,6 @@ void GSAircraftTrackerThread::RunLoopTracker(std::stop_token stopToken)
         }
     }
 
-    OnDisconnect();
     Disconnect();
 }
 
@@ -83,7 +82,6 @@ void GSAircraftTrackerThread::OnConnect()
 
 void GSAircraftTrackerThread::OnDisconnect()
 {
-    OnSimStop();
     m_scanInProgress = false;
     m_scanAirportInProgress = false;
 }

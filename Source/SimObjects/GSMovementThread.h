@@ -18,6 +18,7 @@ namespace NS_GSAliveAirport
 class GSMovementThread final : public GSSimConnect
 {
 public:
+	~GSMovementThread() override { Stop(); }
 
 	#pragma pack(push, 1)
 	struct StateWireDataGet

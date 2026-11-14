@@ -49,7 +49,6 @@ void GSAnimationThread::RunLoopAnimation(std::stop_token stopToken)
         wakeTime = std::chrono::steady_clock::now();
     }
 
-    OnDisconnect();
     Disconnect();
 }
 

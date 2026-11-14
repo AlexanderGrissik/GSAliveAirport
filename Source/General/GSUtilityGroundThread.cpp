@@ -24,7 +24,6 @@ void GSUtilityGroundThread::Start()
             CheckForPendingRemove();
             std::this_thread::sleep_for(IsSimStarted() && IsLastLoopMessage() ? 50ms : 1000ms);
         }
-        OnDisconnect();
         Disconnect();
     });
 }
