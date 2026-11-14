@@ -174,10 +174,10 @@ void GSMovementThread::HandlePosMessage(SIMCONNECT_RECV_SIMOBJECT_DATA& entry, G
     if (arrived) {
         if (!maxTime && track.m_reversePending) {
             track.m_reversePending = false;
-            track.m_simObj->ShootWaypointsRev();
-
             track.m_lastPosCheckTime = nowTime;
             track.m_lastPosition = currentPos;
+
+            track.m_simObj->GetSimConnect().PostCommandExt(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REV, *track.m_simObj));
         } else
             Arrived(track);
     }

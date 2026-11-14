@@ -126,6 +126,9 @@ void GSSpawnerThread::OnCommand(GSCommand& cmd)
         m_mvmntThread.PostCommandExt(
             new GSCmdSimObj(GS_CMD_MVMNT_OBJ_QUICK, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
+    case GS_CMD_MVMNT_OBJ_REV:
+        static_cast<GSCmdSimObj&>(cmd).SimObj().ShootWaypointsRev();
+        break;
     case GS_CMD_MVMNT_OBJ_ARR:
         static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrival();
         break;

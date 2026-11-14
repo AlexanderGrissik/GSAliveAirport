@@ -60,6 +60,9 @@ void GSUtilityGroundThread::OnCommand(GSCommand& cmd)
     case GS_CMD_MVMNT_OBJ_REM:
         m_mvmntThread.PostCommandExt(new GSCmdSimObj(GS_CMD_MVMNT_OBJ_REM, static_cast<GSCmdSimObj&>(cmd).SimObj()));
         break;
+    case GS_CMD_MVMNT_OBJ_REV:
+        static_cast<GSCmdSimObj&>(cmd).SimObj().ShootWaypointsRev();
+        break;
     case GS_CMD_MVMNT_OBJ_ARR:
         static_cast<GSCmdSimObj&>(cmd).SimObj().OnArrival();
         break;
