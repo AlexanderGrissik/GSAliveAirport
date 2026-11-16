@@ -126,6 +126,15 @@ void GSAircraft::LoadFullState(const SIMCONNECT_RECV_SIMOBJECT_DATA& entry)
 
 void GSAircraft::ApplyInteractivePoints()
 {
+    rearLeftDoorPnt.reset();
+    rearRightDoorPnt.reset();
+    frontLeftDoorPnt.reset();
+    frontRightDoorPnt.reset();
+    cargoDoorFrontPnt.reset();
+    cargoDoorBackPnt.reset();
+    groundPowerPnt.reset();
+    fuelHosePnt.reset();
+
     for (size_t idx = 0; idx < m_rawConstData.interactivePoints.size(); ++idx) {
         const auto& interactivePnt = m_rawConstData.interactivePoints[idx];
         if (interactivePnt.type > 4 || interactivePnt.type == 2)
@@ -135,15 +144,19 @@ void GSAircraft::ApplyInteractivePoints()
         case 0: // Main
             if (interactivePnt.posZMeter < 0) {
                 if (interactivePnt.posXMeter < 0) {
-                    rearLeftDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                    if (!rearLeftDoorPnt || interactivePnt.posZMeter < rearLeftDoorPnt->first.get().posZMeter)
+                        rearLeftDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
                 } else {
-                    rearRightDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                    if (!rearRightDoorPnt || interactivePnt.posZMeter < rearRightDoorPnt->first.get().posZMeter)
+                        rearRightDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
                 }
             } else {
                 if (interactivePnt.posXMeter < 0) {
-                    frontLeftDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                    if (!frontLeftDoorPnt || interactivePnt.posZMeter > frontLeftDoorPnt->first.get().posZMeter)
+                        frontLeftDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
                 } else {
-                    frontRightDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
+                    if (!frontRightDoorPnt || interactivePnt.posZMeter > frontRightDoorPnt->first.get().posZMeter)
+                        frontRightDoorPnt = std::make_pair(std::cref(interactivePnt), idx);
                 }
             }
             break;
