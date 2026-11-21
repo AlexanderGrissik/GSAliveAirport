@@ -9,10 +9,9 @@
 #define IDR_UI_JS 104
 #define IDR_UI_LOGO 105
 
-// Application version - single source of truth. Consumed by:
-//  - C++ (GSAliveAirportApp::s_Version -> startup log banner -> UI version chip)
-//  - App.rc VS_VERSION_INFO (Windows Explorer .exe properties)
-#define APP_VERSION_MAJOR 0
-#define APP_VERSION_MINOR 7
+// Application version printed in the startup log. Keep the version values in
+// App.rc, resource.h, and index.html in sync.
+#define APP_VERSION_MAJOR 1
+#define APP_VERSION_MINOR 0
 #define APP_VERSION_PATCH 0
-#define APP_VERSION "0.7.0"
+#define APP_VERSION "1.0.0"

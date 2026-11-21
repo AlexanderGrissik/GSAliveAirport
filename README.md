@@ -11,6 +11,7 @@ It watches nearby parked and taxiing traffic and automatically spawns animated g
 - **Tracks nearby aircraft** — continuously scans for non-user aircraft within range.
 - **Spawns ground services** — when an aircraft is parked (arrived or preparing for departure), the app creates a matching set of ground-service vehicles and personnel next to it.
 - **Moves services on the road network** — vehicles follow the airport's taxi/road paths to reach their target aircraft, just like real ground crews.
+- **Adds airport utility traffic** — utility vehicles circulate on service roads at the airport detected near your aircraft, where a suitable road network is available.
 - **Cleans up automatically** — when an aircraft departs, leaves the area, or the sim closes, all associated services are removed.
 
 The app is a **non-intrusive observer**: it does not control your aircraft, modify flight plans, or interfere with ATC. It only creates and removes decorative SimObjects around other traffic.
@@ -27,36 +28,23 @@ The app is a **non-intrusive observer**: it does not control your aircraft, modi
 |---|---|
 | **OS** | Windows 10 or 11 (64-bit) |
 | **Microsoft Flight Simulator 2024** | Must be installed; the app connects to a running session via SimConnect |
-| **Microsoft Visual C++ Redistributable (x64)** | Latest version. The app is built with the MSVC C++20 toolchain and depends on the standard `VCRUNTIME140.dll` / `MSVCP140.dll` system DLLs. Normally already present on Windows 10/11, but install the latest [VC++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) if you get a missing-DLL error. |
-
-> No other runtime dependencies. The app is a single self-contained `.exe`.
+| **Microsoft Visual C++ Redistributable (x64)** | Provides the runtime DLLs the application needs. Install it if Windows reports that `VCRUNTIME140.dll` or `MSVCP140.dll` is missing. [VC++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) |
+| **Microsoft Edge WebView2 Runtime** | Required for the desktop interface. See [BUILD.md](BUILD.md#prerequisites) for installation details. |
 
 ## How to run
 
-1. Extract `GSAliveAirport.exe` and `SimConnect.dll` from Release Archive into any folder.
-2. Run `GSAliveAirport.exe`. The application waits for MSFS24 session and a flight.
+1. Extract `GSAliveAirport.exe` and `SimConnect.dll` from the release archive into the same folder.
+2. Open `GSAliveAirport.exe` and load a flight in Microsoft Flight Simulator 2024. The app connects automatically and detects your aircraft, the nearest airport, and nearby traffic.
+3. In **Settings**, select the injector mode for your traffic source. The available modes are **SayIntentions**, **MSFS24 Default**, and **Any**.
 
-- The application automatically detects the user aircraft and the closest airport to the user aircraft.
-- The application automatically detects parking traffic and spawns/despawns ground service for it.
-- Type `help` for the list of console commands - Mainly for debugging.
+### Desktop interface
 
-```
-GSAliveAirport.exe        ← the application
-SimConnect.dll            ← MSFS 2024 SimConnect runtime (same folder)
-```
-
-### Console commands
-
-| Command | Description |
+| Page | What it shows |
 |---|---|
-| `help` | Show all available commands |
-| `tracked` | List all currently tracked aircraft |
-| `tracked 1km` | List tracked aircraft within 1 km |
-| `parked` | List tracked aircraft that are parked |
-| `test` | Spawn a set of test aircraft near your position |
-| `log` | Toggle detailed logging on/off |
-| `debug` | Show or configure debug loggers |
-| `quit` | Exit the application |
+| **Aircrafts** | Your aircraft, nearby tracked aircraft, and their ground-service status. |
+| **Log** | Connection messages and application activity. |
+| **Debug** | Controls to spawn test aircraft, toggle logging, and configure debug loggers. |
+| **Settings** | Traffic injector options. Settings are saved between sessions. |
 
 ## Building from source
 

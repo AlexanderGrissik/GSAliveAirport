@@ -2,7 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by App.rc
 //
-#define APP_VERSION_MAJOR               0
+#define APP_VERSION_MAJOR               1
 #define APP_VERSION_PATCH               0
 #define _USE_DECLSPECS_FOR_SAL          0
 #define _USE_ATTRIBUTES_FOR_SAL         0
@@ -21,7 +21,7 @@
 #define WINAPI_FAMILY_SYSTEM            4
 #define VFF_BUFFTOOSMALL                0x0004
 #define WINAPI_FAMILY_SERVER            5
-#define APP_VERSION_MINOR               6
+#define APP_VERSION_MINOR               0
 #define WINAPI_FAMILY_GAMES             6
 #define _SAL_VERSION                    20
 #define WINAPI_FAMILY_DESKTOP_APP       100
